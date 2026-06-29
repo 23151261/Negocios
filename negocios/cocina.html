@@ -636,6 +636,129 @@
             text-decoration: underline;
         }
 
+        .profile-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            padding: 2.5rem;
+            border-radius: 36px;
+            border: 1px solid #e8ddf2;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid #ede6f5;
+        }
+
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #8b5cf6;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .profile-user-info h3 {
+            font-size: 1.5rem;
+            color: #2d1b3d;
+            margin-bottom: 0.2rem;
+        }
+
+        .profile-user-info p {
+            color: #6b4f7a;
+            font-size: 1rem;
+        }
+
+        .profile-section {
+            margin: 1.5rem 0;
+            padding: 1.2rem;
+            background: #faf8fc;
+            border-radius: 20px;
+            border: 1px solid #ede6f5;
+        }
+
+        .profile-section h4 {
+            font-size: 1.1rem;
+            color: #2d1b3d;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .profile-section h4 i {
+            color: #8b5cf6;
+        }
+
+        .profile-section .profile-field {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #ede6f5;
+            font-size: 0.95rem;
+        }
+
+        .profile-section .profile-field:last-child {
+            border-bottom: none;
+        }
+
+        .profile-section .profile-field .label {
+            color: #6b4f7a;
+        }
+
+        .profile-section .profile-field .value {
+            color: #2d1b3d;
+            font-weight: 500;
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn-danger {
+            background: #fce4ec;
+            color: #c62828;
+            border: none;
+            padding: 0.7rem 1.8rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-danger:hover {
+            background: #f8d0d8;
+            transform: scale(1.02);
+        }
+
+        .coming-soon {
+            color: #8b5cf6;
+            font-size: 0.85rem;
+            font-weight: 500;
+            background: #ede6f5;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
         @media (max-width: 640px) {
             .app {
                 padding: 1rem;
@@ -653,7 +776,7 @@
             .hero h1 {
                 font-size: 2.2rem;
             }
-            .detail-view, .contact-form, .about-text, .auth-container {
+            .detail-view, .contact-form, .about-text, .auth-container, .profile-container {
                 padding: 1.5rem;
             }
             .social-float {
@@ -671,6 +794,14 @@
             }
             .detail-view .product-img {
                 height: 200px;
+            }
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .profile-section .profile-field {
+                flex-direction: column;
+                gap: 0.2rem;
             }
         }
     </style>
@@ -863,6 +994,56 @@
         </div>
     </section>
 
+    <section id="page-perfil" class="page-section">
+        <h2 class="section-title"><i class="fas fa-user-circle"></i> Mi Perfil</h2>
+        <div class="profile-container">
+            <div class="profile-header">
+                <div class="profile-avatar">JP</div>
+                <div class="profile-user-info">
+                    <h3>Juan Pérez</h3>
+                    <p><i class="fas fa-envelope" style="color:#8b5cf6;"></i> juan.perez@email.com</p>
+                    <p><i class="fas fa-calendar-alt" style="color:#8b5cf6;"></i> Miembro desde 2024</p>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <h4><i class="fas fa-id-card"></i> Mis datos</h4>
+                <div class="profile-field">
+                    <span class="label">Nombre completo</span>
+                    <span class="value">Juan Pérez</span>
+                </div>
+                <div class="profile-field">
+                    <span class="label">Correo electrónico</span>
+                    <span class="value">juan.perez@email.com</span>
+                </div>
+                <div class="profile-field">
+                    <span class="label">Teléfono</span>
+                    <span class="value">+52 55 1234 5678</span>
+                </div>
+                <div class="profile-field">
+                    <span class="label">Dirección</span>
+                    <span class="value">Calle Principal 123, Colonia Centro</span>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <h4><i class="fas fa-shopping-bag"></i> Mis compras <span class="coming-soon">Próximamente</span></h4>
+                <p style="color:#6b4f7a; font-size:0.95rem; margin-top:0.5rem;">
+                    <i class="fas fa-clock" style="color:#8b5cf6;"></i> Pronto podrás ver el historial de tus pedidos aquí.
+                </p>
+            </div>
+
+            <div class="profile-actions">
+                <button class="btn-secondary" id="edit-profile-btn"><i class="fas fa-edit"></i> Editar perfil</button>
+                <button class="btn-danger" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
+            </div>
+
+            <div id="profile-message" class="hidden alert-message" style="margin-top:1.5rem; width:100%; text-align:center;">
+                <i class="fas fa-info-circle"></i> Mensaje
+            </div>
+        </div>
+    </section>
+
     <div class="footer-note">
         <i class="fas fa-utensils"></i> DeliciasResto · Comida con tradición
     </div>
@@ -878,12 +1059,22 @@
             catalogo: document.getElementById('page-catalogo'),
             detalle: document.getElementById('page-detalle'),
             registro: document.getElementById('page-registro'),
-            login: document.getElementById('page-login')
+            login: document.getElementById('page-login'),
+            perfil: document.getElementById('page-perfil')
         };
 
         const navLinks = document.querySelectorAll('.nav-links a[data-page]');
         const backToCatalog = document.getElementById('back-to-catalog');
         const viewDetailBtns = document.querySelectorAll('.view-detail-btn');
+
+        let isLoggedIn = false;
+        let currentUser = {
+            name: 'Juan Pérez',
+            email: 'juan.perez@email.com',
+            phone: '+52 55 1234 5678',
+            address: 'Calle Principal 123, Colonia Centro',
+            memberSince: '2024'
+        };
 
         const productData = {
             1: { 
@@ -916,6 +1107,53 @@
             }
         };
 
+        function updateNavForAuth() {
+            const loginLink = document.querySelector('.nav-links .login-btn');
+            if (isLoggedIn) {
+                loginLink.innerHTML = '<i class="fas fa-user-circle"></i> Mi Perfil';
+                loginLink.setAttribute('data-page', 'perfil');
+                loginLink.classList.remove('login-btn');
+                loginLink.classList.add('login-btn');
+                loginLink.style.background = '#8b5cf6';
+                loginLink.style.color = 'white !important';
+            } else {
+                loginLink.innerHTML = '<i class="fas fa-user-circle"></i> Iniciar sesión';
+                loginLink.setAttribute('data-page', 'login');
+                loginLink.style.background = '#ede6f5';
+                loginLink.style.color = '#2d1b3d !important';
+            }
+        }
+
+        function updateProfileData() {
+            if (isLoggedIn) {
+                const avatar = document.querySelector('.profile-avatar');
+                const nameEl = document.querySelector('.profile-user-info h3');
+                const emailEl = document.querySelector('.profile-user-info p:first-child');
+                const memberEl = document.querySelector('.profile-user-info p:last-child');
+                const fields = document.querySelectorAll('.profile-section:first-child .profile-field .value');
+                
+                if (avatar) {
+                    const initials = currentUser.name.split(' ').map(n => n[0]).join('');
+                    avatar.textContent = initials;
+                }
+                if (nameEl) nameEl.textContent = currentUser.name;
+                if (emailEl) emailEl.innerHTML = '<i class="fas fa-envelope" style="color:#8b5cf6;"></i> ' + currentUser.email;
+                if (memberEl) memberEl.innerHTML = '<i class="fas fa-calendar-alt" style="color:#8b5cf6;"></i> Miembro desde ' + currentUser.memberSince;
+                
+                const fieldValues = [
+                    currentUser.name,
+                    currentUser.email,
+                    currentUser.phone,
+                    currentUser.address
+                ];
+                fields.forEach((el, index) => {
+                    if (index < fieldValues.length) {
+                        el.textContent = fieldValues[index];
+                    }
+                });
+            }
+        }
+
         function showPage(pageId) {
             Object.keys(pages).forEach(key => {
                 pages[key].classList.remove('active');
@@ -936,6 +1174,10 @@
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const page = this.getAttribute('data-page');
+                if (page === 'perfil' && !isLoggedIn) {
+                    showPage('login');
+                    return;
+                }
                 showPage(page);
             });
         });
@@ -1021,6 +1263,10 @@
             messageDiv.innerHTML = 'Registro exitoso (simulado)';
             messageDiv.classList.remove('hidden');
 
+            currentUser.name = nombre;
+            currentUser.email = email;
+            currentUser.memberSince = '2024';
+
             document.getElementById('registro-nombre').value = '';
             document.getElementById('registro-email').value = '';
             document.getElementById('registro-password').value = '';
@@ -1051,12 +1297,21 @@
             messageDiv.innerHTML = 'Inicio de sesión exitoso (simulado)';
             messageDiv.classList.remove('hidden');
 
+            isLoggedIn = true;
+            currentUser.email = email;
+            if (email.includes('@') && email.split('@')[0]) {
+                const namePart = email.split('@')[0];
+                currentUser.name = namePart.replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            }
+
             document.getElementById('login-email').value = '';
             document.getElementById('login-password').value = '';
 
             setTimeout(() => {
                 messageDiv.classList.add('hidden');
-                showPage('inicio');
+                updateNavForAuth();
+                updateProfileData();
+                showPage('perfil');
             }, 1500);
         });
 
@@ -1089,6 +1344,33 @@
                 showPage('login');
             });
         });
+
+        document.getElementById('logout-btn')?.addEventListener('click', function() {
+            const messageDiv = document.getElementById('profile-message');
+            isLoggedIn = false;
+            messageDiv.className = 'auth-success';
+            messageDiv.innerHTML = 'Has cerrado sesión exitosamente';
+            messageDiv.style.borderLeftColor = '#8b5cf6';
+            messageDiv.classList.remove('hidden');
+            updateNavForAuth();
+            setTimeout(() => {
+                messageDiv.classList.add('hidden');
+                showPage('inicio');
+            }, 2000);
+        });
+
+        document.getElementById('edit-profile-btn')?.addEventListener('click', function() {
+            const messageDiv = document.getElementById('profile-message');
+            messageDiv.className = 'auth-success';
+            messageDiv.innerHTML = 'Función de edición de perfil (simulada)';
+            messageDiv.style.borderLeftColor = '#8b5cf6';
+            messageDiv.classList.remove('hidden');
+            setTimeout(() => {
+                messageDiv.classList.add('hidden');
+            }, 3000);
+        });
+
+        updateNavForAuth();
 
     });
 </script>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeliciasResto - Sabores que enamoran</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: #f7f3fc;
+            color: #2d1b3d;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .landing {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem 0 2rem 0;
+            border-bottom: 2px solid #d9c4e8;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            background: #8b5cf6;
+            color: white;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .logo-text {
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: #2d1b3d;
+        }
+        .logo-text span {
+            color: #8b5cf6;
+        }
+
+        .hero {
+            display: flex;
+            align-items: center;
+            gap: 4rem;
+            padding: 3rem 0;
+            flex-wrap: wrap;
+        }
+
+        .hero-content {
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .hero-content h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+        }
+
+        .hero-content h1 span {
+            color: #8b5cf6;
+        }
+
+        .hero-content p {
+            font-size: 1.15rem;
+            color: #5d4a6b;
+            line-height: 1.7;
+            margin-bottom: 2rem;
+            max-width: 450px;
+        }
+
+        .btn-primary {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 0.9rem 2.5rem;
+            border-radius: 60px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.25s ease;
+            box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3);
+            text-decoration: none;
+        }
+
+        .btn-primary:hover {
+            background: #7c3aed;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(139, 92, 246, 0.4);
+        }
+
+        .hero-image {
+            flex: 1;
+            min-width: 280px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .hero-image img {
+            width: 100%;
+            max-width: 450px;
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(139, 92, 246, 0.12);
+        }
+
+        .footer {
+            text-align: center;
+            color: #7a5d8a;
+            padding: 2rem 0 0.5rem;
+            font-size: 0.9rem;
+            border-top: 2px solid #d9c4e8;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .landing {
+                padding: 1rem;
+                min-height: auto;
+            }
+            .hero {
+                flex-direction: column;
+                gap: 2rem;
+                padding: 2rem 0;
+            }
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+            .header {
+                flex-direction: column;
+                align-items: center;
+            }
+            .hero-image img {
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-content h1 {
+                font-size: 2rem;
+            }
+            .btn-primary {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="landing">
+        <!-- Header -->
+        <header class="header">
+            <a href="#" class="logo">
+                <div class="logo-icon"><i class="fas fa-utensils"></i></div>
+                <div class="logo-text">Delicias<span>Resto</span></div>
+            </a>
+        </header>
+
+        <!-- Hero -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Sabores que enamoran</h1>
+                <p>Descubre nuestra cocina casera con ingredientes frescos y recetas tradicionales que llevan el amor por la buena comida a tu mesa.</p>
+                <a href="#" class="btn-primary">
+                    <i class="fas fa-arrow-right"></i> Saber más
+                </a>
+            </div>
+            <div class="hero-image">
+                <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&h=400&fit=crop&crop=center" alt="Comida Deliciosa">
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <i class="fas fa-utensils"></i> DeliciasResto · Comida con tradición · 2024
+        </div>
+    </div>
+</body>
+</html>
