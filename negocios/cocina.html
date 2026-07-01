@@ -220,20 +220,58 @@
             padding-left: 1.2rem;
         }
 
+        .catalog-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: white;
+            border-radius: 40px;
+            padding: 0.3rem 1rem;
+            border: 1px solid #d9c4e8;
+            flex: 1;
+            min-width: 200px;
+            max-width: 400px;
+        }
+
+        .search-box i {
+            color: #8b5cf6;
+            margin-right: 0.5rem;
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            padding: 0.6rem 0.2rem;
+            width: 100%;
+            font-size: 1rem;
+            background: transparent;
+        }
+
         .catalog-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             gap: 2rem;
         }
 
         .product-card {
             background: white;
-            padding: 1.5rem 1rem 1.5rem 1rem;
+            padding: 1.5rem 1rem;
             border-radius: 28px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.03);
             border: 1px solid #e8ddf2;
-            transition: 0.2s;
+            transition: 0.25s;
             text-align: center;
+            position: relative;
+            display: flex;
+            flex-direction: column;
         }
 
         .product-card:hover {
@@ -242,9 +280,42 @@
             transform: translateY(-5px);
         }
 
+        .product-card .badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            padding: 0.2rem 1rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            z-index: 5;
+        }
+
+        .badge-new {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .badge-offer {
+            background: #f06292;
+            color: white;
+        }
+
+        .badge-popular {
+            background: #ffb74d;
+            color: #2d1b3d;
+        }
+
+        .badge-vegan {
+            background: #66bb6a;
+            color: white;
+        }
+
         .product-img {
             width: 100%;
-            height: 140px;
+            height: 160px;
             border-radius: 20px;
             display: flex;
             align-items: center;
@@ -263,19 +334,6 @@
             display: block;
         }
 
-        .product-img .img-badge {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: rgba(139, 92, 246, 0.9);
-            color: white;
-            border-radius: 20px;
-            padding: 2px 12px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            z-index: 2;
-        }
-
         .product-img .img-overlay {
             position: absolute;
             bottom: 0;
@@ -286,24 +344,55 @@
             border-radius: 0 0 20px 20px;
         }
 
-        .product-card h3 {
-            font-size: 1.3rem;
+        .product-category {
+            font-size: 0.75rem;
+            color: #8b5cf6;
             font-weight: 600;
-            color: #2d1b3d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.3rem;
         }
 
-        .product-card p {
+        .product-card h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2d1b3d;
+            margin-bottom: 0.2rem;
+        }
+
+        .product-card .description {
             color: #6b4f7a;
-            margin: 0.2rem 0 0.8rem;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
+            margin: 0.2rem 0 0.5rem;
+            flex: 1;
         }
 
         .product-price {
             font-weight: 700;
             color: #8b5cf6;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             display: block;
-            margin-bottom: 0.8rem;
+            margin: 0.5rem 0 1rem;
+        }
+
+        .product-card .btn-secondary {
+            margin-top: auto;
+            align-self: center;
+        }
+
+        .no-results {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 3rem;
+            color: #6b4f7a;
+            font-size: 1.2rem;
+        }
+
+        .no-results i {
+            font-size: 2.5rem;
+            color: #d9c4e8;
+            display: block;
+            margin-bottom: 1rem;
         }
 
         .detail-view {
@@ -396,6 +485,45 @@
             border-left: 4px solid #8b5cf6;
         }
 
+        .hidden {
+            display: none !important;
+        }
+
+        .about-text {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            padding: 2.5rem;
+            border-radius: 36px;
+            border: 1px solid #e8ddf2;
+            line-height: 1.7;
+            color: #3d2a4a;
+        }
+
+        .about-text p {
+            margin: 0.8rem 0;
+        }
+
+        .about-text i {
+            color: #8b5cf6;
+            width: 24px;
+        }
+
+        .info-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+            justify-content: center;
+        }
+
+        .info-item {
+            background: #f7f3fc;
+            padding: 0.8rem 1.8rem;
+            border-radius: 40px;
+            border: 1px solid #d9c4e8;
+        }
+
         .contact-form {
             max-width: 600px;
             margin: 0 auto;
@@ -460,45 +588,6 @@
             font-size: 0.9rem;
             border-top: 1px solid #d9c4e8;
             margin-top: 3rem;
-        }
-
-        .about-text {
-            max-width: 700px;
-            margin: 0 auto;
-            background: white;
-            padding: 2.5rem;
-            border-radius: 36px;
-            border: 1px solid #e8ddf2;
-            line-height: 1.7;
-            color: #3d2a4a;
-        }
-
-        .about-text p {
-            margin: 0.8rem 0;
-        }
-
-        .about-text i {
-            color: #8b5cf6;
-            width: 24px;
-        }
-
-        .info-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1.5rem;
-            margin-top: 1.5rem;
-            justify-content: center;
-        }
-
-        .info-item {
-            background: #f7f3fc;
-            padding: 0.8rem 1.8rem;
-            border-radius: 40px;
-            border: 1px solid #d9c4e8;
-        }
-
-        .hidden {
-            display: none !important;
         }
 
         .social-float {
@@ -634,6 +723,30 @@
 
         .forgot-password-link:hover {
             text-decoration: underline;
+        }
+
+        .remember-me-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0.5rem 0 1rem 0;
+        }
+
+        .remember-me-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #8b5cf6;
+            cursor: pointer;
+            margin: 0;
+            border-radius: 4px;
+        }
+
+        .remember-me-group label {
+            font-weight: 500;
+            color: #3d2a4a;
+            cursor: pointer;
+            margin: 0;
+            font-size: 0.95rem;
         }
 
         .profile-container {
@@ -776,6 +889,13 @@
             .hero h1 {
                 font-size: 2.2rem;
             }
+            .catalog-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .search-box {
+                max-width: 100%;
+            }
             .detail-view, .contact-form, .about-text, .auth-container, .profile-container {
                 padding: 1.5rem;
             }
@@ -802,6 +922,13 @@
             .profile-section .profile-field {
                 flex-direction: column;
                 gap: 0.2rem;
+            }
+            .remember-me-group {
+                justify-content: center;
+            }
+            .catalog-grid {
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                gap: 1.2rem;
             }
         }
     </style>
@@ -856,20 +983,16 @@
         <div class="contact-form">
             <label><i class="fas fa-user"></i> Nombre</label>
             <input type="text" placeholder="Tu nombre" id="contact-name">
-
             <label><i class="fas fa-envelope"></i> Correo</label>
             <input type="email" placeholder="tucorreo@ejemplo.com" id="contact-email">
-
             <label><i class="fas fa-comment"></i> Mensaje</label>
             <textarea placeholder="Escribe tu mensaje aquí..." id="contact-message"></textarea>
-
             <button class="btn-primary" style="width:100%; justify-content:center; margin-top:1.5rem;" id="send-contact-btn">
                 <i class="fas fa-paper-plane"></i> Enviar
             </button>
             <div id="contact-feedback" class="hidden alert-message" style="margin-top:1.2rem; width:100%; text-align:center;">
                 <i class="fas fa-check-circle"></i> Mensaje enviado
             </div>
-
             <div class="social-links">
                 <a href="#" title="Facebook"><i class="fab fa-facebook"></i></a>
                 <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
@@ -880,48 +1003,13 @@
 
     <section id="page-catalogo" class="page-section">
         <h2 class="section-title"><i class="fas fa-utensils"></i> Catálogo</h2>
-        <div class="catalog-grid" id="catalog-grid">
-            <div class="product-card" data-id="1">
-                <div class="product-img pizza">
-                    <img src="pizza.jpg" alt="Pizza Margarita" class="food-image">
-                    <div class="img-overlay"></div>
-                </div>
-                <h3>Pizza Margarita</h3>
-                <p>Mozzarella, tomate y albahaca</p>
-                <span class="product-price">$12.50</span>
-                <button class="btn-secondary view-detail-btn" data-id="1">Ver detalle</button>
-            </div>
-            <div class="product-card" data-id="2">
-                <div class="product-img hamburger">
-                    <img src="hamburguesa.jpg" alt="Hamburguesa Clásica" class="food-image">
-                    <div class="img-overlay"></div>
-                </div>
-                <h3>Hamburguesa Clásica</h3>
-                <p>Carne premium, lechuga y tomate</p>
-                <span class="product-price">$10.90</span>
-                <button class="btn-secondary view-detail-btn" data-id="2">Ver detalle</button>
-            </div>
-            <div class="product-card" data-id="3">
-                <div class="product-img salmon">
-                    <img src="salmon.jpg" alt="Salmón a la plancha" class="food-image">
-                    <div class="img-overlay"></div>
-                </div>
-                <h3>Salmón a la plancha</h3>
-                <p>Con vegetales asados</p>
-                <span class="product-price">$18.40</span>
-                <button class="btn-secondary view-detail-btn" data-id="3">Ver detalle</button>
-            </div>
-            <div class="product-card" data-id="4">
-                <div class="product-img coffee">
-                    <img src="cafe.jpg" alt="Café de especialidad" class="food-image">
-                    <div class="img-overlay"></div>
-                </div>
-                <h3>Café de especialidad</h3>
-                <p>Origen mexicano, tueste medio</p>
-                <span class="product-price">$4.20</span>
-                <button class="btn-secondary view-detail-btn" data-id="4">Ver detalle</button>
+        <div class="catalog-controls">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-input" placeholder="Buscar productos...">
             </div>
         </div>
+        <div class="catalog-grid" id="catalog-grid"></div>
     </section>
 
     <section id="page-detalle" class="page-section">
@@ -934,7 +1022,7 @@
             <span class="product-price" id="detail-price">$0.00</span>
             <p id="detail-desc">Descripción del producto.</p>
             <div class="detail-actions">
-                <button class="btn-outline" id="back-to-catalog"><i class="fas fa-arrow-left"></i> Regresar al catálogo</button>
+                <button class="btn-outline" id="back-to-catalog"><i class="fas fa-arrow-left"></i> Regresar</button>
                 <button class="btn-cart-fake" id="add-to-cart-fake"><i class="fas fa-shopping-cart"></i> Agregar al carrito</button>
             </div>
             <div id="cart-fake-feedback" class="hidden alert-message" style="margin-top:1rem; width:100%; text-align:center;">
@@ -983,6 +1071,10 @@
                     <label><i class="fas fa-lock"></i> Contraseña</label>
                     <input type="password" id="login-password" placeholder="Ingresa tu contraseña">
                 </div>
+                <div class="remember-me-group">
+                    <input type="checkbox" id="remember-me">
+                    <label for="remember-me"><i class="fas fa-check-circle" style="color:#8b5cf6;"></i> Recuérdame</label>
+                </div>
                 <a href="#" class="forgot-password-link" id="forgot-password-link">¿Olvidaste tu contraseña?</a>
                 <button type="submit" class="btn-primary" id="login-btn">
                     <i class="fas fa-arrow-right"></i> Entrar
@@ -1005,7 +1097,6 @@
                     <p><i class="fas fa-calendar-alt" style="color:#8b5cf6;"></i> Miembro desde 2024</p>
                 </div>
             </div>
-
             <div class="profile-section">
                 <h4><i class="fas fa-id-card"></i> Mis datos</h4>
                 <div class="profile-field">
@@ -1025,19 +1116,16 @@
                     <span class="value">Calle Principal 123, Colonia Centro</span>
                 </div>
             </div>
-
             <div class="profile-section">
                 <h4><i class="fas fa-shopping-bag"></i> Mis compras <span class="coming-soon">Próximamente</span></h4>
                 <p style="color:#6b4f7a; font-size:0.95rem; margin-top:0.5rem;">
                     <i class="fas fa-clock" style="color:#8b5cf6;"></i> Pronto podrás ver el historial de tus pedidos aquí.
                 </p>
             </div>
-
             <div class="profile-actions">
                 <button class="btn-secondary" id="edit-profile-btn"><i class="fas fa-edit"></i> Editar perfil</button>
                 <button class="btn-danger" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
             </div>
-
             <div id="profile-message" class="hidden alert-message" style="margin-top:1.5rem; width:100%; text-align:center;">
                 <i class="fas fa-info-circle"></i> Mensaje
             </div>
@@ -1052,6 +1140,89 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
 
+        const products = [
+            {
+                id: 1,
+                name: 'Pizza Margarita',
+                category: 'Pizzas',
+                price: 12.50,
+                desc: 'Clásica pizza con mozzarella, tomate fresco y albahaca. Masa artesanal con fermentación lenta.',
+                image: 'pizza.jpg',
+                badge: 'popular',
+                badgeText: '⭐ Popular'
+            },
+            {
+                id: 2,
+                name: 'Pizza Pepperoni',
+                category: 'Pizzas',
+                price: 14.90,
+                desc: 'Pizza con pepperoni, mozzarella y salsa de tomate. La favorita de los amantes del picante.',
+                image: 'pepperoni.jpg',
+                badge: 'new',
+                badgeText: 'Nuevo'
+            },
+            {
+                id: 3,
+                name: 'Hamburguesa Clásica',
+                category: 'Hamburguesas',
+                price: 10.90,
+                desc: 'Carne 100% premium de res, lechuga, tomate, cebolla morada y salsa especial. Con papas fritas.',
+                image: 'clasica.jpg',
+                badge: 'offer',
+                badgeText: 'Oferta'
+            },
+            {
+                id: 4,
+                name: 'Hamburguesa BBQ',
+                category: 'Hamburguesas',
+                price: 13.50,
+                desc: 'Hamburguesa con salsa BBQ, aros de cebolla crujientes y queso cheddar derretido.',
+                image: 'bbq.jpg',
+                badge: null,
+                badgeText: null
+            },
+            {
+                id: 5,
+                name: 'Salmón a la plancha',
+                category: 'Pescados',
+                price: 18.40,
+                desc: 'Salmón fresco sellado a la plancha, acompañado de vegetales asados y salsa de hierbas finas.',
+                image: 'salmon.jpg',
+                badge: 'popular',
+                badgeText: '⭐ Popular'
+            },
+            {
+                id: 6,
+                name: 'Ceviche de camarón',
+                category: 'Pescados',
+                price: 15.20,
+                desc: 'Camarones frescos marinados en jugo de limón con cebolla morada, cilantro y aguacate.',
+                image: 'ceviche.jpg',
+                badge: 'new',
+                badgeText: 'Nuevo'
+            },
+            {
+                id: 7,
+                name: 'Café de especialidad',
+                category: 'Bebidas',
+                price: 4.20,
+                desc: 'Café de origen mexicano, tueste medio, con notas de chocolate y caramelo.',
+                image: 'cafe.jpg',
+                badge: null,
+                badgeText: null
+            },
+            {
+                id: 8,
+                name: 'Ensalada César',
+                category: 'Ensaladas',
+                price: 11.80,
+                desc: 'Lechuga romana, pollo a la plancha, parmesano, crutones y aderezo César casero.',
+                image: 'cesar.jpg',
+                badge: 'vegan',
+                badgeText: 'Vegano'
+            }
+        ];
+
         const pages = {
             inicio: document.getElementById('page-inicio'),
             nosotros: document.getElementById('page-nosotros'),
@@ -1064,8 +1235,8 @@
         };
 
         const navLinks = document.querySelectorAll('.nav-links a[data-page]');
-        const backToCatalog = document.getElementById('back-to-catalog');
-        const viewDetailBtns = document.querySelectorAll('.view-detail-btn');
+        const catalogGrid = document.getElementById('catalog-grid');
+        const searchInput = document.getElementById('search-input');
 
         let isLoggedIn = false;
         let currentUser = {
@@ -1075,84 +1246,6 @@
             address: 'Calle Principal 123, Colonia Centro',
             memberSince: '2024'
         };
-
-        const productData = {
-            1: { 
-                name: 'Pizza Margarita', 
-                price: '$12.50', 
-                desc: 'Clásica pizza con mozzarella, tomate fresco y albahaca. Masa artesanal con fermentación lenta que le da una textura esponjosa y un sabor inigualable.',
-                image: 'pizza.jpg',
-                imgClass: 'pizza'
-            },
-            2: { 
-                name: 'Hamburguesa Clásica', 
-                price: '$10.90', 
-                desc: 'Carne 100% premium de res, lechuga crujiente, tomate fresco, cebolla morada y nuestra salsa especial. Acompañada de papas fritas caseras.',
-                image: 'hamburguesa.jpg',
-                imgClass: 'hamburger'
-            },
-            3: { 
-                name: 'Salmón a la plancha', 
-                price: '$18.40', 
-                desc: 'Salmón fresco de cultivo sostenible, sellado a la plancha para mantener su jugosidad, acompañado de vegetales asados y salsa de hierbas finas.',
-                image: 'salmon.jpg',
-                imgClass: 'salmon'
-            },
-            4: { 
-                name: 'Café de especialidad', 
-                price: '$4.20', 
-                desc: 'Café de origen colombiano, tueste medio, con notas de chocolate y caramelo. Cultivado en altura y seleccionado a mano para garantizar la mejor calidad.',
-                image: 'cafe.jpg',
-                imgClass: 'coffee'
-            }
-        };
-
-        function updateNavForAuth() {
-            const loginLink = document.querySelector('.nav-links .login-btn');
-            if (isLoggedIn) {
-                loginLink.innerHTML = '<i class="fas fa-user-circle"></i> Mi Perfil';
-                loginLink.setAttribute('data-page', 'perfil');
-                loginLink.classList.remove('login-btn');
-                loginLink.classList.add('login-btn');
-                loginLink.style.background = '#8b5cf6';
-                loginLink.style.color = 'white !important';
-            } else {
-                loginLink.innerHTML = '<i class="fas fa-user-circle"></i> Iniciar sesión';
-                loginLink.setAttribute('data-page', 'login');
-                loginLink.style.background = '#ede6f5';
-                loginLink.style.color = '#2d1b3d !important';
-            }
-        }
-
-        function updateProfileData() {
-            if (isLoggedIn) {
-                const avatar = document.querySelector('.profile-avatar');
-                const nameEl = document.querySelector('.profile-user-info h3');
-                const emailEl = document.querySelector('.profile-user-info p:first-child');
-                const memberEl = document.querySelector('.profile-user-info p:last-child');
-                const fields = document.querySelectorAll('.profile-section:first-child .profile-field .value');
-                
-                if (avatar) {
-                    const initials = currentUser.name.split(' ').map(n => n[0]).join('');
-                    avatar.textContent = initials;
-                }
-                if (nameEl) nameEl.textContent = currentUser.name;
-                if (emailEl) emailEl.innerHTML = '<i class="fas fa-envelope" style="color:#8b5cf6;"></i> ' + currentUser.email;
-                if (memberEl) memberEl.innerHTML = '<i class="fas fa-calendar-alt" style="color:#8b5cf6;"></i> Miembro desde ' + currentUser.memberSince;
-                
-                const fieldValues = [
-                    currentUser.name,
-                    currentUser.email,
-                    currentUser.phone,
-                    currentUser.address
-                ];
-                fields.forEach((el, index) => {
-                    if (index < fieldValues.length) {
-                        el.textContent = fieldValues[index];
-                    }
-                });
-            }
-        }
 
         function showPage(pageId) {
             Object.keys(pages).forEach(key => {
@@ -1170,6 +1263,110 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        function updateNavForAuth() {
+            const loginLink = document.querySelector('.nav-links .login-btn');
+            if (isLoggedIn) {
+                loginLink.innerHTML = '<i class="fas fa-user-circle"></i> Mi Perfil';
+                loginLink.setAttribute('data-page', 'perfil');
+                loginLink.style.background = '#8b5cf6';
+                loginLink.style.color = 'white !important';
+            } else {
+                loginLink.innerHTML = '<i class="fas fa-user-circle"></i> Iniciar sesión';
+                loginLink.setAttribute('data-page', 'login');
+                loginLink.style.background = '#ede6f5';
+                loginLink.style.color = '#2d1b3d !important';
+            }
+        }
+
+        function updateProfileData() {
+            if (isLoggedIn) {
+                const avatar = document.querySelector('.profile-avatar');
+                const nameEl = document.querySelector('.profile-user-info h3');
+                const emailEl = document.querySelector('.profile-user-info p:first-child');
+                const memberEl = document.querySelector('.profile-user-info p:last-child');
+                const fields = document.querySelectorAll('.profile-section:first-child .profile-field .value');
+                if (avatar) {
+                    const initials = currentUser.name.split(' ').map(n => n[0]).join('');
+                    avatar.textContent = initials || 'U';
+                }
+                if (nameEl) nameEl.textContent = currentUser.name;
+                if (emailEl) emailEl.innerHTML = '<i class="fas fa-envelope" style="color:#8b5cf6;"></i> ' + currentUser.email;
+                if (memberEl) memberEl.innerHTML = '<i class="fas fa-calendar-alt" style="color:#8b5cf6;"></i> Miembro desde ' + currentUser.memberSince;
+                const fieldValues = [currentUser.name, currentUser.email, currentUser.phone, currentUser.address];
+                fields.forEach((el, index) => {
+                    if (index < fieldValues.length) {
+                        el.textContent = fieldValues[index];
+                    }
+                });
+            }
+        }
+
+        function renderProducts() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+
+            let filtered = products.filter(p => {
+                const matchesSearch = p.name.toLowerCase().includes(searchTerm) ||
+                                      p.desc.toLowerCase().includes(searchTerm) ||
+                                      p.category.toLowerCase().includes(searchTerm);
+                return matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                catalogGrid.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-utensils"></i>
+                        No encontramos productos con esos filtros.<br>
+                        <small>Intenta cambiar tu búsqueda.</small>
+                    </div>
+                `;
+                return;
+            }
+
+            catalogGrid.innerHTML = filtered.map(p => {
+                let badgeHTML = '';
+                if (p.badge) {
+                    const badgeClass = p.badge === 'new' ? 'badge-new' :
+                                      p.badge === 'offer' ? 'badge-offer' :
+                                      p.badge === 'popular' ? 'badge-popular' :
+                                      p.badge === 'vegan' ? 'badge-vegan' : '';
+                    badgeHTML = `<span class="badge ${badgeClass}">${p.badgeText || p.badge}</span>`;
+                }
+                return `
+                    <div class="product-card" data-id="${p.id}">
+                        ${badgeHTML}
+                        <div class="product-img">
+                            <img src="${p.image}" alt="${p.name}" class="food-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23ede6f5%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%238b5cf6%22 font-family=%22sans-serif%22 font-size=%2216%22%3E${p.name}%3C/text%3E%3C/svg%3E'">
+                            <div class="img-overlay"></div>
+                        </div>
+                        <div class="product-category">${p.category}</div>
+                        <h3>${p.name}</h3>
+                        <div class="description">${p.desc}</div>
+                        <span class="product-price">$${p.price.toFixed(2)}</span>
+                        <button class="btn-secondary view-detail-btn" data-id="${p.id}">Ver detalle</button>
+                    </div>
+                `;
+            }).join('');
+
+            document.querySelectorAll('.view-detail-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    showDetail(id);
+                });
+            });
+        }
+
+        function showDetail(id) {
+            const product = products.find(p => p.id === id);
+            if (!product) return;
+            document.getElementById('detail-name').textContent = product.name;
+            document.getElementById('detail-price').textContent = '$' + product.price.toFixed(2);
+            document.getElementById('detail-desc').textContent = product.desc;
+            const detailImg = document.getElementById('detail-img');
+            detailImg.innerHTML = `<img src="${product.image}" alt="${product.name}" class="food-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22%3E%3Crect fill=%22%23ede6f5%22 width=%22300%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%238b5cf6%22 font-family=%22sans-serif%22 font-size=%2220%22%3E${product.name}%3C/text%3E%3C/svg%3E'"><div class="img-overlay"></div>`;
+            document.getElementById('detail-content').setAttribute('data-product-id', id);
+            showPage('detalle');
+        }
+
         navLinks.forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -1179,41 +1376,28 @@
                     return;
                 }
                 showPage(page);
+                if (page === 'catalogo') {
+                    renderProducts();
+                }
             });
         });
 
         document.querySelectorAll('.auth-link a[data-page]').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
-                const page = this.getAttribute('data-page');
-                showPage(page);
+                showPage(this.getAttribute('data-page'));
             });
         });
 
         document.querySelector('.hero .btn-primary')?.addEventListener('click', function(e) {
             e.preventDefault();
             showPage('catalogo');
+            renderProducts();
         });
 
-        viewDetailBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const id = this.getAttribute('data-id');
-                const product = productData[id];
-                if (product) {
-                    document.getElementById('detail-name').textContent = product.name;
-                    document.getElementById('detail-price').textContent = product.price;
-                    document.getElementById('detail-desc').textContent = product.desc;
-                    const detailImg = document.getElementById('detail-img');
-                    detailImg.className = 'product-img ' + product.imgClass;
-                    detailImg.innerHTML = `<img src="${product.image}" alt="${product.name}" class="food-image"><div class="img-overlay"></div>`;
-                    document.getElementById('detail-content').setAttribute('data-product-id', id);
-                    showPage('detalle');
-                }
-            });
-        });
-
-        backToCatalog.addEventListener('click', function() {
+        document.getElementById('back-to-catalog').addEventListener('click', function() {
             showPage('catalogo');
+            renderProducts();
         });
 
         document.getElementById('add-to-cart-fake').addEventListener('click', function() {
@@ -1230,6 +1414,14 @@
             const email = document.getElementById('contact-email').value.trim();
             const msg = document.getElementById('contact-message').value.trim();
             const feedback = document.getElementById('contact-feedback');
+            if (!name || !email || !msg) {
+                feedback.innerHTML = '<i class="fas fa-exclamation-circle"></i> Por favor, completa todos los campos';
+                feedback.style.borderLeftColor = '#e53935';
+                feedback.className = 'auth-error';
+                feedback.classList.remove('hidden');
+                setTimeout(() => { feedback.classList.add('hidden'); }, 3000);
+                return;
+            }
             feedback.innerHTML = '<i class="fas fa-check-circle"></i> Mensaje enviado (simulado)';
             feedback.style.borderLeftColor = '#8b5cf6';
             feedback.className = 'auth-success';
@@ -1237,9 +1429,7 @@
             document.getElementById('contact-name').value = '';
             document.getElementById('contact-email').value = '';
             document.getElementById('contact-message').value = '';
-            setTimeout(() => {
-                feedback.classList.add('hidden');
-            }, 3500);
+            setTimeout(() => { feedback.classList.add('hidden'); }, 3500);
         });
 
         document.getElementById('registro-btn').addEventListener('click', function(e) {
@@ -1248,29 +1438,22 @@
             const email = document.getElementById('registro-email').value.trim();
             const password = document.getElementById('registro-password').value.trim();
             const messageDiv = document.getElementById('registro-message');
-
             if (!nombre || !email || !password) {
                 messageDiv.className = 'auth-error';
                 messageDiv.innerHTML = 'Por favor, completa todos los campos';
                 messageDiv.classList.remove('hidden');
-                setTimeout(() => {
-                    messageDiv.classList.add('hidden');
-                }, 3000);
+                setTimeout(() => { messageDiv.classList.add('hidden'); }, 3000);
                 return;
             }
-
             messageDiv.className = 'auth-success';
             messageDiv.innerHTML = 'Registro exitoso (simulado)';
             messageDiv.classList.remove('hidden');
-
             currentUser.name = nombre;
             currentUser.email = email;
             currentUser.memberSince = '2024';
-
             document.getElementById('registro-nombre').value = '';
             document.getElementById('registro-email').value = '';
             document.getElementById('registro-password').value = '';
-
             setTimeout(() => {
                 messageDiv.classList.add('hidden');
                 showPage('login');
@@ -1281,32 +1464,28 @@
             e.preventDefault();
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value.trim();
+            const rememberMe = document.getElementById('remember-me').checked;
             const messageDiv = document.getElementById('login-message');
-
             if (!email || !password) {
                 messageDiv.className = 'auth-error';
                 messageDiv.innerHTML = 'Por favor, ingresa tu correo y contraseña';
                 messageDiv.classList.remove('hidden');
-                setTimeout(() => {
-                    messageDiv.classList.add('hidden');
-                }, 3000);
+                setTimeout(() => { messageDiv.classList.add('hidden'); }, 3000);
                 return;
             }
-
             messageDiv.className = 'auth-success';
-            messageDiv.innerHTML = 'Inicio de sesión exitoso (simulado)';
+            let rememberMessage = rememberMe ? ' (sesión recordada)' : '';
+            messageDiv.innerHTML = 'Inicio de sesión exitoso' + rememberMessage;
             messageDiv.classList.remove('hidden');
-
             isLoggedIn = true;
             currentUser.email = email;
             if (email.includes('@') && email.split('@')[0]) {
                 const namePart = email.split('@')[0];
                 currentUser.name = namePart.replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             }
-
             document.getElementById('login-email').value = '';
             document.getElementById('login-password').value = '';
-
+            document.getElementById('remember-me').checked = false;
             setTimeout(() => {
                 messageDiv.classList.add('hidden');
                 updateNavForAuth();
@@ -1319,30 +1498,17 @@
             e.preventDefault();
             const email = document.getElementById('login-email').value.trim();
             const messageDiv = document.getElementById('login-message');
-            
             if (!email) {
                 messageDiv.className = 'auth-error';
-                messageDiv.innerHTML = 'Por favor, ingresa tu correo electrónico para restablecer tu contraseña';
+                messageDiv.innerHTML = 'Por favor, ingresa tu correo electrónico';
                 messageDiv.classList.remove('hidden');
-                setTimeout(() => {
-                    messageDiv.classList.add('hidden');
-                }, 3000);
+                setTimeout(() => { messageDiv.classList.add('hidden'); }, 3000);
                 return;
             }
-
             messageDiv.className = 'auth-success';
-            messageDiv.innerHTML = 'Se ha enviado un enlace de restablecimiento a tu correo (simulado)';
+            messageDiv.innerHTML = 'Se ha enviado un enlace de restablecimiento (simulado)';
             messageDiv.classList.remove('hidden');
-            setTimeout(() => {
-                messageDiv.classList.add('hidden');
-            }, 4000);
-        });
-
-        document.querySelectorAll('[data-page="login"]').forEach(el => {
-            el.addEventListener('click', function(e) {
-                e.preventDefault();
-                showPage('login');
-            });
+            setTimeout(() => { messageDiv.classList.add('hidden'); }, 4000);
         });
 
         document.getElementById('logout-btn')?.addEventListener('click', function() {
@@ -1365,12 +1531,20 @@
             messageDiv.innerHTML = 'Función de edición de perfil (simulada)';
             messageDiv.style.borderLeftColor = '#8b5cf6';
             messageDiv.classList.remove('hidden');
-            setTimeout(() => {
-                messageDiv.classList.add('hidden');
-            }, 3000);
+            setTimeout(() => { messageDiv.classList.add('hidden'); }, 3000);
+        });
+
+        searchInput.addEventListener('input', renderProducts);
+
+        document.querySelectorAll('[data-page="login"], [data-page="registro"]').forEach(el => {
+            el.addEventListener('click', function(e) {
+                e.preventDefault();
+                showPage(this.getAttribute('data-page'));
+            });
         });
 
         updateNavForAuth();
+        renderProducts();
 
     });
 </script>
