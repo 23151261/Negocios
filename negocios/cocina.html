@@ -2,2273 +2,600 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
     <title>DeliciasResto</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
-        }
-
-        body {
-            background: #f7f3fc;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            color: #2d1b3d;
-        }
-
-        .app {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 1.5rem 2rem;
-            width: 100%;
-            flex: 1;
-        }
-
-        .navbar {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.5rem 0 1.5rem 0;
-            border-bottom: 2px solid #d9c4e8;
-            position: relative;
-        }
-
-        .logo-area {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .logo-icon {
-            background: #8b5cf6;
-            color: white;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.6rem;
-            font-weight: 700;
-            box-shadow: 0 4px 8px rgba(139, 92, 246, 0.25);
-        }
-
-        .logo-text {
-            font-size: 1.7rem;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            color: #2d1b3d;
-        }
-        .logo-text span {
-            color: #8b5cf6;
-        }
-
-        .nav-links {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 1.8rem;
-            list-style: none;
-            font-weight: 500;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: #3d2a4a;
-            font-size: 1.05rem;
-            transition: 0.15s ease;
-            padding: 0.3rem 0;
-            border-bottom: 2px solid transparent;
-            cursor: pointer;
-        }
-
-        .nav-links a:hover {
-            color: #8b5cf6;
-            border-bottom-color: #8b5cf6;
-        }
-
-        .nav-links .active-link {
-            color: #8b5cf6;
-            border-bottom-color: #8b5cf6;
-        }
-
-        .login-btn {
-            background: #ede6f5;
-            padding: 0.5rem 1.2rem;
-            border-radius: 40px;
-            font-weight: 600;
-            color: #2d1b3d !important;
-            border-bottom: none !important;
-            transition: 0.2s;
-        }
-        .login-btn i {
-            margin-right: 6px;
-        }
-        .login-btn:hover {
-            background: #ddd0eb;
-            transform: scale(1.02);
-        }
-
-        .cart-icon-wrapper {
-            position: relative;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: #ede6f5;
-            padding: 0.4rem 1.2rem 0.4rem 1rem;
-            border-radius: 40px;
-            transition: 0.2s;
-            border: none;
-            font-size: 1.1rem;
-            color: #2d1b3d;
-            font-weight: 600;
-        }
-
-        .cart-icon-wrapper:hover {
-            background: #ddd0eb;
-            transform: scale(1.02);
-        }
-
-        .cart-icon-wrapper i {
-            font-size: 1.4rem;
-            color: #8b5cf6;
-        }
-
-        .cart-badge {
-            background: #8b5cf6;
-            color: white;
-            border-radius: 50%;
-            padding: 0.1rem 0.55rem;
-            font-size: 0.8rem;
-            font-weight: 700;
-            margin-left: 2px;
-        }
-
-        .cart-total-badge {
-            background: #2d1b3d;
-            color: white;
-            border-radius: 20px;
-            padding: 0.1rem 0.8rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .cart-overlay {
-            position: fixed;
-            top: 0;
-            right: -420px;
-            width: 400px;
-            max-width: 90vw;
-            height: 100%;
-            background: white;
-            box-shadow: -8px 0 30px rgba(0,0,0,0.1);
-            z-index: 1000;
-            transition: right 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-            padding: 2rem 1.5rem;
-            display: flex;
-            flex-direction: column;
-            border-left: 2px solid #e8ddf2;
-        }
-
-        .cart-overlay.open {
-            right: 0;
-        }
-
-        .cart-overlay-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.3);
-            z-index: 999;
-            display: none;
-            backdrop-filter: blur(3px);
-        }
-
-        .cart-overlay-backdrop.show {
-            display: block;
-        }
-
-        .cart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 1.5rem;
-            border-bottom: 2px solid #ede6f5;
-        }
-
-        .cart-header h2 {
-            font-size: 1.8rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .cart-header h2 i {
-            color: #8b5cf6;
-        }
-
-        .cart-close {
-            background: none;
-            border: none;
-            font-size: 2rem;
-            cursor: pointer;
-            color: #6b4f7a;
-            transition: 0.2s;
-            padding: 0 0.5rem;
-        }
-
-        .cart-close:hover {
-            color: #2d1b3d;
-            transform: rotate(90deg);
-        }
-
-        .cart-items {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1rem 0;
-            margin: 0.5rem 0;
-        }
-
-        .cart-item {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem 0;
-            border-bottom: 1px solid #f0eaf5;
-            animation: fadeIn 0.2s ease;
-        }
-
-        .cart-item-img {
-            width: 60px;
-            height: 60px;
-            border-radius: 16px;
-            background: #f7f3fc;
-            border: 1px solid #e8ddf2;
-            overflow: hidden;
-            flex-shrink: 0;
-        }
-
-        .cart-item-img img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .cart-item-info {
-            flex: 1;
-        }
-
-        .cart-item-info h4 {
-            font-size: 1rem;
-            color: #2d1b3d;
-        }
-
-        .cart-item-info .item-price {
-            color: #8b5cf6;
-            font-weight: 600;
-        }
-
-        .cart-item-qty {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 0.3rem;
-        }
-
-        .cart-item-qty button {
-            background: #ede6f5;
-            border: none;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.15s;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .cart-item-qty button:hover {
-            background: #ddd0eb;
-        }
-
-        .cart-item-qty span {
-            font-weight: 600;
-            min-width: 24px;
-            text-align: center;
-        }
-
-        .cart-item-remove {
-            background: none;
-            border: none;
-            color: #c62828;
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 0.3rem;
-            transition: 0.15s;
-            opacity: 0.6;
-        }
-
-        .cart-item-remove:hover {
-            opacity: 1;
-            transform: scale(1.1);
-        }
-
-        .cart-empty {
-            text-align: center;
-            color: #6b4f7a;
-            padding: 3rem 0;
-        }
-
-        .cart-empty i {
-            font-size: 3rem;
-            color: #d9c4e8;
-            display: block;
-            margin-bottom: 1rem;
-        }
-
-        .cart-footer {
-            border-top: 2px solid #ede6f5;
-            padding-top: 1.5rem;
-        }
-
-        .cart-total {
-            display: flex;
-            justify-content: space-between;
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 1.2rem;
-        }
-
-        .cart-total span:last-child {
-            color: #8b5cf6;
-        }
-
-        .btn-checkout {
-            width: 100%;
-            background: #8b5cf6;
-            color: white;
-            border: none;
-            padding: 1rem;
-            border-radius: 40px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.25s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .btn-checkout:hover {
-            background: #7c3aed;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3);
-        }
-
-        .btn-checkout:disabled {
-            background: #d9c4e8;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 2000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(4px);
-        }
-
-        .modal-overlay.show {
-            display: flex;
-        }
-
-        .modal-box {
-            background: white;
-            max-width: 480px;
-            width: 90%;
-            border-radius: 36px;
-            padding: 2.5rem;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-            animation: modalIn 0.3s ease;
-            text-align: center;
-        }
-
-        @keyframes modalIn {
-            0% { transform: scale(0.9) translateY(20px); opacity: 0; }
-            100% { transform: scale(1) translateY(0); opacity: 1; }
-        }
-
-        .modal-box .modal-icon {
-            font-size: 4rem;
-            color: #8b5cf6;
-            margin-bottom: 1rem;
-        }
-
-        .modal-box h2 {
-            font-size: 1.8rem;
-            color: #2d1b3d;
-            margin-bottom: 0.5rem;
-        }
-
-        .modal-box p {
-            color: #5d4a6b;
-            font-size: 1.05rem;
-            line-height: 1.6;
-            margin: 0.5rem 0 1.5rem;
-        }
-
-        .modal-box .btn-primary {
-            width: 100%;
-            justify-content: center;
-        }
-
-        .modal-box .btn-secondary {
-            margin-top: 0.8rem;
-            width: 100%;
-            justify-content: center;
-        }
-
-        .success-page {
-            max-width: 600px;
-            margin: 2rem auto;
-            background: white;
-            padding: 3rem 2.5rem;
-            border-radius: 36px;
-            border: 1px solid #e8ddf2;
-            text-align: center;
-        }
-
-        .success-page .big-icon {
-            font-size: 5rem;
-            color: #4caf50;
-            margin-bottom: 1rem;
-        }
-
-        .success-page h2 {
-            font-size: 2.2rem;
-            color: #2d1b3d;
-        }
-
-        .success-page p {
-            color: #5d4a6b;
-            font-size: 1.1rem;
-            margin: 0.8rem 0 2rem;
-        }
-
-        .success-page .order-details {
-            background: #faf8fc;
-            border-radius: 20px;
-            padding: 1.5rem;
-            text-align: left;
-            border: 1px solid #ede6f5;
-            margin-bottom: 2rem;
-        }
-
-        .success-page .order-details .detail-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #ede6f5;
-            font-size: 0.95rem;
-        }
-
-        .success-page .order-details .detail-row:last-child {
-            border-bottom: none;
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: #8b5cf6;
-            padding-top: 0.6rem;
-            margin-top: 0.3rem;
-            border-top: 2px solid #ede6f5;
-        }
-
-        .page-section {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .page-section.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            0% { opacity: 0; transform: translateY(6px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-
-        .hero {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            margin: 3rem 0 2.5rem 0;
-        }
-
-        .hero h1 {
-            font-size: 3rem;
-            font-weight: 800;
-            color: #2d1b3d;
-            max-width: 700px;
-            line-height: 1.2;
-        }
-
-        .hero h1 i {
-            color: #8b5cf6;
-            margin-right: 8px;
-        }
-
-        .hero p {
-            font-size: 1.2rem;
-            color: #5d4a6b;
-            max-width: 550px;
-            margin: 1.2rem 0 2rem 0;
-        }
-
-        .btn-primary {
-            background: #8b5cf6;
-            color: white;
-            border: none;
-            padding: 1rem 2.8rem;
-            border-radius: 60px;
-            font-size: 1.2rem;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-            transition: 0.25s ease;
-            box-shadow: 0 8px 18px rgba(139, 92, 246, 0.3);
-            text-decoration: none;
-        }
-
-        .btn-primary i {
-            font-size: 1.3rem;
-            transition: transform 0.2s;
-        }
-
-        .btn-primary:hover {
-            background: #7c3aed;
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(139, 92, 246, 0.4);
-        }
-
-        .btn-primary:hover i {
-            transform: translateX(6px);
-        }
-
-        .btn-secondary {
-            background: #ede6f5;
-            color: #2d1b3d;
-            border: none;
-            padding: 0.7rem 1.8rem;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-secondary:hover {
-            background: #ddd0eb;
-            transform: scale(1.02);
-        }
-
-        .section-title {
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: #2d1b3d;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 2rem;
-            border-left: 8px solid #8b5cf6;
-            padding-left: 1.2rem;
-        }
-
-        .catalog-controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            align-items: center;
-        }
-
-        .category-menu {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.8rem;
-        }
-
-        .category-btn {
-            background: #ede6f5;
-            border: 2px solid transparent;
-            padding: 0.6rem 1.8rem;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: 0.2s;
-            color: #3d2a4a;
-        }
-
-        .category-btn:hover {
-            background: #ddd0eb;
-            transform: scale(1.02);
-        }
-
-        .category-btn.active {
-            background: #8b5cf6;
-            color: white;
-            border-color: #8b5cf6;
-        }
-
-        .catalog-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 1.8rem;
-        }
-
-        .product-card {
-            background: white;
-            padding: 1.2rem 1rem;
-            border-radius: 24px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.03);
-            border: 1px solid #e8ddf2;
-            transition: 0.25s;
-            text-align: center;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .product-card:hover {
-            border-color: #b695e6;
-            box-shadow: 0 12px 28px rgba(139, 92, 246, 0.08);
-            transform: translateY(-5px);
-        }
-
-        .product-card .badge {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            padding: 0.2rem 1rem;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            z-index: 5;
-        }
-
-        .badge-new { background: #8b5cf6; color: white; }
-        .badge-offer { background: #f06292; color: white; }
-        .badge-popular { background: #ffb74d; color: #2d1b3d; }
-        .badge-vegan { background: #66bb6a; color: white; }
-
-        .product-img {
-            width: 100%;
-            height: 150px;
-            border-radius: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, #f7f3fc 0%, #ede6f5 100%);
-            border: 1px solid #e8ddf2;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .product-img .food-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        .product-img .img-overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 40px;
-            background: linear-gradient(transparent, rgba(45, 27, 61, 0.08));
-            border-radius: 0 0 18px 18px;
-        }
-
-        .product-category {
-            font-size: 0.7rem;
-            color: #8b5cf6;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 0.3rem;
-        }
-
-        .product-card h3 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #2d1b3d;
-            margin-bottom: 0.2rem;
-        }
-
-        .product-card .description {
-            color: #6b4f7a;
-            font-size: 0.85rem;
-            margin: 0.2rem 0 0.5rem;
-            flex: 1;
-        }
-
-        .product-price {
-            font-weight: 700;
-            color: #8b5cf6;
-            font-size: 1.2rem;
-            display: block;
-            margin: 0.4rem 0 0.8rem;
-        }
-
-        .product-card .btn-secondary {
-            margin-top: auto;
-            align-self: center;
-            padding: 0.5rem 1.5rem;
-            font-size: 0.9rem;
-        }
-
-        .no-results {
-            text-align: center;
-            padding: 3rem;
-            color: #6b4f7a;
-            font-size: 1.2rem;
-            grid-column: 1 / -1;
-        }
-
-        .no-results i {
-            font-size: 2.5rem;
-            color: #d9c4e8;
-            display: block;
-            margin-bottom: 1rem;
-        }
-
-        .detail-view {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 2.5rem;
-            border-radius: 36px;
-            box-shadow: 0 12px 32px rgba(0,0,0,0.04);
-            border: 1px solid #e8ddf2;
-        }
-
-        .detail-view .product-img {
-            height: 280px;
-            margin-bottom: 1.5rem;
-            border-radius: 20px;
-        }
-
-        .detail-view .product-img .food-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .detail-view h2 {
-            font-size: 2rem;
-            color: #2d1b3d;
-        }
-
-        .detail-view .product-price {
-            font-size: 1.6rem;
-            margin: 0.5rem 0;
-        }
-
-        .detail-view p {
-            color: #5d4a6b;
-            font-size: 1.05rem;
-            line-height: 1.5;
-            margin: 1rem 0 1.8rem;
-        }
-
-        .quantity-selector {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin: 1.5rem 0;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .quantity-selector label {
-            font-weight: 600;
-            color: #2d1b3d;
-            font-size: 1.1rem;
-        }
-
-        .qty-control {
-            display: flex;
-            align-items: center;
-            background: #f7f3fc;
-            border-radius: 40px;
-            border: 1px solid #d9c4e8;
-            overflow: hidden;
-        }
-
-        .qty-control button {
-            background: transparent;
-            border: none;
-            padding: 0.6rem 1.2rem;
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #2d1b3d;
-            cursor: pointer;
-            transition: 0.15s;
-            line-height: 1;
-        }
-
-        .qty-control button:hover { background: #ede6f5; }
-        .qty-control button:active { transform: scale(0.92); }
-        .qty-control span {
-            padding: 0.6rem 1.2rem;
-            font-size: 1.2rem;
-            font-weight: 600;
-            min-width: 50px;
-            text-align: center;
-            color: #2d1b3d;
-        }
-
-        .btn-add-cart {
-            background: #8b5cf6;
-            color: white;
-            border: none;
-            padding: 0.8rem 2.5rem;
-            border-radius: 40px;
-            font-weight: 700;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
-        }
-
-        .btn-add-cart:hover {
-            background: #7c3aed;
-            transform: scale(1.02);
-            box-shadow: 0 6px 18px rgba(139, 92, 246, 0.35);
-        }
-
-        .btn-add-cart:active { transform: scale(0.96); }
-
-        .cart-feedback {
-            margin-top: 1rem;
-            padding: 0.8rem 1.5rem;
-            border-radius: 40px;
-            font-weight: 500;
-            text-align: center;
-            background: #e8f5e9;
-            color: #2e7d32;
-            border-left: 4px solid #4caf50;
-            display: none;
-        }
-
-        .cart-feedback.show { display: block; animation: fadeIn 0.3s ease; }
-
-        .detail-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            justify-content: center;
-            margin-top: 0.5rem;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 2px solid #8b5cf6;
-            color: #8b5cf6;
-            padding: 0.7rem 1.8rem;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .btn-outline:hover {
-            background: #8b5cf6;
-            color: white;
-        }
-
-        .related-products {
-            margin-top: 2.5rem;
-            padding-top: 2rem;
-            border-top: 2px solid #ede6f5;
-        }
-
-        .related-products h3 {
-            font-size: 1.4rem;
-            color: #2d1b3d;
-            margin-bottom: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .related-products h3 i { color: #8b5cf6; }
-
-        .related-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 1.2rem;
-        }
-
-        .related-card {
-            background: #faf8fc;
-            border-radius: 20px;
-            padding: 1rem;
-            border: 1px solid #e8ddf2;
-            text-align: center;
-            transition: 0.2s;
-            cursor: pointer;
-        }
-
-        .related-card:hover {
-            border-color: #8b5cf6;
-            transform: translateY(-3px);
-            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.08);
-        }
-
-        .related-card .product-img {
-            height: 90px;
-            margin-bottom: 0.5rem;
-            border-radius: 14px;
-        }
-
-        .related-card h4 { font-size: 0.95rem; color: #2d1b3d; }
-        .related-card .product-price { font-size: 1rem; margin: 0.3rem 0; }
-        .related-card .btn-secondary { padding: 0.3rem 1.2rem; font-size: 0.8rem; }
-
-        .auth-container {
-            max-width: 480px;
-            margin: 0 auto;
-            background: white;
-            padding: 2.5rem;
-            border-radius: 36px;
-            border: 1px solid #e8ddf2;
-        }
-
-        .auth-container h2 {
-            font-size: 2rem;
-            color: #2d1b3d;
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .auth-container .form-group { margin-bottom: 1.5rem; }
-        .auth-container label {
-            font-weight: 600;
-            color: #2d1b3d;
-            display: block;
-            margin-bottom: 0.5rem;
-        }
-
-        .auth-container input {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            border-radius: 20px;
-            border: 1px solid #d9c4e8;
-            background: #faf8fc;
-            font-size: 1rem;
-            transition: 0.2s;
-        }
-
-        .auth-container input:focus {
-            outline: none;
-            border-color: #8b5cf6;
-            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
-        }
-
-        .auth-container .btn-primary {
-            width: 100%;
-            justify-content: center;
-            margin-top: 0.5rem;
-        }
-
-        .auth-link {
-            text-align: center;
-            margin-top: 1.5rem;
-            color: #5d4a6b;
-        }
-
-        .auth-link a {
-            color: #8b5cf6;
-            text-decoration: none;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .auth-link a:hover { text-decoration: underline; }
-
-        .auth-success {
-            background: #e8f5e9;
-            color: #2e7d32;
-            padding: 0.9rem 1.5rem;
-            border-radius: 40px;
-            font-weight: 500;
-            text-align: center;
-            border-left: 4px solid #4caf50;
-            margin-bottom: 1.5rem;
-        }
-
-        .auth-error {
-            background: #fce4ec;
-            color: #c62828;
-            padding: 0.9rem 1.5rem;
-            border-radius: 40px;
-            font-weight: 500;
-            text-align: center;
-            border-left: 4px solid #e53935;
-            margin-bottom: 1.5rem;
-        }
-
-        .hidden { display: none !important; }
-        .alert-message {
-            background: #ede6f5;
-            color: #2d1b3d;
-            padding: 0.9rem 1.5rem;
-            border-radius: 40px;
-            font-weight: 500;
-            display: inline-block;
-            margin-top: 1rem;
-            border-left: 4px solid #8b5cf6;
-        }
-
-        .about-text {
-            max-width: 700px;
-            margin: 0 auto;
-            background: white;
-            padding: 2.5rem;
-            border-radius: 36px;
-            border: 1px solid #e8ddf2;
-            line-height: 1.7;
-            color: #3d2a4a;
-        }
-
-        .about-text p { margin: 0.8rem 0; }
-        .about-text i { color: #8b5cf6; width: 24px; }
-
-        .info-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1.5rem;
-            margin-top: 1.5rem;
-            justify-content: center;
-        }
-
-        .info-item {
-            background: #f7f3fc;
-            padding: 0.8rem 1.8rem;
-            border-radius: 40px;
-            border: 1px solid #d9c4e8;
-        }
-
-        .contact-form {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            padding: 2.5rem;
-            border-radius: 36px;
-            border: 1px solid #e8ddf2;
-        }
-
-        .contact-form label {
-            font-weight: 600;
-            color: #2d1b3d;
-            display: block;
-            margin-top: 1.2rem;
-        }
-
-        .contact-form input, .contact-form textarea {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            border-radius: 20px;
-            border: 1px solid #d9c4e8;
-            background: #faf8fc;
-            font-size: 1rem;
-            margin-top: 0.3rem;
-            transition: 0.2s;
-        }
-
-        .contact-form input:focus, .contact-form textarea:focus {
-            outline: none;
-            border-color: #8b5cf6;
-            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
-        }
-
-        .contact-form textarea { min-height: 120px; resize: vertical; }
-
-        .social-links {
-            display: flex;
-            gap: 1.5rem;
-            justify-content: center;
-            margin-top: 2rem;
-            font-size: 1.8rem;
-        }
-
-        .social-links a {
-            color: #6b4f7a;
-            transition: 0.2s;
-        }
-
-        .social-links a:hover {
-            color: #8b5cf6;
-            transform: scale(1.1);
-        }
-
-        .footer-note {
-            text-align: center;
-            color: #7a5d8a;
-            padding: 2rem 0 0.5rem;
-            font-size: 0.9rem;
-            border-top: 1px solid #d9c4e8;
-            margin-top: 3rem;
-        }
-
-        .social-float {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            z-index: 999;
-        }
-
-        .social-float a {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: white;
-            color: #6b4f7a;
-            font-size: 1.6rem;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.12);
-            transition: 0.25s ease;
-            text-decoration: none;
-            border: 1px solid #e8ddf2;
-        }
-
-        .social-float a:hover {
-            color: #8b5cf6;
-            transform: scale(1.12) translateY(-3px);
-            box-shadow: 0 8px 22px rgba(139, 92, 246, 0.25);
-            border-color: #8b5cf6;
-        }
-
-        .forgot-password-link {
-            display: block;
-            text-align: right;
-            margin-top: 0.5rem;
-            font-size: 0.9rem;
-            color: #8b5cf6;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        .forgot-password-link:hover { text-decoration: underline; }
-
-        .remember-me-group {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin: 0.5rem 0 1rem 0;
-        }
-
-        .remember-me-group input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            accent-color: #8b5cf6;
-            cursor: pointer;
-            margin: 0;
-            border-radius: 4px;
-        }
-
-        .remember-me-group label {
-            font-weight: 500;
-            color: #3d2a4a;
-            cursor: pointer;
-            margin: 0;
-            font-size: 0.95rem;
-        }
-
-        .profile-container {
-            max-width: 700px;
-            margin: 0 auto;
-            background: white;
-            padding: 2.5rem;
-            border-radius: 36px;
-            border: 1px solid #e8ddf2;
-        }
-
-        .profile-header {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 2px solid #ede6f5;
-        }
-
-        .profile-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: #8b5cf6;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            font-weight: 700;
-            flex-shrink: 0;
-        }
-
-        .profile-user-info h3 {
-            font-size: 1.5rem;
-            color: #2d1b3d;
-            margin-bottom: 0.2rem;
-        }
-
-        .profile-user-info p { color: #6b4f7a; font-size: 1rem; }
-
-        .profile-section {
-            margin: 1.5rem 0;
-            padding: 1.2rem;
-            background: #faf8fc;
-            border-radius: 20px;
-            border: 1px solid #ede6f5;
-        }
-
-        .profile-section h4 {
-            font-size: 1.1rem;
-            color: #2d1b3d;
-            margin-bottom: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .profile-section h4 i { color: #8b5cf6; }
-
-        .profile-section .profile-field {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #ede6f5;
-            font-size: 0.95rem;
-        }
-
-        .profile-section .profile-field:last-child { border-bottom: none; }
-        .profile-section .profile-field .label { color: #6b4f7a; }
-        .profile-section .profile-field .value { color: #2d1b3d; font-weight: 500; }
-
-        .profile-actions {
-            display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .btn-danger {
-            background: #fce4ec;
-            color: #c62828;
-            border: none;
-            padding: 0.7rem 1.8rem;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-danger:hover {
-            background: #f8d0d8;
-            transform: scale(1.02);
-        }
-
-        .coming-soon {
-            color: #8b5cf6;
-            font-size: 0.85rem;
-            font-weight: 500;
-            background: #ede6f5;
-            padding: 0.2rem 0.8rem;
-            border-radius: 20px;
-            display: inline-block;
-        }
-
-        @media (max-width: 640px) {
-            .app { padding: 1rem; }
-            .navbar {
-                flex-direction: column;
-                gap: 1rem;
-                align-items: flex-start;
-            }
-            .nav-links {
-                gap: 0.8rem;
-                width: 100%;
-                justify-content: space-between;
-                flex-wrap: wrap;
-            }
-            .hero h1 { font-size: 2.2rem; }
-            .catalog-controls { flex-direction: column; align-items: stretch; }
-            .category-menu { justify-content: center; }
-            .detail-view, .contact-form, .about-text, .auth-container, .profile-container { padding: 1.5rem; }
-            .social-float { bottom: 16px; right: 16px; gap: 10px; }
-            .social-float a { width: 44px; height: 44px; font-size: 1.3rem; }
-            .product-img { height: 120px; }
-            .detail-view .product-img { height: 200px; }
-            .profile-header { flex-direction: column; text-align: center; }
-            .profile-section .profile-field { flex-direction: column; gap: 0.2rem; }
-            .remember-me-group { justify-content: center; }
-            .catalog-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
-            .related-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
-            .cart-overlay { width: 100%; right: -100%; }
-            .cart-overlay.open { right: 0; }
-            .cart-icon-wrapper span:not(.cart-badge) { display: none; }
-            .cart-icon-wrapper { padding: 0.4rem 0.8rem; }
-            .modal-box { padding: 1.8rem; }
-            .success-page { padding: 2rem 1.5rem; }
-        }
-    </style>
+    <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
-<div class="app">
 
-    <nav class="navbar">
-        <div class="logo-area">
-            <div class="logo-icon"><i class="fas fa-utensils"></i></div>
-            <div class="logo-text">Delicias<span>Resto</span></div>
-        </div>
-        <ul class="nav-links">
-            <li><a href="#" class="active-link" data-page="inicio">Inicio</a></li>
-            <li><a href="#" data-page="catalogo">Catálogo</a></li>
-            <li><a href="#" data-page="nosotros">Nosotros</a></li>
-            <li><a href="#" data-page="contacto">Contacto</a></li>
-            <li><a href="#" class="login-btn" data-page="login"><i class="fas fa-user-circle"></i> Iniciar sesión</a></li>
-            <li>
-                <button class="cart-icon-wrapper" id="cart-toggle-btn" aria-label="Abrir carrito">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span>Carrito</span>
-                    <span class="cart-badge" id="cart-badge">0</span>
-                    <span class="cart-total-badge" id="cart-total-badge">$0</span>
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    <div class="app" id="main-content" role="main">
+
+        <nav class="navbar" aria-label="Navegación principal">
+            <div class="logo-area">
+                <div class="logo-icon" aria-hidden="true"><i class="fas fa-utensils"></i></div>
+                <div class="logo-text">Delicias<span>Resto</span></div>
+            </div>
+            <ul class="nav-links">
+                <li class="user-nav"><a href="#" data-page="inicio" class="active-link">Inicio</a></li>
+                <li class="user-nav"><a href="#" data-page="catalogo">Catálogo</a></li>
+                <li class="user-nav"><a href="#" data-page="nosotros">Nosotros</a></li>
+                <li class="user-nav"><a href="#" data-page="contacto">Contacto</a></li>
+                <li class="admin-nav"><span style="color:var(--primary); font-weight:600; padding:0.3rem 0.5rem;">
+                </span></li>
+                <li><a href="#" class="login-btn" id="nav-login-btn" data-page="login"><i class="fas fa-user-circle" aria-hidden="true"></i> Iniciar sesión</a></li>
+                <li class="admin-nav">
+                    <button class="logout-btn-nav" id="nav-admin-logout">
+                        <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Cerrar sesión
+                    </button>
+                </li>
+                <li class="user-nav">
+                    <button class="cart-icon-wrapper" id="cart-toggle-btn" aria-label="Abrir carrito de compras" aria-expanded="false">
+                        <i class="fas fa-shopping-cart" aria-hidden="true"></i>
+                        <span>Carrito</span>
+                        <span class="cart-badge" id="cart-badge">0</span>
+                        <span class="cart-total-badge" id="cart-total-badge">$0</span>
+                    </button>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="cart-overlay-backdrop" id="cart-backdrop" aria-hidden="true"></div>
+        <div class="cart-overlay" id="cart-overlay" role="dialog" aria-modal="true" aria-label="Carrito de compras">
+            <div class="cart-header">
+                <h2><i class="fas fa-shopping-cart" aria-hidden="true"></i> Mi Carrito</h2>
+                <button class="cart-close" id="cart-close-btn" aria-label="Cerrar carrito">&times;</button>
+            </div>
+            <div class="cart-items" id="cart-items-container" role="list">
+                <div class="cart-empty" role="status">
+                    <i class="fas fa-shopping-basket" aria-hidden="true"></i>
+                    <p>Tu carrito está vacío</p>
+                    <small>Explora nuestro catálogo y agrega tus productos favoritos</small>
+                </div>
+            </div>
+            <div class="cart-footer">
+                <div class="cart-total">
+                    <span>Total</span>
+                    <span id="cart-total-amount">$0.00</span>
+                </div>
+                <button class="btn-checkout" id="checkout-btn" disabled>
+                    <i class="fas fa-credit-card" aria-hidden="true"></i> Pagar ahora
                 </button>
-            </li>
-        </ul>
-    </nav>
-
-    <div class="cart-overlay-backdrop" id="cart-backdrop"></div>
-    <div class="cart-overlay" id="cart-overlay">
-        <div class="cart-header">
-            <h2><i class="fas fa-shopping-cart"></i> Mi Carrito</h2>
-            <button class="cart-close" id="cart-close-btn">&times;</button>
-        </div>
-        <div class="cart-items" id="cart-items-container">
-            <div class="cart-empty">
-                <i class="fas fa-shopping-basket"></i>
-                <p>Tu carrito está vacío</p>
-                <small>Explora nuestro catálogo y agrega tus productos favoritos</small>
             </div>
         </div>
-        <div class="cart-footer">
-            <div class="cart-total">
-                <span>Total</span>
-                <span id="cart-total-amount">$0.00</span>
-            </div>
-            <button class="btn-checkout" id="checkout-btn" disabled>
-                <i class="fas fa-credit-card"></i> Pagar ahora
-            </button>
-        </div>
-    </div>
 
-    <div class="modal-overlay" id="login-required-modal">
-        <div class="modal-box">
-            <div class="modal-icon"><i class="fas fa-user-lock"></i></div>
-            <h2>Inicio de sesión requerido</h2>
-            <p>Para finalizar tu compra, necesitas iniciar sesión en tu cuenta.</p>
-            <button class="btn-primary" id="login-required-btn">
-                <i class="fas fa-sign-in-alt"></i> Iniciar sesión
-            </button>
-            <button class="btn-secondary" id="login-required-cancel">
-                Cancelar
-            </button>
-        </div>
-    </div>
-
-    <section id="page-exito" class="page-section">
-        <div class="success-page">
-            <div class="big-icon"><i class="fas fa-check-circle"></i></div>
-            <h2>¡Pago realizado con éxito!</h2>
-            <p>Tu pedido ha sido confirmado. En breve recibirás un correo con los detalles.</p>
-            <div class="order-details" id="success-details"></div>
-            <button class="btn-primary" id="success-continue-btn">
-                <i class="fas fa-arrow-left"></i> Seguir comprando
-            </button>
-        </div>
-    </section>
-
-    <div class="social-float">
-        <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
-        <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
-        <a href="#" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-    </div>
-
-    <section id="page-inicio" class="page-section active">
-        <div class="hero">
-            <h1><i class="fas fa-utensil-spoon"></i> Sabores que enamoran</h1>
-            <p>Descubre nuestra cocina casera con ingredientes frescos y recetas tradicionales.</p>
-            <a href="#" class="btn-primary" data-page="catalogo">
-                Ver productos <i class="fas fa-arrow-right"></i>
-            </a>
-        </div>
-    </section>
-
-    <section id="page-nosotros" class="page-section">
-        <h2 class="section-title"><i class="fas fa-store"></i> Nosotros</h2>
-        <div class="about-text">
-            <p><i class="fas fa-quote-left"></i> DeliciasResto nació en 2018 con el sueño de compartir recetas familiares que combinan tradición y amor por la buena mesa. Cada plato está hecho con ingredientes frescos y un toque especial.</p>
-            <p><i class="fas fa-bullseye"></i> <strong>Misión:</strong> Ofrecer una experiencia culinaria auténtica, donde cada bocado cuente una historia. Vendemos comida casera con alma, desde nuestras manos a tu mesa.</p>
-            <div class="info-grid">
-                <span class="info-item"><i class="fas fa-map-pin"></i> Av. Principal 123, Centro</span>
-                <span class="info-item"><i class="far fa-clock"></i> Lun–Sáb 12:00 – 22:00</span>
-            </div>
-        </div>
-    </section>
-
-    <section id="page-contacto" class="page-section">
-        <h2 class="section-title"><i class="fas fa-envelope"></i> Contacto</h2>
-        <div class="contact-form">
-            <label><i class="fas fa-user"></i> Nombre</label>
-            <input type="text" placeholder="Tu nombre" id="contact-name">
-            <label><i class="fas fa-envelope"></i> Correo</label>
-            <input type="email" placeholder="tucorreo@ejemplo.com" id="contact-email">
-            <label><i class="fas fa-comment"></i> Mensaje</label>
-            <textarea placeholder="Escribe tu mensaje aquí..." id="contact-message"></textarea>
-            <button class="btn-primary" style="width:100%; justify-content:center; margin-top:1.5rem;" id="send-contact-btn">
-                <i class="fas fa-paper-plane"></i> Enviar
-            </button>
-            <div id="contact-feedback" class="hidden alert-message" style="margin-top:1.2rem; width:100%; text-align:center;">
-                <i class="fas fa-check-circle"></i> Mensaje enviado
-            </div>
-            <div class="social-links">
-                <a href="#" title="Facebook"><i class="fab fa-facebook"></i></a>
-                <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
-                <a href="#" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-            </div>
-        </div>
-    </section>
-
-    <section id="page-catalogo" class="page-section">
-        <h2 class="section-title"><i class="fas fa-utensils"></i> Catálogo</h2>
-        <div class="catalog-controls">
-            <div class="category-menu" id="category-menu">
-                <button class="category-btn active" data-category="todas">Todas</button>
-            </div>
-        </div>
-        <div id="catalog-container"></div>
-    </section>
-
-    <section id="page-detalle" class="page-section">
-        <div class="detail-view" id="detail-content">
-            <div class="product-img" id="detail-img">
-                <img src="pizza.jpg" alt="Producto" class="food-image">
-                <div class="img-overlay"></div>
-            </div>
-            <h2 id="detail-name">Nombre del producto</h2>
-            <span class="product-price" id="detail-price">$0.00</span>
-            <p id="detail-desc">Descripción del producto.</p>
-            <div class="quantity-selector">
-                <label><i class="fas fa-sort-amount-up-alt"></i> Cantidad:</label>
-                <div class="qty-control">
-                    <button id="qty-minus">−</button>
-                    <span id="qty-value">1</span>
-                    <button id="qty-plus">+</button>
-                </div>
-            </div>
-            <button class="btn-add-cart" id="add-to-cart-btn">
-                <i class="fas fa-shopping-cart"></i> Agregar al carrito
-            </button>
-            <div id="cart-feedback" class="cart-feedback"></div>
-            <div class="detail-actions">
-                <button class="btn-outline" id="back-to-catalog"><i class="fas fa-arrow-left"></i> Regresar</button>
-            </div>
-            <div class="related-products">
-                <h3><i class="fas fa-link"></i> Productos relacionados</h3>
-                <div class="related-grid" id="related-grid"></div>
-            </div>
-        </div>
-    </section>
-
-    <section id="page-registro" class="page-section">
-        <div class="auth-container">
-            <h2><i class="fas fa-user-plus" style="color:#8b5cf6;"></i> Crear cuenta</h2>
-            <div id="registro-message" class="hidden"></div>
-            <form id="registro-form" onsubmit="return false;">
-                <div class="form-group">
-                    <label><i class="fas fa-user"></i> Nombre completo</label>
-                    <input type="text" id="registro-nombre" placeholder="Ej: Juan Pérez">
-                </div>
-                <div class="form-group">
-                    <label><i class="fas fa-envelope"></i> Correo electrónico</label>
-                    <input type="email" id="registro-email" placeholder="ejemplo@correo.com">
-                </div>
-                <div class="form-group">
-                    <label><i class="fas fa-lock"></i> Contraseña</label>
-                    <input type="password" id="registro-password" placeholder="Ingresa tu contraseña">
-                </div>
-                <button type="submit" class="btn-primary" id="registro-btn">
-                    <i class="fas fa-check-circle"></i> Registrarme
+        <div class="modal-overlay" id="login-required-modal" role="dialog" aria-modal="true" aria-label="Inicio de sesión requerido">
+            <div class="modal-box">
+                <div class="modal-icon" aria-hidden="true"><i class="fas fa-user-lock"></i></div>
+                <h2>Inicio de sesión requerido</h2>
+                <p>Para finalizar tu compra, necesitas iniciar sesión en tu cuenta.</p>
+                <button class="btn-primary" id="login-required-btn">
+                    <i class="fas fa-sign-in-alt" aria-hidden="true"></i> Iniciar sesión
                 </button>
-            </form>
-            <div class="auth-link">
-                ¿Ya tienes cuenta? <a data-page="login">Inicia sesión aquí</a>
+                <button class="btn-secondary" id="login-required-cancel">Cancelar</button>
             </div>
         </div>
-    </section>
 
-    <section id="page-login" class="page-section">
-        <div class="auth-container">
-            <h2><i class="fas fa-sign-in-alt" style="color:#8b5cf6;"></i> Iniciar sesión</h2>
-            <div id="login-message" class="hidden"></div>
-            <form id="login-form" onsubmit="return false;">
-                <div class="form-group">
-                    <label><i class="fas fa-envelope"></i> Correo electrónico</label>
-                    <input type="email" id="login-email" placeholder="ejemplo@correo.com">
-                </div>
-                <div class="form-group">
-                    <label><i class="fas fa-lock"></i> Contraseña</label>
-                    <input type="password" id="login-password" placeholder="Ingresa tu contraseña">
-                </div>
-                <div class="remember-me-group">
-                    <input type="checkbox" id="remember-me">
-                    <label for="remember-me"><i class="fas fa-check-circle" style="color:#8b5cf6;"></i> Recuérdame</label>
-                </div>
-                <a href="#" class="forgot-password-link" id="forgot-password-link">¿Olvidaste tu contraseña?</a>
-                <button type="submit" class="btn-primary" id="login-btn">
-                    <i class="fas fa-arrow-right"></i> Entrar
-                </button>
-            </form>
-            <div class="auth-link">
-                ¿No tienes cuenta? <a data-page="registro">Regístrate aquí</a>
+        <section id="page-inicio" class="page-section active" aria-labelledby="hero-title">
+            <div class="hero">
+                <h1 id="hero-title"><i class="fas fa-utensil-spoon" aria-hidden="true"></i> Sabores que enamoran</h1>
+                <p>Descubre nuestra cocina casera con ingredientes frescos y recetas tradicionales.</p>
+                <a href="#" class="btn-primary" data-page="catalogo">Ver productos <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section id="page-perfil" class="page-section">
-        <h2 class="section-title"><i class="fas fa-user-circle"></i> Mi Perfil</h2>
-        <div class="profile-container">
-            <div class="profile-header">
-                <div class="profile-avatar">JP</div>
-                <div class="profile-user-info">
-                    <h3>Juan Pérez</h3>
-                    <p><i class="fas fa-envelope" style="color:#8b5cf6;"></i> juan.perez@email.com</p>
-                    <p><i class="fas fa-calendar-alt" style="color:#8b5cf6;"></i> Miembro desde 2024</p>
+        <section id="page-catalogo" class="page-section" aria-labelledby="catalogo-title">
+            <h2 id="catalogo-title" class="section-title"><i class="fas fa-utensils" aria-hidden="true"></i> Catálogo</h2>
+            <div class="catalog-controls">
+                <div class="category-menu" id="category-menu" role="tablist">
+                    <button class="category-btn active" data-category="todas" role="tab" aria-selected="true">Todas</button>
                 </div>
             </div>
-            <div class="profile-section">
-                <h4><i class="fas fa-id-card"></i> Mis datos</h4>
-                <div class="profile-field"><span class="label">Nombre completo</span><span class="value">Juan Pérez</span></div>
-                <div class="profile-field"><span class="label">Correo electrónico</span><span class="value">juan.perez@email.com</span></div>
-                <div class="profile-field"><span class="label">Teléfono</span><span class="value">+52 55 1234 5678</span></div>
-                <div class="profile-field"><span class="label">Dirección</span><span class="value">Calle Principal 123, Colonia Centro</span></div>
+            <div id="catalog-container"></div>
+        </section>
+
+        <section id="page-nosotros" class="page-section" aria-labelledby="nosotros-title">
+            <h2 id="nosotros-title" class="section-title"><i class="fas fa-store" aria-hidden="true"></i> Nosotros</h2>
+            <div class="about-text">
+                <p><i class="fas fa-quote-left" aria-hidden="true"></i> DeliciasResto nació en 2018 con el sueño de compartir recetas familiares que combinan tradición y amor por la buena mesa. Cada plato está hecho con ingredientes frescos y un toque especial.</p>
+                <p><i class="fas fa-bullseye" aria-hidden="true"></i> <strong>Misión:</strong> Ofrecer una experiencia culinaria auténtica, donde cada bocado cuente una historia. Vendemos comida casera con alma, desde nuestras manos a tu mesa.</p>
+                <div class="info-grid">
+                    <span class="info-item"><i class="fas fa-map-pin" aria-hidden="true"></i> Av. Principal 123, Centro</span>
+                    <span class="info-item"><i class="far fa-clock" aria-hidden="true"></i> Lun–Sáb 12:00 – 22:00</span>
+                </div>
             </div>
-            <div class="profile-section">
-                <h4><i class="fas fa-shopping-bag"></i> Mis compras <span class="coming-soon">Próximamente</span></h4>
-                <p style="color:#6b4f7a; font-size:0.95rem; margin-top:0.5rem;">
-                    <i class="fas fa-clock" style="color:#8b5cf6;"></i> Pronto podrás ver el historial de tus pedidos aquí.
-                </p>
+        </section>
+
+        <section id="page-contacto" class="page-section" aria-labelledby="contacto-title">
+            <h2 id="contacto-title" class="section-title"><i class="fas fa-envelope" aria-hidden="true"></i> Contacto</h2>
+            <div class="contact-form">
+                <label for="contact-name"><i class="fas fa-user" aria-hidden="true"></i> Nombre</label>
+                <input type="text" placeholder="Tu nombre" id="contact-name">
+                <label for="contact-email"><i class="fas fa-envelope" aria-hidden="true"></i> Correo</label>
+                <input type="email" placeholder="tucorreo@ejemplo.com" id="contact-email">
+                <label for="contact-message"><i class="fas fa-comment" aria-hidden="true"></i> Mensaje</label>
+                <textarea placeholder="Escribe tu mensaje aquí..." id="contact-message"></textarea>
+                <button class="btn-primary" style="width:100%; justify-content:center; margin-top:1.2rem;" id="send-contact-btn"><i class="fas fa-paper-plane" aria-hidden="true"></i> Enviar</button>
+                <div id="contact-feedback" class="hidden alert-message" style="margin-top:1rem; width:100%; text-align:center;"></div>
+                <div class="social-links">
+                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="#" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                </div>
             </div>
-            <div class="profile-actions">
-                <button class="btn-secondary" id="edit-profile-btn"><i class="fas fa-edit"></i> Editar perfil</button>
-                <button class="btn-danger" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
-            </div>
-            <div id="profile-message" class="hidden alert-message" style="margin-top:1.5rem; width:100%; text-align:center;">
-                <i class="fas fa-info-circle"></i> Mensaje
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <div class="footer-note">
-        <i class="fas fa-utensils"></i> DeliciasResto · Comida con tradición
-    </div>
-</div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-
-        const products = [
-            { id: 1, name: 'Pizza Margarita', category: 'Pizzas', price: 12.50, desc: 'Clásica pizza con mozzarella, tomate fresco y albahaca. Masa artesanal con fermentación lenta.', image: 'pizza.jpg', badge: 'popular', badgeText: '⭐ Popular' },
-            { id: 2, name: 'Pizza Pepperoni', category: 'Pizzas', price: 14.90, desc: 'Pizza con pepperoni, mozzarella y salsa de tomate. La favorita de los amantes del picante.', image: 'pepperoni.jpg', badge: 'new', badgeText: 'Nuevo' },
-            { id: 3, name: 'Hamburguesa Clásica', category: 'Hamburguesas', price: 10.90, desc: 'Carne 100% premium de res, lechuga, tomate, cebolla morada y salsa especial. Con papas fritas.', image: 'clasica.jpg', badge: 'offer', badgeText: 'Oferta' },
-            { id: 4, name: 'Hamburguesa BBQ', category: 'Hamburguesas', price: 13.50, desc: 'Hamburguesa con salsa BBQ, aros de cebolla crujientes y queso cheddar derretido.', image: 'bbq.jpg', badge: null, badgeText: null },
-            { id: 5, name: 'Salmón a la plancha', category: 'Pescados', price: 18.40, desc: 'Salmón fresco sellado a la plancha, acompañado de vegetales asados y salsa de hierbas finas.', image: 'salmon.jpg', badge: 'popular', badgeText: '⭐ Popular' },
-            { id: 6, name: 'Ceviche de camarón', category: 'Pescados', price: 15.20, desc: 'Camarones frescos marinados en jugo de limón con cebolla morada, cilantro y aguacate.', image: 'ceviche.jpg', badge: 'new', badgeText: 'Nuevo' },
-            { id: 7, name: 'Café de especialidad', category: 'Bebidas', price: 4.20, desc: 'Café de origen mexicano, tueste medio, con notas de chocolate y caramelo.', image: 'cafe.jpg', badge: null, badgeText: null },
-            { id: 8, name: 'Ensalada César', category: 'Ensaladas', price: 11.80, desc: 'Lechuga romana, pollo a la plancha, parmesano, crutones y aderezo César casero.', image: 'cesar.jpg', badge: 'vegan', badgeText: 'Vegano' }
-        ];
-
-        let cart = [];
-        const cartBadge = document.getElementById('cart-badge');
-        const cartTotalBadge = document.getElementById('cart-total-badge');
-        const cartItemsContainer = document.getElementById('cart-items-container');
-        const cartTotalAmount = document.getElementById('cart-total-amount');
-        const checkoutBtn = document.getElementById('checkout-btn');
-
-        const loginRequiredModal = document.getElementById('login-required-modal');
-        const loginRequiredBtn = document.getElementById('login-required-btn');
-        const loginRequiredCancel = document.getElementById('login-required-cancel');
-
-        let isLoggedIn = false;
-        let currentUser = {
-            name: 'Juan Pérez',
-            email: 'juan.perez@email.com',
-            phone: '+52 55 1234 5678',
-            address: 'Calle Principal 123, Colonia Centro',
-            memberSince: '2024'
-        };
-
-        let selectedCategory = 'todas';
-
-        function updateCartUI() {
-            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-            cartBadge.textContent = totalItems;
-
-            const totalPrice = cart.reduce((sum, item) => {
-                const product = products.find(p => p.id === item.productId);
-                return sum + (product ? product.price * item.quantity : 0);
-            }, 0);
-            cartTotalBadge.textContent = '$' + totalPrice.toFixed(0);
-
-            if (cart.length === 0) {
-                cartItemsContainer.innerHTML = `
-                    <div class="cart-empty">
-                        <i class="fas fa-shopping-basket"></i>
-                        <p>Tu carrito está vacío</p>
-                        <small>Explora nuestro catálogo y agrega tus productos favoritos</small>
+        <section id="page-detalle" class="page-section" aria-labelledby="detail-title">
+            <div class="detail-view">
+                <div class="product-img" id="detail-img">
+                    <img src="pizza.jpg" alt="Producto" class="food-image">
+                    <div class="img-overlay" aria-hidden="true"></div>
+                </div>
+                <h2 id="detail-title">Nombre del producto</h2>
+                <span class="product-price" id="detail-price">$0.00</span>
+                <p id="detail-desc">Descripción del producto.</p>
+                <div class="quantity-selector">
+                    <label for="qty-value" style="font-weight:600; color:#2d1b3d; font-size:1rem;"><i class="fas fa-sort-amount-up-alt" aria-hidden="true"></i> Cantidad:</label>
+                    <div class="qty-control">
+                        <button id="qty-minus" aria-label="Disminuir cantidad">−</button>
+                        <span id="qty-value" aria-live="polite">1</span>
+                        <button id="qty-plus" aria-label="Aumentar cantidad">+</button>
                     </div>
-                `;
-                checkoutBtn.disabled = true;
-                cartTotalAmount.textContent = '$0.00';
-                return;
-            }
+                </div>
+                <button class="btn-add-cart" id="add-to-cart-btn"><i class="fas fa-shopping-cart" aria-hidden="true"></i> Agregar al carrito</button>
+                <div id="cart-feedback" class="cart-feedback" style="margin-top:1rem; padding:0.8rem 1.2rem; border-radius:40px; font-weight:500; text-align:center; background:#e8f5e9; color:#2e7d32; border-left:4px solid #4caf50; display:none;"></div>
+                <div class="detail-actions" style="display:flex; flex-wrap:wrap; gap:0.6rem; justify-content:center; margin-top:0.5rem;">
+                    <button class="btn-outline" id="back-to-catalog"><i class="fas fa-arrow-left" aria-hidden="true"></i> Regresar</button>
+                </div>
+                <div class="related-products">
+                    <h3 style="font-size:1.2rem; color:#2d1b3d; margin-bottom:1rem; display:flex; align-items:center; gap:0.6rem;"><i class="fas fa-link" style="color:#8b5cf6;" aria-hidden="true"></i> Productos relacionados</h3>
+                    <div class="related-grid" id="related-grid"></div>
+                </div>
+            </div>
+        </section>
 
-            let html = '';
-            cart.forEach((item, index) => {
-                const product = products.find(p => p.id === item.productId);
-                if (!product) return;
-                html += `
-                    <div class="cart-item" data-index="${index}">
-                        <div class="cart-item-img">
-                            <img src="${product.image}" alt="${product.name}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Crect fill=%22%23ede6f5%22 width=%2260%22 height=%2260%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%238b5cf6%22 font-family=%22sans-serif%22 font-size=%2210%22%3E${product.name}%3C/text%3E%3C/svg%3E'">
+        <section id="page-registro" class="page-section" aria-labelledby="registro-title">
+            <div class="auth-container">
+                <h2 id="registro-title"><i class="fas fa-user-plus" style="color:#8b5cf6;" aria-hidden="true"></i> Crear cuenta</h2>
+                <div id="registro-message" class="hidden"></div>
+                <form id="registro-form" onsubmit="return false;">
+                    <div class="form-group">
+                        <label for="registro-nombre"><i class="fas fa-user" aria-hidden="true"></i> Nombre completo</label>
+                        <input type="text" id="registro-nombre" placeholder="Ej: Juan Pérez">
+                    </div>
+                    <div class="form-group">
+                        <label for="registro-email"><i class="fas fa-envelope" aria-hidden="true"></i> Correo electrónico</label>
+                        <input type="email" id="registro-email" placeholder="ejemplo@correo.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="registro-password"><i class="fas fa-lock" aria-hidden="true"></i> Contraseña</label>
+                        <input type="password" id="registro-password" placeholder="Ingresa tu contraseña">
+                    </div>
+                    <button type="submit" class="btn-primary" id="registro-btn"><i class="fas fa-check-circle" aria-hidden="true"></i> Registrarme</button>
+                </form>
+                <div class="auth-link">¿Ya tienes cuenta? <a data-page="login">Inicia sesión aquí</a></div>
+            </div>
+        </section>
+
+        <section id="page-login" class="page-section" aria-labelledby="login-title">
+            <div class="auth-container">
+                <h2 id="login-title"><i class="fas fa-sign-in-alt" style="color:#8b5cf6;" aria-hidden="true"></i> Iniciar sesión</h2>
+                <div id="login-message" class="hidden"></div>
+                <form id="login-form" onsubmit="return false;">
+                    <div class="form-group">
+                        <label for="login-email"><i class="fas fa-envelope" aria-hidden="true"></i> Correo electrónico</label>
+                        <input type="email" id="login-email" placeholder="ejemplo@correo.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password"><i class="fas fa-lock" aria-hidden="true"></i> Contraseña</label>
+                        <input type="password" id="login-password" placeholder="Ingresa tu contraseña">
+                    </div>
+                    <div class="remember-me-group">
+                        <input type="checkbox" id="remember-me">
+                        <label for="remember-me"><i class="fas fa-check-circle" style="color:#8b5cf6;" aria-hidden="true"></i> Recuérdame</label>
+                    </div>
+                    <a href="#" class="forgot-password-link" id="forgot-password-link">¿Olvidaste tu contraseña?</a>
+                    <button type="submit" class="btn-primary" id="login-btn"><i class="fas fa-arrow-right" aria-hidden="true"></i> Entrar</button>
+                </form>
+                <div class="admin-access-divider">
+                    <span>Acceso administrador</span>
+                </div>
+                <button class="btn-admin" id="admin-login-btn">
+                    <i class="fas fa-user-shield" aria-hidden="true"></i> Administrar
+                </button>
+                <div class="auth-link">¿No tienes cuenta? <a data-page="registro">Regístrate aquí</a></div>
+            </div>
+        </section>
+
+        <section id="page-perfil" class="page-section" aria-labelledby="perfil-title">
+            <h2 id="perfil-title" class="section-title"><i class="fas fa-user-circle" aria-hidden="true"></i> Mi Perfil</h2>
+            <div class="profile-container">
+                <div class="profile-header">
+                    <div class="profile-avatar" aria-hidden="true">JP</div>
+                    <div class="profile-user-info">
+                        <h3>Juan Pérez</h3>
+                        <p><i class="fas fa-envelope" style="color:#8b5cf6;" aria-hidden="true"></i> juan.perez@email.com</p>
+                        <p><i class="fas fa-calendar-alt" style="color:#8b5cf6;" aria-hidden="true"></i> Miembro desde 2024</p>
+                    </div>
+                </div>
+                <div class="profile-section">
+                    <h4><i class="fas fa-id-card" aria-hidden="true"></i> Mis datos</h4>
+                    <div class="profile-field"><span class="label">Nombre completo</span><span class="value">Juan Pérez</span></div>
+                    <div class="profile-field"><span class="label">Correo electrónico</span><span class="value">juan.perez@email.com</span></div>
+                    <div class="profile-field"><span class="label">Teléfono</span><span class="value">+52 55 1234 5678</span></div>
+                    <div class="profile-field"><span class="label">Dirección</span><span class="value">Calle Principal 123, Colonia Centro</span></div>
+                </div>
+                <div class="profile-section">
+                    <h4><i class="fas fa-shopping-bag" aria-hidden="true"></i> Mis compras <span class="coming-soon">Próximamente</span></h4>
+                    <p style="color:#6b4f7a; font-size:0.9rem; margin-top:0.3rem;"><i class="fas fa-clock" style="color:#8b5cf6;" aria-hidden="true"></i> Pronto podrás ver el historial de tus pedidos aquí.</p>
+                </div>
+                <div class="profile-actions">
+                    <button class="btn-secondary" id="edit-profile-btn"><i class="fas fa-edit" aria-hidden="true"></i> Editar perfil</button>
+                    <button class="btn-danger" id="logout-btn"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Cerrar sesión</button>
+                </div>
+                <div id="profile-message" class="hidden alert-message" style="margin-top:1.2rem; width:100%; text-align:center;"></div>
+            </div>
+        </section>
+
+        <section id="page-admin" class="page-section" aria-labelledby="admin-title">
+            <h2 id="admin-title" class="section-title"><i class="fas fa-tachometer-alt" aria-hidden="true"></i> Panel de Administración</h2>
+
+            <div class="admin-layout">
+                <aside class="admin-sidebar" aria-label="Menú de administración">
+                    <div class="admin-user">
+                        <div class="admin-avatar" aria-hidden="true">AD</div>
+                        <div>
+                            <div class="admin-name">Administrador</div>
+                            <div class="admin-email">admin@deliciasresto.com</div>
                         </div>
-                        <div class="cart-item-info">
-                            <h4>${product.name}</h4>
-                            <span class="item-price">$${product.price.toFixed(2)}</span>
-                            <div class="cart-item-qty">
-                                <button class="cart-qty-dec" data-index="${index}">−</button>
-                                <span>${item.quantity}</span>
-                                <button class="cart-qty-inc" data-index="${index}">+</button>
+                    </div>
+                    <ul class="sidebar-menu">
+                        <li><a href="#" class="active" data-admin-page="dashboard"><i class="fas fa-chart-pie" aria-hidden="true"></i> Dashboard</a></li>
+                        <li><a href="#" data-admin-page="productos"><i class="fas fa-box" aria-hidden="true"></i> Productos</a></li>
+                        <li><a href="#" data-admin-page="pedidos"><i class="fas fa-shopping-bag" aria-hidden="true"></i> Pedidos</a></li>
+                        <li><a href="#" data-admin-page="promociones"><i class="fas fa-tags" aria-hidden="true"></i> Promociones</a></li>
+                        <li><a href="#" data-admin-page="clientes"><i class="fas fa-users" aria-hidden="true"></i> Clientes</a></li>
+                        <li><a href="#" data-admin-page="reportes"><i class="fas fa-file-alt" aria-hidden="true"></i> Reportes</a></li>
+                    </ul>
+                </aside>
+
+                <div class="admin-content">
+
+                    <div id="admin-dashboard" class="admin-page active">
+                        <div class="admin-dashboard-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon" aria-hidden="true"><i class="fas fa-utensils"></i></div>
+                                <div class="stat-number" id="stat-products">12</div>
+                                <div class="stat-label">Productos publicados</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon" aria-hidden="true"><i class="fas fa-clipboard-list"></i></div>
+                                <div class="stat-number">5</div>
+                                <div class="stat-label">Pedidos del día</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon" aria-hidden="true"><i class="fas fa-dollar-sign"></i></div>
+                                <div class="stat-number">$12,500</div>
+                                <div class="stat-label">Ventas del mes</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon" aria-hidden="true"><i class="fas fa-user-friends"></i></div>
+                                <div class="stat-number">38</div>
+                                <div class="stat-label">Clientes registrados</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon" aria-hidden="true"><i class="fas fa-exclamation-triangle"></i></div>
+                                <div class="stat-number" id="stat-out-of-stock">2</div>
+                                <div class="stat-label">Productos agotados</div>
                             </div>
                         </div>
-                        <button class="cart-item-remove" data-index="${index}" title="Eliminar"><i class="fas fa-times"></i></button>
+
+                        <div class="admin-actions">
+                            <button class="btn-primary" id="admin-add-product-btn"><i class="fas fa-plus" aria-hidden="true"></i> Agregar producto</button>
+                            <button class="btn-secondary" id="admin-view-orders-btn"><i class="fas fa-eye" aria-hidden="true"></i> Ver pedidos</button>
+                            <button class="btn-success" id="admin-create-promo-btn"><i class="fas fa-tag" aria-hidden="true"></i> Crear promoción</button>
+                        </div>
+
+                        <div class="activity-feed">
+                            <h3><i class="fas fa-bolt" aria-hidden="true"></i> Actividad reciente</h3>
+                            <div class="activity-item">
+                                <div class="activity-icon" aria-hidden="true"><i class="fas fa-shopping-bag"></i></div>
+                                <span class="activity-text">Pedido #125 recibido</span>
+                                <span class="activity-time">hace 5 min</span>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon" aria-hidden="true"><i class="fas fa-user-plus"></i></div>
+                                <span class="activity-text">Nuevo cliente registrado</span>
+                                <span class="activity-time">hace 12 min</span>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon" aria-hidden="true"><i class="fas fa-edit"></i></div>
+                                <span class="activity-text">Producto actualizado: Pizza Margarita</span>
+                                <span class="activity-time">hace 28 min</span>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon" aria-hidden="true"><i class="fas fa-plus"></i></div>
+                                <span class="activity-text">Nuevo producto agregado: Ensalada César</span>
+                                <span class="activity-time">hace 1 hora</span>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon" aria-hidden="true"><i class="fas fa-check-circle"></i></div>
+                                <span class="activity-text">Pedido #124 completado</span>
+                                <span class="activity-time">hace 2 horas</span>
+                            </div>
+                        </div>
                     </div>
-                `;
-            });
 
-            cartItemsContainer.innerHTML = html;
+                    <div id="admin-productos" class="admin-page hidden">
+                        <div class="product-table-container">
+                            <div class="table-header">
+                                <div class="search-box">
+                                    <label for="product-search" class="hidden">Buscar producto</label>
+                                    <input type="text" id="product-search" placeholder="Buscar producto...">
+                                    <label for="category-filter" class="hidden">Filtrar por categoría</label>
+                                    <select id="category-filter">
+                                        <option value="todas">Todas las categorías</option>
+                                        <option value="Pizzas">Pizzas</option>
+                                        <option value="Hamburguesas">Hamburguesas</option>
+                                        <option value="Pescados">Pescados</option>
+                                        <option value="Bebidas">Bebidas</option>
+                                        <option value="Ensaladas">Ensaladas</option>
+                                    </select>
+                                    <label for="status-filter" class="hidden">Filtrar por estado</label>
+                                    <select id="status-filter">
+                                        <option value="todos">Todos los estados</option>
+                                        <option value="disponible">Disponible</option>
+                                        <option value="agotado">Agotado</option>
+                                        <option value="inactivo">Inactivo</option>
+                                    </select>
+                                </div>
+                                <button class="btn-primary" id="admin-add-product-btn2"><i class="fas fa-plus" aria-hidden="true"></i> Agregar producto</button>
+                            </div>
 
-            document.querySelectorAll('.cart-qty-dec').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const idx = parseInt(this.getAttribute('data-index'));
-                    if (cart[idx] && cart[idx].quantity > 1) {
-                        cart[idx].quantity--;
-                    } else {
-                        cart.splice(idx, 1);
-                    }
-                    updateCartUI();
-                });
-            });
-
-            document.querySelectorAll('.cart-qty-inc').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const idx = parseInt(this.getAttribute('data-index'));
-                    if (cart[idx]) {
-                        cart[idx].quantity++;
-                    }
-                    updateCartUI();
-                });
-            });
-
-            document.querySelectorAll('.cart-item-remove').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const idx = parseInt(this.getAttribute('data-index'));
-                    cart.splice(idx, 1);
-                    updateCartUI();
-                });
-            });
-
-            const total = cart.reduce((sum, item) => {
-                const p = products.find(pr => pr.id === item.productId);
-                return sum + (p ? p.price * item.quantity : 0);
-            }, 0);
-            cartTotalAmount.textContent = '$' + total.toFixed(2);
-            checkoutBtn.disabled = false;
-        }
-
-        function addToCart(productId, quantity = 1) {
-            const existing = cart.find(item => item.productId === productId);
-            if (existing) {
-                existing.quantity += quantity;
-            } else {
-                cart.push({ productId, quantity });
-            }
-            updateCartUI();
-            openCart();
-        }
-
-        const cartOverlay = document.getElementById('cart-overlay');
-        const cartBackdrop = document.getElementById('cart-backdrop');
-
-        function openCart() {
-            cartOverlay.classList.add('open');
-            cartBackdrop.classList.add('show');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeCart() {
-            cartOverlay.classList.remove('open');
-            cartBackdrop.classList.remove('show');
-            document.body.style.overflow = '';
-        }
-
-        document.getElementById('cart-toggle-btn').addEventListener('click', openCart);
-        document.getElementById('cart-close-btn').addEventListener('click', closeCart);
-        cartBackdrop.addEventListener('click', closeCart);
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeCart();
-        });
-
-        checkoutBtn.addEventListener('click', function() {
-            if (cart.length === 0) return;
-
-            if (!isLoggedIn) {
-                loginRequiredModal.classList.add('show');
-                return;
-            }
-
-            processPayment();
-        });
-
-        function processPayment() {
-            const orderItems = cart.map(item => {
-                const p = products.find(pr => pr.id === item.productId);
-                return { ...item, name: p ? p.name : 'Producto', price: p ? p.price : 0 };
-            });
-            const total = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-            closeCart();
-            cart = [];
-            updateCartUI();
-
-            showSuccessPage(orderItems, total);
-        }
-
-        loginRequiredBtn.addEventListener('click', function() {
-            loginRequiredModal.classList.remove('show');
-            closeCart();
-            showPage('login');
-        });
-
-        loginRequiredCancel.addEventListener('click', function() {
-            loginRequiredModal.classList.remove('show');
-        });
-
-        loginRequiredModal.addEventListener('click', function(e) {
-            if (e.target === loginRequiredModal) {
-                loginRequiredModal.classList.remove('show');
-            }
-        });
-
-        function showSuccessPage(items, total) {
-            const detailsContainer = document.getElementById('success-details');
-            let html = '';
-            items.forEach(item => {
-                html += `
-                    <div class="detail-row">
-                        <span>${item.quantity} × ${item.name}</span>
-                        <span>$${(item.price * item.quantity).toFixed(2)}</span>
+                            <div style="overflow-x:auto;">
+                                <table class="product-table" id="product-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Imagen</th>
+                                            <th>Nombre</th>
+                                            <th>Categoría</th>
+                                            <th>Precio</th>
+                                            <th>Existencia</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="product-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
-                `;
-            });
-            html += `
-                <div class="detail-row">
-                    <span><strong>Total</strong></span>
-                    <span><strong>$${total.toFixed(2)}</strong></span>
+
+                    <div id="admin-product-form" class="admin-page hidden">
+                        <div class="product-form-container">
+                            <h3 style="margin-bottom:1.2rem; display:flex; align-items:center; gap:0.6rem; font-size:1.3rem;">
+                                <i class="fas fa-plus-circle" style="color:#8b5cf6;" aria-hidden="true"></i> <span id="form-title">Agregar Producto</span>
+                            </h3>
+                            <form id="product-form" onsubmit="return false;">
+                                <div class="form-group">
+                                    <label for="form-product-name">Nombre del producto</label>
+                                    <input type="text" id="form-product-name" placeholder="Ej: Pizza Hawaiana">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="form-product-category">Categoría</label>
+                                        <select id="form-product-category">
+                                            <option value="Pizzas">Pizzas</option>
+                                            <option value="Hamburguesas">Hamburguesas</option>
+                                            <option value="Pescados">Pescados</option>
+                                            <option value="Bebidas">Bebidas</option>
+                                            <option value="Ensaladas">Ensaladas</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="form-product-price">Precio</label>
+                                        <input type="number" step="0.01" id="form-product-price" placeholder="0.00">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-product-desc">Descripción</label>
+                                    <textarea id="form-product-desc" placeholder="Descripción del producto..."></textarea>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="form-product-stock">Existencia (simulada)</label>
+                                        <input type="number" id="form-product-stock" placeholder="10">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="form-product-status">Estado</label>
+                                        <select id="form-product-status">
+                                            <option value="disponible">Activo</option>
+                                            <option value="inactivo">Inactivo</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-product-image">Imagen (selector o vista previa)</label>
+                                    <input type="text" id="form-product-image" placeholder="Nombre de la imagen (ej: pizza.jpg)">
+                                    <div class="image-preview" id="form-image-preview" aria-live="polite">
+                                        <div class="empty-preview"><i class="fas fa-image" style="font-size:1.5rem; display:block; margin-bottom:0.3rem;" aria-hidden="true"></i>Vista previa</div>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary" id="form-save-btn"><i class="fas fa-save" aria-hidden="true"></i> Guardar</button>
+                                    <button type="button" class="btn-secondary" id="form-cancel-btn"><i class="fas fa-times" aria-hidden="true"></i> Cancelar</button>
+                                </div>
+                                <div id="form-message" class="hidden alert-message" style="margin-top:1.2rem; width:100%; text-align:center;"></div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div id="admin-pedidos" class="admin-page hidden">
+                        <div class="product-table-container">
+                            <h3 style="margin-bottom:1.2rem; display:flex; align-items:center; gap:0.6rem; font-size:1.2rem;">
+                                <i class="fas fa-shopping-bag" style="color:#8b5cf6;" aria-hidden="true"></i> Pedidos recientes
+                            </h3>
+                            <div style="overflow-x:auto;">
+                                <table class="product-table">
+                                    <thead>
+                                        <tr><th>ID Pedido</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th>Fecha</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>#125</td><td>María García</td><td>Pizza Margarita (2)</td><td>$25.00</td><td><span class="status-badge status-available">Entregado</span></td><td>15/01/2025 14:30</td></tr>
+                                        <tr><td>#124</td><td>Carlos López</td><td>Hamburguesa Clásica (1)</td><td>$10.90</td><td><span class="status-badge status-available">Entregado</span></td><td>15/01/2025 13:15</td></tr>
+                                        <tr><td>#123</td><td>Ana Martínez</td><td>Salmón a la plancha (1)</td><td>$18.40</td><td><span class="status-badge" style="background:#fff3e0; color:#e65100;">En preparación</span></td><td>15/01/2025 12:45</td></tr>
+                                        <tr><td>#122</td><td>Pedro Ramírez</td><td>Ceviche de camarón (2)</td><td>$30.40</td><td><span class="status-badge status-out-of-stock">Pendiente</span></td><td>15/01/2025 12:00</td></tr>
+                                        <tr><td>#121</td><td>Laura Fernández</td><td>Ensalada César (1)</td><td>$11.80</td><td><span class="status-badge status-available">Entregado</span></td><td>15/01/2025 11:20</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="admin-promociones" class="admin-page hidden">
+                        <div class="product-table-container">
+                            <div class="table-header">
+                                <h3 style="display:flex; align-items:center; gap:0.6rem; font-size:1.2rem;">
+                                    <i class="fas fa-tags" style="color:#8b5cf6;" aria-hidden="true"></i> Promociones activas
+                                </h3>
+                                <button class="btn-success" id="admin-create-promo-btn2"><i class="fas fa-plus" aria-hidden="true"></i> Nueva promoción</button>
+                            </div>
+                            <div style="overflow-x:auto;">
+                                <table class="product-table">
+                                    <thead>
+                                        <tr><th>Nombre</th><th>Descuento</th><th>Productos</th><th>Vigencia</th><th>Estado</th><th>Acciones</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>Oferta de fin de semana</td><td>20%</td><td>Pizza Pepperoni, Hamburguesa BBQ</td><td>18-20 Ene</td><td><span class="status-badge status-available">Activa</span></td><td><div class="table-actions"><button class="btn-edit" aria-label="Editar"><i class="fas fa-edit"></i></button><button class="btn-delete" aria-label="Eliminar"><i class="fas fa-trash"></i></button></div></td></tr>
+                                        <tr><td>Combo Familiar</td><td>15%</td><td>Pizza Margarita + Ensalada César</td><td>15-31 Ene</td><td><span class="status-badge status-available">Activa</span></td><td><div class="table-actions"><button class="btn-edit" aria-label="Editar"><i class="fas fa-edit"></i></button><button class="btn-delete" aria-label="Eliminar"><i class="fas fa-trash"></i></button></div></td></tr>
+                                        <tr><td>2x1 en bebidas</td><td>50%</td><td>Café de especialidad</td><td>10-20 Ene</td><td><span class="status-badge status-out-of-stock">Vencida</span></td><td><div class="table-actions"><button class="btn-edit" aria-label="Editar"><i class="fas fa-edit"></i></button><button class="btn-delete" aria-label="Eliminar"><i class="fas fa-trash"></i></button></div></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="admin-clientes" class="admin-page hidden">
+                        <div class="product-table-container">
+                            <div class="table-header">
+                                <h3 style="display:flex; align-items:center; gap:0.6rem; font-size:1.2rem;">
+                                    <i class="fas fa-users" style="color:#8b5cf6;" aria-hidden="true"></i> Clientes registrados
+                                </h3>
+                                <button class="btn-primary" id="admin-add-client-btn"><i class="fas fa-plus" aria-hidden="true"></i> Agregar cliente</button>
+                            </div>
+                            <div style="overflow-x:auto;">
+                                <table class="product-table" id="clients-table">
+                                    <thead>
+                                        <tr><th>Cliente</th><th>Email</th><th>Teléfono</th><th>Pedidos</th><th>Total gastado</th><th>Fecha registro</th><th>Acciones</th></tr>
+                                    </thead>
+                                    <tbody id="clients-table-body">
+                                        <tr><td>María García</td><td>maria@email.com</td><td>55 1234 5678</td><td>8</td><td>$340.50</td><td>10/01/2024</td><td><div class="table-actions"><button class="btn-delete" aria-label="Eliminar"><i class="fas fa-trash"></i></button></div></td></tr>
+                                        <tr><td>Carlos López</td><td>carlos@email.com</td><td>55 2345 6789</td><td>5</td><td>$210.80</td><td>15/03/2024</td><td><div class="table-actions"><button class="btn-delete" aria-label="Eliminar"><i class="fas fa-trash"></i></button></div></td></tr>
+                                        <tr><td>Ana Martínez</td><td>ana@email.com</td><td>55 3456 7890</td><td>12</td><td>$520.30</td><td>02/06/2024</td><td><div class="table-actions"><button class="btn-delete" aria-label="Eliminar"><i class="fas fa-trash"></i></button></div></td></tr>
+                                        <tr><td>Pedro Ramírez</td><td>pedro@email.com</td><td>55 4567 8901</td><td>3</td><td>$95.20</td><td>20/08/2024</td><td><div class="table-actions"><button class="btn-delete" aria-label="Eliminar"><i class="fas fa-trash"></i></button></div></td></tr>
+                                        <tr><td>Laura Fernández</td><td>laura@email.com</td><td>55 5678 9012</td><td>6</td><td>$280.00</td><td>05/10/2024</td><td><div class="table-actions"><button class="btn-delete" aria-label="Eliminar"><i class="fas fa-trash"></i></button></div></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="admin-client-form" class="admin-page hidden">
+                        <div class="product-form-container">
+                            <h3 style="margin-bottom:1.2rem; display:flex; align-items:center; gap:0.6rem; font-size:1.3rem;">
+                                <i class="fas fa-user-plus" style="color:#8b5cf6;" aria-hidden="true"></i> <span id="client-form-title">Agregar cliente</span>
+                            </h3>
+                            <form id="client-form" onsubmit="return false;">
+                                <div class="form-group">
+                                    <label for="form-client-name">Nombre completo</label>
+                                    <input type="text" id="form-client-name" placeholder="Ej: Juan Pérez">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="form-client-email">Correo electrónico</label>
+                                        <input type="email" id="form-client-email" placeholder="Ej: juan@email.com">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="form-client-phone">Teléfono</label>
+                                        <input type="tel" id="form-client-phone" placeholder="Ej: 55 1234 5678">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-client-address">Dirección</label>
+                                    <textarea id="form-client-address" placeholder="Dirección del cliente..."></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary" id="form-client-save-btn"><i class="fas fa-save" aria-hidden="true"></i> Guardar</button>
+                                    <button type="button" class="btn-secondary" id="form-client-cancel-btn"><i class="fas fa-times" aria-hidden="true"></i> Cancelar</button>
+                                </div>
+                                <div id="client-form-message" class="hidden alert-message" style="margin-top:1.2rem; width:100%; text-align:center;"></div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div id="admin-reportes" class="admin-page hidden">
+                        <div class="product-table-container">
+                            <h3 style="margin-bottom:1.2rem; display:flex; align-items:center; gap:0.6rem; font-size:1.2rem;">
+                                <i class="fas fa-file-alt" style="color:#8b5cf6;" aria-hidden="true"></i> Reportes (simulados)
+                            </h3>
+                            <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:1rem;">
+                                <div class="stat-card">
+                                    <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+                                    <div class="stat-number">$12,500</div>
+                                    <div class="stat-label">Ventas del mes</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                                    <div class="stat-number">156</div>
+                                    <div class="stat-label">Pedidos este mes</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+                                    <div class="stat-number">85%</div>
+                                    <div class="stat-label">Tasa de retención</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon"><i class="fas fa-star"></i></div>
+                                    <div class="stat-number">4.8</div>
+                                    <div class="stat-label">Calificación promedio</div>
+                                </div>
+                            </div>
+                            <div style="margin-top:1.2rem; background:#faf8fc; border-radius:16px; padding:1.2rem; text-align:center; border:1px solid #ede6f5;">
+                                <i class="fas fa-download" style="color:#8b5cf6; font-size:1.8rem; display:block; margin-bottom:0.3rem;" aria-hidden="true"></i>
+                                <p style="color:#6b4f7a; font-size:0.9rem;">Descarga de reportes (simulado)</p>
+                                <button class="btn-secondary" style="margin-top:0.3rem;"><i class="fas fa-file-pdf" aria-hidden="true"></i> Exportar PDF</button>
+                                <button class="btn-secondary" style="margin-top:0.3rem;"><i class="fas fa-file-excel" aria-hidden="true"></i> Exportar Excel</button>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-            `;
-            detailsContainer.innerHTML = html;
+            </div>
+        </section>
 
-            Object.keys(pages).forEach(key => {
-                pages[key].classList.remove('active');
-            });
-            document.getElementById('page-exito').classList.add('active');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+        <section id="page-exito" class="page-section" aria-labelledby="exito-title">
+            <div class="success-page">
+                <div class="big-icon" aria-hidden="true"><i class="fas fa-check-circle"></i></div>
+                <h2 id="exito-title">¡Pago realizado con éxito!</h2>
+                <p>Tu pedido ha sido confirmado. En breve recibirás un correo con los detalles.</p>
+                <div class="order-details" id="success-details"></div>
+                <button class="btn-primary" id="success-continue-btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Seguir comprando</button>
+            </div>
+        </section>
 
-        document.getElementById('success-continue-btn').addEventListener('click', function() {
-            showPage('catalogo');
-            renderCatalog(selectedCategory);
-        });
+        <footer class="footer-note">
+            <i class="fas fa-utensils" aria-hidden="true"></i> DeliciasResto · Comida con tradición
+        </footer>
+    </div>
 
-        const pages = {
-            inicio: document.getElementById('page-inicio'),
-            nosotros: document.getElementById('page-nosotros'),
-            contacto: document.getElementById('page-contacto'),
-            catalogo: document.getElementById('page-catalogo'),
-            detalle: document.getElementById('page-detalle'),
-            registro: document.getElementById('page-registro'),
-            login: document.getElementById('page-login'),
-            perfil: document.getElementById('page-perfil'),
-            exito: document.getElementById('page-exito')
-        };
+    <div class="social-float" id="social-float">
+        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+        <a href="#" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+    </div>
 
-        const navLinks = document.querySelectorAll('.nav-links a[data-page]');
-
-        let currentQty = 1;
-        let currentProductId = null;
-
-        function showPage(pageId) {
-            Object.keys(pages).forEach(key => {
-                pages[key].classList.remove('active');
-            });
-            if (pages[pageId]) {
-                pages[pageId].classList.add('active');
-            }
-            navLinks.forEach(link => {
-                link.classList.remove('active-link');
-                if (link.getAttribute('data-page') === pageId) {
-                    link.classList.add('active-link');
-                }
-            });
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function updateNavForAuth() {
-            const loginLink = document.querySelector('.nav-links .login-btn');
-            if (isLoggedIn) {
-                loginLink.innerHTML = '<i class="fas fa-user-circle"></i> Mi Perfil';
-                loginLink.setAttribute('data-page', 'perfil');
-                loginLink.style.background = '#8b5cf6';
-                loginLink.style.color = 'white !important';
-            } else {
-                loginLink.innerHTML = '<i class="fas fa-user-circle"></i> Iniciar sesión';
-                loginLink.setAttribute('data-page', 'login');
-                loginLink.style.background = '#ede6f5';
-                loginLink.style.color = '#2d1b3d !important';
-            }
-        }
-
-        function updateProfileData() {
-            if (isLoggedIn) {
-                const avatar = document.querySelector('.profile-avatar');
-                const nameEl = document.querySelector('.profile-user-info h3');
-                const emailEl = document.querySelector('.profile-user-info p:first-child');
-                const memberEl = document.querySelector('.profile-user-info p:last-child');
-                const fields = document.querySelectorAll('.profile-section:first-child .profile-field .value');
-                if (avatar) {
-                    const initials = currentUser.name.split(' ').map(n => n[0]).join('');
-                    avatar.textContent = initials || 'U';
-                }
-                if (nameEl) nameEl.textContent = currentUser.name;
-                if (emailEl) emailEl.innerHTML = '<i class="fas fa-envelope" style="color:#8b5cf6;"></i> ' + currentUser.email;
-                if (memberEl) memberEl.innerHTML = '<i class="fas fa-calendar-alt" style="color:#8b5cf6;"></i> Miembro desde ' + currentUser.memberSince;
-                const fieldValues = [currentUser.name, currentUser.email, currentUser.phone, currentUser.address];
-                fields.forEach((el, index) => {
-                    if (index < fieldValues.length) el.textContent = fieldValues[index];
-                });
-            }
-        }
-
-        function buildCategoryMenu() {
-            const menu = document.getElementById('category-menu');
-            const categories = ['todas', ...new Set(products.map(p => p.category))];
-
-            menu.innerHTML = categories.map(cat => `
-                <button class="category-btn ${cat === selectedCategory ? 'active' : ''}" data-category="${cat}">
-                    ${cat === 'todas' ? 'Todas' : cat}
-                </button>
-            `).join('');
-
-            menu.querySelectorAll('.category-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const category = this.getAttribute('data-category');
-                    selectedCategory = category;
-                    menu.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    renderCatalog(category);
-                });
-            });
-        }
-
-        function renderCatalog(category = 'todas') {
-            const container = document.getElementById('catalog-container');
-
-            let filtered = category === 'todas' 
-                ? products 
-                : products.filter(p => p.category === category);
-
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="no-results" style="grid-column:1/-1; text-align:center; padding:3rem; color:#6b4f7a;">
-                        <i class="fas fa-utensils" style="font-size:2.5rem; color:#d9c4e8; display:block; margin-bottom:1rem;"></i>
-                        No hay productos en esta categoría.<br>
-                        <small>Selecciona otra categoría para ver más opciones.</small>
-                    </div>
-                `;
-                return;
-            }
-
-            let html = `<div class="catalog-grid">`;
-
-            filtered.forEach(p => {
-                let badgeHTML = '';
-                if (p.badge) {
-                    const badgeClass = p.badge === 'new' ? 'badge-new' :
-                                      p.badge === 'offer' ? 'badge-offer' :
-                                      p.badge === 'popular' ? 'badge-popular' :
-                                      p.badge === 'vegan' ? 'badge-vegan' : '';
-                    badgeHTML = `<span class="badge ${badgeClass}">${p.badgeText || p.badge}</span>`;
-                }
-                html += `
-                    <div class="product-card" data-id="${p.id}">
-                        ${badgeHTML}
-                        <div class="product-img">
-                            <img src="${p.image}" alt="${p.name}" class="food-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23ede6f5%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%238b5cf6%22 font-family=%22sans-serif%22 font-size=%2216%22%3E${p.name}%3C/text%3E%3C/svg%3E'">
-                            <div class="img-overlay"></div>
-                        </div>
-                        <div class="product-category">${p.category}</div>
-                        <h3>${p.name}</h3>
-                        <div class="description">${p.desc}</div>
-                        <span class="product-price">$${p.price.toFixed(2)}</span>
-                        <button class="btn-secondary view-detail-btn" data-id="${p.id}">Ver detalle</button>
-                    </div>
-                `;
-            });
-
-            html += `</div>`;
-
-            container.innerHTML = html;
-
-            document.querySelectorAll('.view-detail-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const id = parseInt(this.getAttribute('data-id'));
-                    showDetail(id);
-                });
-            });
-        }
-
-        function showDetail(id) {
-            const product = products.find(p => p.id === id);
-            if (!product) return;
-
-            currentProductId = id;
-            currentQty = 1;
-            document.getElementById('qty-value').textContent = currentQty;
-            document.getElementById('cart-feedback').className = 'cart-feedback';
-            document.getElementById('cart-feedback').textContent = '';
-
-            document.getElementById('detail-name').textContent = product.name;
-            document.getElementById('detail-price').textContent = '$' + product.price.toFixed(2);
-            document.getElementById('detail-desc').textContent = product.desc;
-            const detailImg = document.getElementById('detail-img');
-            detailImg.innerHTML = `<img src="${product.image}" alt="${product.name}" class="food-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22%3E%3Crect fill=%22%23ede6f5%22 width=%22300%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%238b5cf6%22 font-family=%22sans-serif%22 font-size=%2220%22%3E${product.name}%3C/text%3E%3C/svg%3E'"><div class="img-overlay"></div>`;
-
-            let related = products.filter(p => p.id !== id);
-            if (selectedCategory !== 'todas') {
-                related = related.filter(p => p.category === selectedCategory);
-            }
-            related = related.slice(0, 3);
-
-            const relatedGrid = document.getElementById('related-grid');
-            if (related.length === 0) {
-                relatedGrid.innerHTML = '<p style="color:#6b4f7a; grid-column:1/-1; text-align:center;">No hay productos relacionados.</p>';
-            } else {
-                relatedGrid.innerHTML = related.map(p => `
-                    <div class="related-card" data-id="${p.id}">
-                        <div class="product-img">
-                            <img src="${p.image}" alt="${p.name}" class="food-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23ede6f5%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%238b5cf6%22 font-family=%22sans-serif%22 font-size=%2210%22%3E${p.name}%3C/text%3E%3C/svg%3E'">
-                            <div class="img-overlay"></div>
-                        </div>
-                        <h4>${p.name}</h4>
-                        <span class="product-price">$${p.price.toFixed(2)}</span>
-                        <button class="btn-secondary view-related-btn" data-id="${p.id}">Ver</button>
-                    </div>
-                `).join('');
-
-                document.querySelectorAll('.view-related-btn').forEach(btn => {
-                    btn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        const rid = parseInt(this.getAttribute('data-id'));
-                        showDetail(rid);
-                    });
-                });
-
-                document.querySelectorAll('.related-card').forEach(card => {
-                    card.addEventListener('click', function() {
-                        const rid = parseInt(this.getAttribute('data-id'));
-                        showDetail(rid);
-                    });
-                });
-            }
-
-            showPage('detalle');
-        }
-
-        document.getElementById('qty-minus').addEventListener('click', function() {
-            if (currentQty > 1) { currentQty--; document.getElementById('qty-value').textContent = currentQty; }
-        });
-        document.getElementById('qty-plus').addEventListener('click', function() {
-            if (currentQty < 20) { currentQty++; document.getElementById('qty-value').textContent = currentQty; }
-        });
-
-        document.getElementById('add-to-cart-btn').addEventListener('click', function() {
-            if (currentProductId === null) return;
-            const product = products.find(p => p.id === currentProductId);
-            if (!product) return;
-
-            addToCart(currentProductId, currentQty);
-
-            const feedback = document.getElementById('cart-feedback');
-            const total = (product.price * currentQty).toFixed(2);
-            feedback.textContent = `✅ ${currentQty} × "${product.name}" agregado al carrito. Total: $${total}`;
-            feedback.className = 'cart-feedback show';
-            feedback.style.background = '#e8f5e9';
-            feedback.style.color = '#2e7d32';
-            feedback.style.borderLeftColor = '#4caf50';
-
-            const btn = this;
-            btn.innerHTML = '<i class="fas fa-check"></i> ¡Agregado!';
-            btn.style.background = '#4caf50';
-            setTimeout(() => {
-                btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Agregar al carrito';
-                btn.style.background = '#8b5cf6';
-            }, 2000);
-
-            setTimeout(() => { feedback.className = 'cart-feedback'; }, 4000);
-        });
-
-        navLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const page = this.getAttribute('data-page');
-                if (page === 'perfil' && !isLoggedIn) {
-                    showPage('login');
-                    return;
-                }
-                showPage(page);
-                if (page === 'catalogo') {
-                    buildCategoryMenu();
-                    renderCatalog(selectedCategory);
-                }
-            });
-        });
-
-        document.querySelectorAll('.auth-link a[data-page]').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                showPage(this.getAttribute('data-page'));
-            });
-        });
-
-        document.querySelector('.hero .btn-primary')?.addEventListener('click', function(e) {
-            e.preventDefault();
-            showPage('catalogo');
-            buildCategoryMenu();
-            renderCatalog(selectedCategory);
-        });
-
-        document.getElementById('back-to-catalog').addEventListener('click', function() {
-            showPage('catalogo');
-            buildCategoryMenu();
-            renderCatalog(selectedCategory);
-        });
-
-        document.getElementById('send-contact-btn').addEventListener('click', function() {
-            const name = document.getElementById('contact-name').value.trim();
-            const email = document.getElementById('contact-email').value.trim();
-            const msg = document.getElementById('contact-message').value.trim();
-            const feedback = document.getElementById('contact-feedback');
-            if (!name || !email || !msg) {
-                feedback.innerHTML = '<i class="fas fa-exclamation-circle"></i> Por favor, completa todos los campos';
-                feedback.style.borderLeftColor = '#e53935';
-                feedback.className = 'auth-error';
-                feedback.classList.remove('hidden');
-                setTimeout(() => { feedback.classList.add('hidden'); }, 3000);
-                return;
-            }
-            feedback.innerHTML = '<i class="fas fa-check-circle"></i> Mensaje enviado (simulado)';
-            feedback.style.borderLeftColor = '#8b5cf6';
-            feedback.className = 'auth-success';
-            feedback.classList.remove('hidden');
-            document.getElementById('contact-name').value = '';
-            document.getElementById('contact-email').value = '';
-            document.getElementById('contact-message').value = '';
-            setTimeout(() => { feedback.classList.add('hidden'); }, 3500);
-        });
-
-        document.getElementById('registro-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            const nombre = document.getElementById('registro-nombre').value.trim();
-            const email = document.getElementById('registro-email').value.trim();
-            const password = document.getElementById('registro-password').value.trim();
-            const messageDiv = document.getElementById('registro-message');
-            if (!nombre || !email || !password) {
-                messageDiv.className = 'auth-error';
-                messageDiv.innerHTML = 'Por favor, completa todos los campos';
-                messageDiv.classList.remove('hidden');
-                setTimeout(() => { messageDiv.classList.add('hidden'); }, 3000);
-                return;
-            }
-            messageDiv.className = 'auth-success';
-            messageDiv.innerHTML = 'Registro exitoso (simulado)';
-            messageDiv.classList.remove('hidden');
-            currentUser.name = nombre;
-            currentUser.email = email;
-            currentUser.memberSince = '2024';
-            document.getElementById('registro-nombre').value = '';
-            document.getElementById('registro-email').value = '';
-            document.getElementById('registro-password').value = '';
-            setTimeout(() => {
-                messageDiv.classList.add('hidden');
-                showPage('login');
-            }, 1500);
-        });
-
-        document.getElementById('login-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value.trim();
-            const password = document.getElementById('login-password').value.trim();
-            const rememberMe = document.getElementById('remember-me').checked;
-            const messageDiv = document.getElementById('login-message');
-            if (!email || !password) {
-                messageDiv.className = 'auth-error';
-                messageDiv.innerHTML = 'Por favor, ingresa tu correo y contraseña';
-                messageDiv.classList.remove('hidden');
-                setTimeout(() => { messageDiv.classList.add('hidden'); }, 3000);
-                return;
-            }
-            messageDiv.className = 'auth-success';
-            let rememberMessage = rememberMe ? ' (sesión recordada)' : '';
-            messageDiv.innerHTML = 'Inicio de sesión exitoso' + rememberMessage;
-            messageDiv.classList.remove('hidden');
-            isLoggedIn = true;
-            currentUser.email = email;
-            if (email.includes('@') && email.split('@')[0]) {
-                const namePart = email.split('@')[0];
-                currentUser.name = namePart.replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            }
-            document.getElementById('login-email').value = '';
-            document.getElementById('login-password').value = '';
-            document.getElementById('remember-me').checked = false;
-            setTimeout(() => {
-                messageDiv.classList.add('hidden');
-                updateNavForAuth();
-                updateProfileData();
-                showPage('perfil');
-            }, 1500);
-        });
-
-        document.getElementById('forgot-password-link').addEventListener('click', function(e) {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value.trim();
-            const messageDiv = document.getElementById('login-message');
-            if (!email) {
-                messageDiv.className = 'auth-error';
-                messageDiv.innerHTML = 'Por favor, ingresa tu correo electrónico';
-                messageDiv.classList.remove('hidden');
-                setTimeout(() => { messageDiv.classList.add('hidden'); }, 3000);
-                return;
-            }
-            messageDiv.className = 'auth-success';
-            messageDiv.innerHTML = 'Se ha enviado un enlace de restablecimiento (simulado)';
-            messageDiv.classList.remove('hidden');
-            setTimeout(() => { messageDiv.classList.add('hidden'); }, 4000);
-        });
-
-        document.getElementById('logout-btn')?.addEventListener('click', function() {
-            const messageDiv = document.getElementById('profile-message');
-            isLoggedIn = false;
-            messageDiv.className = 'auth-success';
-            messageDiv.innerHTML = 'Has cerrado sesión exitosamente';
-            messageDiv.style.borderLeftColor = '#8b5cf6';
-            messageDiv.classList.remove('hidden');
-            updateNavForAuth();
-            setTimeout(() => {
-                messageDiv.classList.add('hidden');
-                showPage('inicio');
-            }, 2000);
-        });
-
-        document.getElementById('edit-profile-btn')?.addEventListener('click', function() {
-            const messageDiv = document.getElementById('profile-message');
-            messageDiv.className = 'auth-success';
-            messageDiv.innerHTML = 'Función de edición de perfil (simulada)';
-            messageDiv.style.borderLeftColor = '#8b5cf6';
-            messageDiv.classList.remove('hidden');
-            setTimeout(() => { messageDiv.classList.add('hidden'); }, 3000);
-        });
-
-        document.querySelectorAll('[data-page="login"], [data-page="registro"]').forEach(el => {
-            el.addEventListener('click', function(e) {
-                e.preventDefault();
-                showPage(this.getAttribute('data-page'));
-            });
-        });
-
-        buildCategoryMenu();
-        renderCatalog(selectedCategory);
-        updateNavForAuth();
-        updateCartUI();
-
-    });
-</script>
+    <script src="script.js"></script>
 </body>
 </html>
