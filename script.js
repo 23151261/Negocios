@@ -172,9 +172,6 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (e) {}
     }
 
-    // ============================================================
-    // PROMOCIONES (DATOS EDITABLES)
-    // ============================================================
     let promociones = [
         { nombre: 'Oferta de fin de semana', descuento: '20%', productos: 'Pizza Pepperoni, Hamburguesa BBQ', vigencia: '18-20 Ene', estado: 'Activa' },
         { nombre: 'Combo Familiar', descuento: '15%', productos: 'Pizza Margarita + Ensalada Cesar', vigencia: '15-31 Ene', estado: 'Activa' },
@@ -190,7 +187,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let editingClientId = null;
     let cartOpen = false;
 
-    // Variables para el modal de confirmacion
     let confirmCallback = null;
     let confirmTarget = null;
 
@@ -250,9 +246,6 @@ document.addEventListener('DOMContentLoaded', function() {
         reportes: document.getElementById('admin-reportes')
     };
 
-    // ============================================================
-    // MODAL DE CONFIRMACION PERSONALIZADO
-    // ============================================================
     function showConfirmModal(message, callback) {
         var modal = document.getElementById('confirm-modal');
         var messageEl = document.getElementById('confirm-message');
@@ -260,7 +253,6 @@ document.addEventListener('DOMContentLoaded', function() {
         var cancelBtn = document.getElementById('confirm-cancel-btn');
         
         if (!modal) {
-            // Crear el modal si no existe
             modal = document.createElement('div');
             modal.id = 'confirm-modal';
             modal.className = 'modal-overlay';
@@ -287,7 +279,6 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.classList.add('show');
         modal.style.display = 'flex';
 
-        // Remover event listeners anteriores
         var newConfirmBtn = confirmBtn.cloneNode(true);
         var newCancelBtn = cancelBtn.cloneNode(true);
         confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
@@ -305,7 +296,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (callback) callback(false);
         });
 
-        // Cerrar al hacer clic fuera
         modal.addEventListener('click', function(e) {
             if (e.target === modal) {
                 modal.classList.remove('show');
@@ -314,7 +304,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Cerrar con Escape
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && modal.classList.contains('show')) {
                 modal.classList.remove('show');
@@ -324,9 +313,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ============================================================
-    // FUNCION DE NOTIFICACION EN FORMULARIO
-    // ============================================================
     function showFormMessage(msgElement, message, type) {
         if (!msgElement) return;
         msgElement.className = type === 'success' ? 'auth-success alert-message' : 'auth-error alert-message';
@@ -337,10 +323,6 @@ document.addEventListener('DOMContentLoaded', function() {
             msgElement.classList.add('hidden');
         }, 4000);
     }
-
-    // ============================================================
-    // FUNCIONES DE PROMOCIONES ADMIN
-    // ============================================================
 
     function renderPromotionsAdmin() {
         var tbody = document.getElementById('promo-table-body-admin');
@@ -488,10 +470,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ============================================================
-    // FUNCIONES DE CARRITO Y NAVEGACION
-    // ============================================================
-
     function openCart() {
         if (cartOverlay) {
             cartOverlay.classList.add('open');
@@ -562,6 +540,28 @@ document.addEventListener('DOMContentLoaded', function() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    function clearCart() {
+        if (cart.length === 0) return;
+        
+        showConfirmModal('¿Estás seguro de que quieres vaciar tu carrito?', function(confirmed) {
+            if (confirmed) {
+                cart = [];
+                saveCart();
+                updateCartUI();
+                
+                var feedback = document.getElementById('cart-feedback');
+                if (feedback) {
+                    feedback.textContent = 'Carrito vaciado correctamente.';
+                    feedback.style.display = 'block';
+                    feedback.style.background = '#fff3e0';
+                    feedback.style.color = '#e65100';
+                    feedback.style.borderLeftColor = '#ff9800';
+                    setTimeout(function() { feedback.style.display = 'none'; }, 3000);
+                }
+            }
+        });
+    }
+
     function updateCartUI() {
         var totalItems = 0;
         for (var i = 0; i < cart.length; i++) {
@@ -575,6 +575,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (p) totalPrice += p.price * cart[j].quantity;
         }
         if (cartTotalBadge) cartTotalBadge.textContent = '$' + totalPrice.toFixed(0);
+
+        var clearCartBtn = document.getElementById('clear-cart-btn');
+        if (clearCartBtn) {
+            clearCartBtn.disabled = cart.length === 0;
+        }
 
         if (!cartItemsContainer) return;
 
@@ -787,10 +792,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // ============================================================
-    // EVENT LISTENERS
-    // ============================================================
-
     document.querySelectorAll('.nav-links a[data-page]').forEach(function(link) {
         link.addEventListener('click', function(e) {
             e.preventDefault();
@@ -826,10 +827,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ============================================================
-    // CARRITO - EVENT LISTENERS
-    // ============================================================
-
     if (cartToggleBtn) {
         cartToggleBtn.addEventListener('click', function(e) {
             e.preventDefault();
@@ -850,6 +847,14 @@ document.addEventListener('DOMContentLoaded', function() {
         cartBackdrop.addEventListener('click', function(e) {
             e.preventDefault();
             closeCart();
+        });
+    }
+
+    var clearCartBtn = document.getElementById('clear-cart-btn');
+    if (clearCartBtn) {
+        clearCartBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            clearCart();
         });
     }
 
@@ -902,10 +907,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.target === this) this.classList.remove('show');
         });
     }
-
-    // ============================================================
-    // CATALOGO Y PRODUCTOS
-    // ============================================================
 
     function buildCategoryMenu() {
         var menu = document.getElementById('category-menu');
@@ -1070,10 +1071,6 @@ document.addEventListener('DOMContentLoaded', function() {
         showPage('detalle');
     }
 
-    // ============================================================
-    // CONTROLES DE CANTIDAD EN DETALLE
-    // ============================================================
-
     var qtyMinus = document.getElementById('qty-minus');
     if (qtyMinus) {
         qtyMinus.addEventListener('click', function() {
@@ -1152,10 +1149,6 @@ document.addEventListener('DOMContentLoaded', function() {
             renderCatalog(selectedCategory);
         });
     }
-
-    // ============================================================
-    // ADMIN - PRODUCTOS
-    // ============================================================
 
     function renderProductTable() {
         var tbody = document.getElementById('product-table-body');
@@ -1388,10 +1381,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ============================================================
-    // ADMIN - PROMOCIONES (botones)
-    // ============================================================
-
     var adminCreatePromoBtn = document.getElementById('admin-create-promo-btn');
     if (adminCreatePromoBtn) {
         adminCreatePromoBtn.addEventListener('click', function() {
@@ -1422,10 +1411,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ============================================================
-    // ADMIN - FILTROS
-    // ============================================================
-
     var productSearch = document.getElementById('product-search');
     if (productSearch) productSearch.addEventListener('input', renderProductTable);
     
@@ -1434,10 +1419,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     var statusFilterSelect = document.getElementById('status-filter');
     if (statusFilterSelect) statusFilterSelect.addEventListener('change', renderProductTable);
-
-    // ============================================================
-    // AUTENTICACION
-    // ============================================================
 
     var registroBtn = document.getElementById('registro-btn');
     if (registroBtn) {
@@ -1567,10 +1548,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ============================================================
-    // CONTACTO
-    // ============================================================
-
     var sendContactBtn = document.getElementById('send-contact-btn');
     if (sendContactBtn) {
         sendContactBtn.addEventListener('click', function() {
@@ -1591,10 +1568,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (msgInput) msgInput.value = '';
         });
     }
-
-    // ============================================================
-    // CLIENTES
-    // ============================================================
 
     function renderClientsTable() {
         var tbody = document.getElementById('clients-table-body');
@@ -1737,10 +1710,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ============================================================
-    // PEDIDOS
-    // ============================================================
-
     function getOrderStatusClass(status) {
         if (status === 'entregado') return 'status-available';
         if (status === 'en preparacion') return 'status-warning';
@@ -1792,10 +1761,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ============================================================
-    // PROMOCION PUBLICA (codigo de descuento)
-    // ============================================================
-
     var promoApplyBtn = document.getElementById('apply-promo-btn');
     var promoFeedback = document.getElementById('promo-feedback');
     var promoTotal = document.getElementById('promo-total');
@@ -1814,8 +1779,199 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // COMENTARIOS DE CAMPAÑA
+    // COMUNIDAD - GESTIÓN DE COMENTARIOS
     // ============================================================
+
+    var communityComments = [
+        { 
+            id: 1, 
+            name: 'María García', 
+            rating: 5, 
+            text: '¡La pizza Margarita es espectacular! La masa crujiente y los ingredientes frescos hacen una combinación perfecta. Definitivamente volveré a pedir.', 
+            date: '15/01/2025 14:30' 
+        },
+        { 
+            id: 2, 
+            name: 'Carlos López', 
+            rating: 4, 
+            text: 'Muy buena atención y la comida llegó caliente. La hamburguesa BBQ estaba deliciosa, aunque me hubiera gustado más salsa.', 
+            date: '14/01/2025 18:45' 
+        },
+        { 
+            id: 3, 
+            name: 'Ana Martínez', 
+            rating: 5, 
+            text: 'El ceviche de camarón es el mejor que he probado. Fresco, bien sazonado y con una presentación impecable. ¡100% recomendado!', 
+            date: '13/01/2025 12:20' 
+        },
+        { 
+            id: 4, 
+            name: 'Pedro Ramírez', 
+            rating: 3, 
+            text: 'Buena comida pero el tiempo de entrega fue un poco largo. La ensalada Cesar estaba rica pero le faltaba un poco de aderezo.', 
+            date: '12/01/2025 20:10' 
+        }
+    ];
+
+    var nextCommentId = 5;
+
+    function renderCommunityComments() {
+        var list = document.getElementById('community-comments-list');
+        var count = document.getElementById('community-count');
+        var avgRating = document.getElementById('avg-rating');
+        var totalComments = document.getElementById('total-comments');
+        
+        if (!list) return;
+
+        var sortedComments = [...communityComments].sort(function(a, b) {
+            return new Date(b.date.split(' ')[0].split('/').reverse().join('-')) - 
+                   new Date(a.date.split(' ')[0].split('/').reverse().join('-'));
+        });
+
+        if (sortedComments.length === 0) {
+            list.innerHTML = '<div class="empty-state" style="text-align:center; padding:2rem; color:#6b4f7a;">' +
+                '<i class="fas fa-comment-slash" style="font-size:2rem; color:#d9c4e8; display:block; margin-bottom:0.8rem;"></i>' +
+                '<p>No hay comentarios aún. Sé el primero en compartir tu experiencia.</p></div>';
+        } else {
+            var html = '';
+            for (var i = 0; i < sortedComments.length; i++) {
+                var c = sortedComments[i];
+                var stars = '';
+                for (var j = 0; j < 5; j++) {
+                    stars += j < c.rating ? '★' : '☆';
+                }
+                html += '<div class="comment-item">';
+                html += '<div class="comment-header">';
+                html += '<div class="comment-author"><strong>' + c.name + '</strong></div>';
+                html += '<span class="comment-rating">' + stars + '</span>';
+                html += '</div>';
+                html += '<div style="display:flex; justify-content:space-between; align-items:center;">';
+                html += '<p>' + c.text + '</p>';
+                html += '<span class="comment-date">' + c.date + '</span>';
+                html += '</div>';
+                html += '</div>';
+            }
+            list.innerHTML = html;
+        }
+
+        if (count) count.textContent = communityComments.length;
+        if (totalComments) totalComments.textContent = communityComments.length;
+        
+        if (communityComments.length > 0) {
+            var total = 0;
+            for (var k = 0; k < communityComments.length; k++) {
+                total += communityComments[k].rating;
+            }
+            var avg = (total / communityComments.length).toFixed(1);
+            if (avgRating) avgRating.textContent = avg;
+        } else {
+            if (avgRating) avgRating.textContent = '0.0';
+        }
+    }
+
+    function addCommunityComment(name, rating, text) {
+        var now = new Date();
+        var dateStr = now.getDate().toString().padStart(2, '0') + '/' + 
+                      (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                      now.getFullYear() + ' ' + 
+                      now.getHours().toString().padStart(2, '0') + ':' + 
+                      now.getMinutes().toString().padStart(2, '0');
+        
+        var newComment = {
+            id: nextCommentId++,
+            name: name,
+            rating: rating,
+            text: text,
+            date: dateStr
+        };
+        
+        communityComments.unshift(newComment);
+        renderCommunityComments();
+        
+        var feedback = document.getElementById('community-feedback');
+        if (feedback) {
+            showFormMessage(feedback, '¡Comentario publicado exitosamente!', 'success');
+            setTimeout(function() {
+                feedback.classList.add('hidden');
+            }, 4000);
+        }
+    }
+
+    var stars = document.querySelectorAll('.star-rating .star');
+    var selectedRating = 0;
+
+    if (stars.length > 0) {
+        stars.forEach(function(star) {
+            star.addEventListener('click', function() {
+                var value = parseInt(this.getAttribute('data-value'));
+                selectedRating = value;
+                updateStars(value);
+                var label = document.getElementById('rating-label');
+                if (label) {
+                    var labels = ['', 'Muy malo', 'Malo', 'Regular', 'Bueno', 'Excelente'];
+                    label.textContent = labels[value] || 'Selecciona una calificación';
+                }
+            });
+            
+            star.addEventListener('mouseenter', function() {
+                var value = parseInt(this.getAttribute('data-value'));
+                updateStars(value);
+            });
+            
+            star.addEventListener('mouseleave', function() {
+                updateStars(selectedRating);
+            });
+            
+            star.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.click();
+                }
+            });
+        });
+    }
+
+    function updateStars(rating) {
+        stars.forEach(function(star) {
+            var value = parseInt(star.getAttribute('data-value'));
+            if (value <= rating) {
+                star.classList.add('active');
+            } else {
+                star.classList.remove('active');
+            }
+        });
+    }
+
+    var communityForm = document.getElementById('community-form');
+    if (communityForm) {
+        communityForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            var nameInput = document.getElementById('community-name');
+            var commentInput = document.getElementById('community-comment');
+            var feedback = document.getElementById('community-feedback');
+            
+            if (!nameInput || !commentInput) return;
+            
+            var name = nameInput.value.trim() || 'Anónimo';
+            var text = commentInput.value.trim() || 'Sin comentario';
+            
+            var rating = selectedRating || 3;
+            
+            addCommunityComment(name, rating, text);
+            
+            nameInput.value = '';
+            commentInput.value = '';
+            selectedRating = 0;
+            updateStars(0);
+            var label = document.getElementById('rating-label');
+            if (label) label.textContent = 'Selecciona una calificación';
+            
+            setTimeout(function() {
+                if (feedback) feedback.classList.add('hidden');
+            }, 5000);
+        });
+    }
 
     var campaignComments = [
         { name: 'Maria', text: 'La pizza estuvo deliciosa y la promocion fue genial.' },
@@ -1844,9 +2000,8 @@ document.addEventListener('DOMContentLoaded', function() {
             var nameInput = document.getElementById('campaign-comment-name');
             var textInput = document.getElementById('campaign-comment-text');
             if (!nameInput || !textInput) return;
-            var name = nameInput.value.trim();
-            var text = textInput.value.trim();
-            if (!name || !text) return;
+            var name = nameInput.value.trim() || 'Anónimo';
+            var text = textInput.value.trim() || 'Sin comentario';
             campaignComments.unshift({ name: name, text: text });
             renderCampaignComments();
             campaignCommentForm.reset();
@@ -1854,10 +2009,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     renderCampaignComments();
-
-    // ============================================================
-    // INICIALIZACION
-    // ============================================================
+    renderCommunityComments();
 
     buildCategoryMenu();
     renderCatalog(selectedCategory);
