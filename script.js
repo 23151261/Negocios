@@ -1,5 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
 
+    // ============================================================
+    // PRODUCTOS
+    // ============================================================
+    
     let products = [];
     const defaultProducts = [
         { 
@@ -100,6 +104,73 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     ];
 
+    // ============================================================
+    // USUARIO ACTUAL
+    // ============================================================
+    
+    let currentUser = {
+        name: 'Juan Pérez',
+        email: 'juan.perez@email.com',
+        phone: '+52 55 1234 5678',
+        address: 'Calle Principal 123, Colonia Centro',
+        memberSince: '2024'
+    };
+
+    // ============================================================
+    // COMENTARIOS DE LA COMUNIDAD
+    // ============================================================
+    
+    let communityComments = [
+        { 
+            id: 1, 
+            name: 'María García', 
+            text: '¡La pizza Margarita es espectacular! La masa crujiente y los ingredientes frescos hacen una combinación perfecta. Definitivamente volveré a pedir.', 
+            date: '15/01/2025 14:30' 
+        },
+        { 
+            id: 2, 
+            name: 'Carlos López', 
+            text: 'Muy buena atención y la comida llegó caliente. La hamburguesa BBQ estaba deliciosa, aunque me hubiera gustado más salsa.', 
+            date: '14/01/2025 18:45' 
+        },
+        { 
+            id: 3, 
+            name: 'Ana Martínez', 
+            text: 'El ceviche de camarón es el mejor que he probado. Fresco, bien sazonado y con una presentación impecable. ¡100% recomendado!', 
+            date: '13/01/2025 12:20' 
+        },
+        { 
+            id: 4, 
+            name: 'Pedro Ramírez', 
+            text: 'Buena comida pero el tiempo de entrega fue un poco largo. La ensalada Cesar estaba rica pero le faltaba un poco de aderezo.', 
+            date: '12/01/2025 20:10' 
+        }
+    ];
+
+    let nextCommentId = 5;
+
+    // ============================================================
+    // VARIABLES DE ESTADO
+    // ============================================================
+    
+    let isLoggedIn = false;
+    let isAdmin = false;
+    let selectedCategory = 'todas';
+    let currentQty = 1;
+    let currentProductId = null;
+    let editingProductId = null;
+    let editingClientId = null;
+    let cartOpen = false;
+
+    let cart = [];
+    let clients = [];
+    let orders = [];
+    let promociones = [];
+
+    // ============================================================
+    // CARGA DE DATOS DESDE LOCALSTORAGE
+    // ============================================================
+
     try {
         const savedProducts = localStorage.getItem('delicias_products');
         products = savedProducts ? JSON.parse(savedProducts) : JSON.parse(JSON.stringify(defaultProducts));
@@ -107,13 +178,6 @@ document.addEventListener('DOMContentLoaded', function() {
         products = JSON.parse(JSON.stringify(defaultProducts));
     }
 
-    function saveProducts() {
-        try {
-            localStorage.setItem('delicias_products', JSON.stringify(products));
-        } catch (e) {}
-    }
-
-    let cart = [];
     try {
         const savedCart = localStorage.getItem('delicias_cart');
         cart = savedCart ? JSON.parse(savedCart) : [];
@@ -121,13 +185,18 @@ document.addEventListener('DOMContentLoaded', function() {
         cart = [];
     }
 
-    function saveCart() {
-        try {
-            localStorage.setItem('delicias_cart', JSON.stringify(cart));
-        } catch (e) {}
-    }
+    try {
+        const savedComments = localStorage.getItem('delicias_comments');
+        if (savedComments) {
+            communityComments = JSON.parse(savedComments);
+            let maxId = 0;
+            communityComments.forEach(function(c) {
+                if (c.id > maxId) maxId = c.id;
+            });
+            nextCommentId = maxId + 1;
+        }
+    } catch (e) {}
 
-    let clients = [];
     const defaultClients = [
         { id: 1, name: 'Maria Garcia', email: 'maria@email.com', phone: '55 1234 5678', address: 'Av. Principal 123', orders: 8, spent: 340.50, registeredDate: '10/01/2024' },
         { id: 2, name: 'Carlos Lopez', email: 'carlos@email.com', phone: '55 2345 6789', address: 'Calle Centro 456', orders: 5, spent: 210.80, registeredDate: '15/03/2024' },
@@ -144,8 +213,6 @@ document.addEventListener('DOMContentLoaded', function() {
         { id: 121, client: 'Laura Fernandez', products: 'Ensalada Cesar (1)', total: 11.80, status: 'entregado', date: '15/01/2025 11:20' }
     ];
 
-    let orders = [];
-
     try {
         const savedClients = localStorage.getItem('delicias_clients');
         clients = savedClients ? JSON.parse(savedClients) : JSON.parse(JSON.stringify(defaultClients));
@@ -160,6 +227,37 @@ document.addEventListener('DOMContentLoaded', function() {
         orders = JSON.parse(JSON.stringify(defaultOrders));
     }
 
+    try {
+        const savedPromos = localStorage.getItem('delicias_promociones');
+        promociones = savedPromos ? JSON.parse(savedPromos) : [
+            { nombre: 'Oferta de fin de semana', descuento: '20%', productos: 'Pizza Pepperoni, Hamburguesa BBQ', vigencia: '18-20 Ene', estado: 'Activa' },
+            { nombre: 'Combo Familiar', descuento: '15%', productos: 'Pizza Margarita + Ensalada Cesar', vigencia: '15-31 Ene', estado: 'Activa' },
+            { nombre: '2x1 en bebidas', descuento: '50%', productos: 'Cafe de especialidad', vigencia: '10-20 Ene', estado: 'Vencida' }
+        ];
+    } catch (e) {}
+
+    // ============================================================
+    // FUNCIONES DE GUARDADO
+    // ============================================================
+
+    function saveProducts() {
+        try {
+            localStorage.setItem('delicias_products', JSON.stringify(products));
+        } catch (e) {}
+    }
+
+    function saveCart() {
+        try {
+            localStorage.setItem('delicias_cart', JSON.stringify(cart));
+        } catch (e) {}
+    }
+
+    function saveComments() {
+        try {
+            localStorage.setItem('delicias_comments', JSON.stringify(communityComments));
+        } catch (e) {}
+    }
+
     function saveClients() {
         try {
             localStorage.setItem('delicias_clients', JSON.stringify(clients));
@@ -172,85 +270,29 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (e) {}
     }
 
-    let promociones = [
-        { nombre: 'Oferta de fin de semana', descuento: '20%', productos: 'Pizza Pepperoni, Hamburguesa BBQ', vigencia: '18-20 Ene', estado: 'Activa' },
-        { nombre: 'Combo Familiar', descuento: '15%', productos: 'Pizza Margarita + Ensalada Cesar', vigencia: '15-31 Ene', estado: 'Activa' },
-        { nombre: '2x1 en bebidas', descuento: '50%', productos: 'Cafe de especialidad', vigencia: '10-20 Ene', estado: 'Vencida' }
-    ];
-
-    let isLoggedIn = false;
-    let isAdmin = false;
-    let selectedCategory = 'todas';
-    let currentQty = 1;
-    let currentProductId = null;
-    let editingProductId = null;
-    let editingClientId = null;
-    let cartOpen = false;
-
-    let confirmCallback = null;
-    let confirmTarget = null;
-
-    const cartBadge = document.getElementById('cart-badge');
-    const cartTotalBadge = document.getElementById('cart-total-badge');
-    const cartItemsContainer = document.getElementById('cart-items-container');
-    const cartTotalAmount = document.getElementById('cart-total-amount');
-    const checkoutBtn = document.getElementById('checkout-btn');
-    const cartOverlay = document.getElementById('cart-overlay');
-    const cartBackdrop = document.getElementById('cart-backdrop');
-    const cartToggleBtn = document.getElementById('cart-toggle-btn');
-
-    const initialComments = [
-        { name: 'Maria', text: 'Las pizzas son increibles y el servicio es super amable.' },
-        { name: 'Luis', text: 'Me encanta la variedad de platos y la presentacion.' }
-    ];
-
-    function renderComments() {
-        const commentsList = document.getElementById('comments-list');
-        const communityCount = document.getElementById('community-count');
-        if (!commentsList) return;
-        commentsList.innerHTML = '';
-        initialComments.forEach(function(comment) {
-            const div = document.createElement('div');
-            div.className = 'comment-item';
-            div.innerHTML = '<strong>' + comment.name + '</strong><p>' + comment.text + '</p>';
-            commentsList.appendChild(div);
-        });
-        if (communityCount) communityCount.textContent = initialComments.length;
+    function savePromociones() {
+        try {
+            localStorage.setItem('delicias_promociones', JSON.stringify(promociones));
+        } catch (e) {}
     }
 
-    const pages = {
-        inicio: document.getElementById('page-inicio'),
-        catalogo: document.getElementById('page-catalogo'),
-        admin: document.getElementById('page-admin'),
-        nosotros: document.getElementById('page-nosotros'),
-        contacto: document.getElementById('page-contacto'),
-        promociones: document.getElementById('page-promociones'),
-        campana: document.getElementById('page-campana'),
-        comunidad: document.getElementById('page-comunidad'),
-        detalle: document.getElementById('page-detalle'),
-        registro: document.getElementById('page-registro'),
-        login: document.getElementById('page-login'),
-        perfil: document.getElementById('page-perfil'),
-        exito: document.getElementById('page-exito')
-    };
+    // ============================================================
+    // FUNCIONES DE UTILIDAD
+    // ============================================================
 
-    const adminPages = {
-        dashboard: document.getElementById('admin-dashboard'),
-        productos: document.getElementById('admin-productos'),
-        'product-form': document.getElementById('admin-product-form'),
-        pedidos: document.getElementById('admin-pedidos'),
-        promociones: document.getElementById('admin-promociones'),
-        'promo-form': document.getElementById('admin-promo-form'),
-        clientes: document.getElementById('admin-clientes'),
-        'client-form': document.getElementById('admin-client-form'),
-        reportes: document.getElementById('admin-reportes')
-    };
+    function showFormMessage(msgElement, message, type) {
+        if (!msgElement) return;
+        msgElement.className = type === 'success' ? 'auth-success alert-message' : 'auth-error alert-message';
+        msgElement.textContent = message;
+        msgElement.classList.remove('hidden');
+        
+        setTimeout(function() {
+            msgElement.classList.add('hidden');
+        }, 4000);
+    }
 
     function showConfirmModal(message, callback) {
         var modal = document.getElementById('confirm-modal');
-        var messageEl = document.getElementById('confirm-message');
-        var confirmBtn = document.getElementById('confirm-btn');
-        var cancelBtn = document.getElementById('confirm-cancel-btn');
         
         if (!modal) {
             modal = document.createElement('div');
@@ -303,172 +345,184 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (callback) callback(false);
             }
         });
+    }
 
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && modal.classList.contains('show')) {
-                modal.classList.remove('show');
-                modal.style.display = 'none';
-                if (callback) callback(false);
+    // ============================================================
+    // FUNCIONES DE NAVEGACIÓN
+    // ============================================================
+
+    const pages = {
+        inicio: document.getElementById('page-inicio'),
+        catalogo: document.getElementById('page-catalogo'),
+        admin: document.getElementById('page-admin'),
+        nosotros: document.getElementById('page-nosotros'),
+        contacto: document.getElementById('page-contacto'),
+        promociones: document.getElementById('page-promociones'),
+        campana: document.getElementById('page-campana'),
+        comunidad: document.getElementById('page-comunidad'),
+        detalle: document.getElementById('page-detalle'),
+        registro: document.getElementById('page-registro'),
+        login: document.getElementById('page-login'),
+        perfil: document.getElementById('page-perfil'),
+        exito: document.getElementById('page-exito')
+    };
+
+    const adminPages = {
+        dashboard: document.getElementById('admin-dashboard'),
+        productos: document.getElementById('admin-productos'),
+        'product-form': document.getElementById('admin-product-form'),
+        pedidos: document.getElementById('admin-pedidos'),
+        promociones: document.getElementById('admin-promociones'),
+        'promo-form': document.getElementById('admin-promo-form'),
+        clientes: document.getElementById('admin-clientes'),
+        'client-form': document.getElementById('admin-client-form'),
+        reportes: document.getElementById('admin-reportes')
+    };
+
+    function showPage(pageId) {
+        for (var key in pages) {
+            if (pages[key]) pages[key].classList.remove('active');
+        }
+        if (pages[pageId]) pages[pageId].classList.add('active');
+
+        document.querySelectorAll('.nav-links a[data-page]').forEach(function(link) {
+            link.classList.remove('active-link');
+            if (link.getAttribute('data-page') === pageId) {
+                link.classList.add('active-link');
             }
         });
+
+        var socialFloat = document.getElementById('social-float');
+        if (socialFloat) {
+            socialFloat.style.display = pageId === 'admin' ? 'none' : 'flex';
+        }
+
+        if (pageId === 'catalogo') {
+            buildCategoryMenu();
+            renderCatalog(selectedCategory);
+        }
+
+        if (pageId === 'admin') {
+            showAdminPage('dashboard');
+            updateDashboardStats();
+        }
+
+        if (pageId === 'perfil') {
+            updateProfileUI();
+        }
+
+        if (pageId === 'comunidad') {
+            renderCommunityComments();
+        }
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function showFormMessage(msgElement, message, type) {
-        if (!msgElement) return;
-        msgElement.className = type === 'success' ? 'auth-success alert-message' : 'auth-error alert-message';
-        msgElement.textContent = message;
-        msgElement.classList.remove('hidden');
-        
-        setTimeout(function() {
-            msgElement.classList.add('hidden');
-        }, 4000);
+    function showAdminPage(pageId) {
+        for (var key in adminPages) {
+            if (adminPages[key]) {
+                adminPages[key].classList.remove('active');
+                adminPages[key].classList.add('hidden');
+            }
+        }
+        if (adminPages[pageId]) {
+            adminPages[pageId].classList.add('active');
+            adminPages[pageId].classList.remove('hidden');
+        }
+
+        document.querySelectorAll('.sidebar-menu a').forEach(function(link) {
+            link.classList.remove('active');
+            if (link.getAttribute('data-admin-page') === pageId) {
+                link.classList.add('active');
+            }
+        });
+
+        if (pageId === 'productos') renderProductTable();
+        if (pageId === 'clientes') renderClientsTable();
+        if (pageId === 'pedidos') renderOrdersTable();
+        if (pageId === 'dashboard') updateDashboardStats();
+        if (pageId === 'promociones') renderPromotionsAdmin();
     }
 
-    function renderPromotionsAdmin() {
-        var tbody = document.getElementById('promo-table-body-admin');
-        if (!tbody) return;
+    function updateDashboardStats() {
+        var total = products.length;
+        var outOfStock = 0;
+        for (var i = 0; i < products.length; i++) {
+            if (products[i].status === 'agotado') outOfStock++;
+        }
+        var statProducts = document.getElementById('stat-products');
+        var statOutOfStock = document.getElementById('stat-out-of-stock');
+        if (statProducts) statProducts.textContent = total;
+        if (statOutOfStock) statOutOfStock.textContent = outOfStock;
+    }
 
-        if (promociones.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:#6b4f7a;">No hay promociones registradas.</td></tr>';
+    // ============================================================
+    // FUNCIONES DE PERFIL
+    // ============================================================
+
+    function updateProfileUI() {
+        var avatarText = document.getElementById('profile-avatar-text');
+        var profileName = document.getElementById('profile-name');
+        var profileEmail = document.getElementById('profile-email');
+        var profileFullname = document.getElementById('profile-fullname');
+        var profileUserEmail = document.getElementById('profile-user-email');
+        var profilePhone = document.getElementById('profile-phone');
+        var profileAddress = document.getElementById('profile-address');
+
+        if (avatarText) {
+            var initials = currentUser.name.split(' ').map(function(n) { return n[0]; }).join('');
+            avatarText.textContent = initials;
+        }
+        if (profileName) profileName.textContent = currentUser.name;
+        if (profileEmail) profileEmail.textContent = currentUser.email;
+        if (profileFullname) profileFullname.textContent = currentUser.name;
+        if (profileUserEmail) profileUserEmail.textContent = currentUser.email;
+        if (profilePhone) profilePhone.textContent = currentUser.phone || '+52 55 1234 5678';
+        if (profileAddress) profileAddress.textContent = currentUser.address || 'Calle Principal 123, Colonia Centro';
+        renderUserComments();
+    }
+
+    function renderUserComments() {
+        var container = document.getElementById('profile-comments-list');
+        if (!container) return;
+
+        var userComments = communityComments.filter(function(c) {
+            return c.name.toLowerCase() === currentUser.name.toLowerCase();
+        });
+
+        if (userComments.length === 0) {
+            container.innerHTML = '<p style="color:#6b4f7a; font-size:0.9rem; text-align:center; padding:0.5rem;">' +
+                '<i class="fas fa-comment-slash" style="color:#d9c4e8; display:block; font-size:1.5rem; margin-bottom:0.5rem;"></i>' +
+                'Aún no has publicado comentarios en la comunidad.' +
+                '</p>';
             return;
         }
 
         var html = '';
-        for (var i = 0; i < promociones.length; i++) {
-            var promo = promociones[i];
-            var estadoClass = promo.estado === 'Activa' ? 'status-available' : (promo.estado === 'Vencida' ? 'status-out-of-stock' : 'status-warning');
-            html += '<tr>';
-            html += '<td><strong>' + promo.nombre + '</strong></td>';
-            html += '<td>' + promo.descuento + '</td>';
-            html += '<td>' + promo.productos + '</td>';
-            html += '<td>' + promo.vigencia + '</td>';
-            html += '<td><span class="status-badge ' + estadoClass + '">' + promo.estado + '</span></td>';
-            html += '<td><div class="table-actions">';
-            html += '<button class="btn-edit edit-promo-btn" data-index="' + i + '" aria-label="Editar promocion"><i class="fas fa-edit"></i></button>';
-            html += '<button class="btn-delete delete-promo-btn" data-index="' + i + '" aria-label="Eliminar promocion"><i class="fas fa-trash"></i></button>';
-            html += '</div></td></tr>';
+        for (var i = 0; i < userComments.length; i++) {
+            var c = userComments[i];
+            html += '<div class="profile-comment-item" style="background:#faf8fc; border-radius:12px; padding:0.8rem; margin-bottom:0.6rem; border:1px solid #ede6f5;">';
+            html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">';
+            html += '<span style="font-size:0.7rem; color:#6b4f7a;">' + c.date + '</span>';
+            html += '</div>';
+            html += '<p style="color:#2d1b3d; font-size:0.9rem; margin:0;">"' + c.text + '"</p>';
+            html += '</div>';
         }
-        tbody.innerHTML = html;
-
-        tbody.querySelectorAll('.edit-promo-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var index = parseInt(this.getAttribute('data-index'));
-                openPromoForm(index);
-            });
-        });
-
-        tbody.querySelectorAll('.delete-promo-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var index = parseInt(this.getAttribute('data-index'));
-                var promoName = promociones[index] ? promociones[index].nombre : 'esta promocion';
-                if (promoName === 'Sin nombre' || promoName === '') {
-                    promoName = 'esta promocion';
-                }
-                showConfirmModal('Eliminar la promocion "' + promoName + '"?', function(confirmed) {
-                    if (confirmed) {
-                        promociones.splice(index, 1);
-                        renderPromotionsAdmin();
-                        renderPublicPromotions();
-                    }
-                });
-            });
-        });
+        container.innerHTML = html;
     }
 
-    function openPromoForm(index) {
-        if (index === undefined) index = -1;
-        var form = document.getElementById('admin-promo-form');
-        var title = document.getElementById('promo-form-title');
-        var msg = document.getElementById('promo-form-message');
-        
-        if (!form) return;
-        
-        msg.classList.add('hidden');
-        msg.textContent = '';
-        msg.className = '';
+    // ============================================================
+    // FUNCIONES DEL CARRITO
+    // ============================================================
 
-        if (index === -1) {
-            title.textContent = 'Nueva Promocion';
-            document.getElementById('promo-form-index').value = '';
-            document.getElementById('promo-form-name').value = '';
-            document.getElementById('promo-form-discount').value = '';
-            document.getElementById('promo-form-products').value = '';
-            document.getElementById('promo-form-validity').value = '';
-            document.getElementById('promo-form-status').value = 'Activa';
-        } else {
-            title.textContent = 'Editar Promocion';
-            var promo = promociones[index];
-            document.getElementById('promo-form-index').value = index;
-            document.getElementById('promo-form-name').value = promo.nombre;
-            document.getElementById('promo-form-discount').value = promo.descuento;
-            document.getElementById('promo-form-products').value = promo.productos;
-            document.getElementById('promo-form-validity').value = promo.vigencia;
-            document.getElementById('promo-form-status').value = promo.estado;
-        }
-
-        showAdminPage('promo-form');
-        form.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    function savePromoForm() {
-        var name = document.getElementById('promo-form-name')?.value;
-        var discount = document.getElementById('promo-form-discount')?.value;
-        var products = document.getElementById('promo-form-products')?.value;
-        var validity = document.getElementById('promo-form-validity')?.value;
-        var status = document.getElementById('promo-form-status')?.value;
-        var index = document.getElementById('promo-form-index')?.value;
-        var msg = document.getElementById('promo-form-message');
-
-        var promoData = { 
-            nombre: name || 'Sin nombre', 
-            descuento: discount || '0%', 
-            productos: products || 'Sin productos', 
-            vigencia: validity || 'Sin fecha', 
-            estado: status || 'Activa' 
-        };
-
-        if (index === '') {
-            promociones.push(promoData);
-            showFormMessage(msg, 'Promocion creada exitosamente.', 'success');
-        } else {
-            promociones[parseInt(index)] = promoData;
-            showFormMessage(msg, 'Promocion actualizada exitosamente.', 'success');
-        }
-
-        renderPromotionsAdmin();
-        renderPublicPromotions();
-
-        setTimeout(function() {
-            showAdminPage('promociones');
-        }, 1500);
-    }
-
-    function renderPublicPromotions() {
-        var grid = document.querySelector('.promo-grid');
-        if (!grid) return;
-
-        var publicPromos = promociones.slice(0, 2);
-        
-        if (publicPromos.length === 0) return;
-
-        var cards = grid.querySelectorAll('.promo-card');
-        cards.forEach(function(card, index) {
-            if (index < publicPromos.length) {
-                var promo = publicPromos[index];
-                var badge = card.querySelector('.promo-badge');
-                var title = card.querySelector('h3');
-                var desc = card.querySelector('p');
-                var meta = card.querySelector('.promo-meta');
-
-                if (badge) badge.textContent = promo.descuento;
-                if (title) title.textContent = promo.nombre;
-                if (desc) desc.textContent = 'Promocion especial: ' + promo.productos;
-                if (meta) {
-                    meta.innerHTML = '<span><i class="fas fa-clock" aria-hidden="true"></i> ' + promo.vigencia + '</span><span><i class="fas fa-tag" aria-hidden="true"></i> ' + promo.estado + '</span>';
-                }
-            }
-        });
-    }
+    const cartBadge = document.getElementById('cart-badge');
+    const cartTotalBadge = document.getElementById('cart-total-badge');
+    const cartItemsContainer = document.getElementById('cart-items-container');
+    const cartTotalAmount = document.getElementById('cart-total-amount');
+    const checkoutBtn = document.getElementById('checkout-btn');
+    const cartOverlay = document.getElementById('cart-overlay');
+    const cartBackdrop = document.getElementById('cart-backdrop');
+    const cartToggleBtn = document.getElementById('cart-toggle-btn');
 
     function openCart() {
         if (cartOverlay) {
@@ -504,62 +558,6 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             openCart();
         }
-    }
-
-    function processPayment() {
-        if (cart.length === 0) return;
-        
-        var orderItems = cart.map(function(item) {
-            var p = products.find(function(pr) { return pr.id === item.productId; });
-            return { ...item, name: p ? p.name : 'Producto', price: p ? p.price : 0 };
-        });
-        
-        var total = 0;
-        for (var i = 0; i < orderItems.length; i++) {
-            total += orderItems[i].price * orderItems[i].quantity;
-        }
-
-        closeCart();
-        cart = [];
-        saveCart();
-        updateCartUI();
-
-        var detailsContainer = document.getElementById('success-details');
-        var html = '';
-        for (var j = 0; j < orderItems.length; j++) {
-            var item = orderItems[j];
-            html += '<div class="detail-row"><span>' + item.quantity + ' x ' + item.name + '</span><span>$' + (item.price * item.quantity).toFixed(2) + '</span></div>';
-        }
-        html += '<div class="detail-row"><span><strong>Total</strong></span><span><strong>$' + total.toFixed(2) + '</strong></span></div>';
-        detailsContainer.innerHTML = html;
-
-        for (var key in pages) {
-            if (pages[key]) pages[key].classList.remove('active');
-        }
-        if (pages.exito) pages.exito.classList.add('active');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function clearCart() {
-        if (cart.length === 0) return;
-        
-        showConfirmModal('¿Estás seguro de que quieres vaciar tu carrito?', function(confirmed) {
-            if (confirmed) {
-                cart = [];
-                saveCart();
-                updateCartUI();
-                
-                var feedback = document.getElementById('cart-feedback');
-                if (feedback) {
-                    feedback.textContent = 'Carrito vaciado correctamente.';
-                    feedback.style.display = 'block';
-                    feedback.style.background = '#fff3e0';
-                    feedback.style.color = '#e65100';
-                    feedback.style.borderLeftColor = '#ff9800';
-                    setTimeout(function() { feedback.style.display = 'none'; }, 3000);
-                }
-            }
-        });
     }
 
     function updateCartUI() {
@@ -668,245 +666,68 @@ document.addEventListener('DOMContentLoaded', function() {
         
         setTimeout(function() {
             openCart();
-        }, 100);
+        }, 300);
     }
 
-    function showPage(pageId) {
+    function clearCart() {
+        if (cart.length === 0) return;
+        
+        showConfirmModal('¿Estás seguro de que quieres vaciar tu carrito?', function(confirmed) {
+            if (confirmed) {
+                cart = [];
+                saveCart();
+                updateCartUI();
+                
+                var feedback = document.getElementById('cart-feedback');
+                if (feedback) {
+                    feedback.textContent = 'Carrito vaciado correctamente.';
+                    feedback.style.display = 'block';
+                    feedback.style.background = '#fff3e0';
+                    feedback.style.color = '#e65100';
+                    feedback.style.borderLeftColor = '#ff9800';
+                    setTimeout(function() { feedback.style.display = 'none'; }, 3000);
+                }
+            }
+        });
+    }
+
+    function processPayment() {
+        if (cart.length === 0) return;
+        
+        var orderItems = cart.map(function(item) {
+            var p = products.find(function(pr) { return pr.id === item.productId; });
+            return { ...item, name: p ? p.name : 'Producto', price: p ? p.price : 0 };
+        });
+        
+        var total = 0;
+        for (var i = 0; i < orderItems.length; i++) {
+            total += orderItems[i].price * orderItems[i].quantity;
+        }
+
+        closeCart();
+        cart = [];
+        saveCart();
+        updateCartUI();
+
+        var detailsContainer = document.getElementById('success-details');
+        var html = '';
+        for (var j = 0; j < orderItems.length; j++) {
+            var item = orderItems[j];
+            html += '<div class="detail-row"><span>' + item.quantity + ' x ' + item.name + '</span><span>$' + (item.price * item.quantity).toFixed(2) + '</span></div>';
+        }
+        html += '<div class="detail-row"><span><strong>Total</strong></span><span><strong>$' + total.toFixed(2) + '</strong></span></div>';
+        detailsContainer.innerHTML = html;
+
         for (var key in pages) {
             if (pages[key]) pages[key].classList.remove('active');
         }
-        if (pages[pageId]) pages[pageId].classList.add('active');
-
-        document.querySelectorAll('.nav-links a[data-page]').forEach(function(link) {
-            link.classList.remove('active-link');
-            if (link.getAttribute('data-page') === pageId) {
-                link.classList.add('active-link');
-            }
-        });
-
-        var socialFloat = document.getElementById('social-float');
-        if (socialFloat) {
-            socialFloat.style.display = pageId === 'admin' ? 'none' : 'flex';
-        }
-
-        if (pageId === 'catalogo') {
-            buildCategoryMenu();
-            renderCatalog(selectedCategory);
-        }
-
-        if (pageId === 'admin') {
-            showAdminPage('dashboard');
-            updateDashboardStats();
-        }
-
+        if (pages.exito) pages.exito.classList.add('active');
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function showAdminPage(pageId) {
-        for (var key in adminPages) {
-            if (adminPages[key]) {
-                adminPages[key].classList.remove('active');
-                adminPages[key].classList.add('hidden');
-            }
-        }
-        if (adminPages[pageId]) {
-            adminPages[pageId].classList.add('active');
-            adminPages[pageId].classList.remove('hidden');
-        }
-
-        document.querySelectorAll('.sidebar-menu a').forEach(function(link) {
-            link.classList.remove('active');
-            if (link.getAttribute('data-admin-page') === pageId) {
-                link.classList.add('active');
-            }
-        });
-
-        if (pageId === 'productos') renderProductTable();
-        if (pageId === 'clientes') renderClientsTable();
-        if (pageId === 'pedidos') renderOrdersTable();
-        if (pageId === 'dashboard') updateDashboardStats();
-        if (pageId === 'promociones') renderPromotionsAdmin();
-    }
-
-    function updateDashboardStats() {
-        var total = products.length;
-        var outOfStock = 0;
-        for (var i = 0; i < products.length; i++) {
-            if (products[i].status === 'agotado') outOfStock++;
-        }
-        var statProducts = document.getElementById('stat-products');
-        var statOutOfStock = document.getElementById('stat-out-of-stock');
-        if (statProducts) statProducts.textContent = total;
-        if (statOutOfStock) statOutOfStock.textContent = outOfStock;
-    }
-
-    function updateNavVisibility() {
-        var userNavItems = document.querySelectorAll('.user-nav');
-        var adminNavItems = document.querySelectorAll('.admin-nav');
-        var navLoginBtn = document.getElementById('nav-login-btn');
-
-        if (isAdmin) {
-            userNavItems.forEach(function(el) { el.style.display = 'none'; });
-            adminNavItems.forEach(function(el) {
-                el.style.display = 'list-item';
-                el.style.background = 'transparent';
-            });
-            document.body.classList.add('admin-mode');
-            if (navLoginBtn) {
-                navLoginBtn.innerHTML = '<i class="fas fa-user-shield" aria-hidden="true"></i> Admin';
-                navLoginBtn.setAttribute('data-page', 'admin');
-                navLoginBtn.style.background = 'transparent';
-                navLoginBtn.style.color = '#8b5cf6';
-                navLoginBtn.style.padding = '0.3rem 0.8rem';
-                navLoginBtn.style.border = 'none';
-                navLoginBtn.style.borderRadius = '40px';
-                navLoginBtn.style.fontWeight = '600';
-                navLoginBtn.style.borderBottom = 'none';
-            }
-        } else {
-            userNavItems.forEach(function(el) { el.style.display = 'list-item'; });
-            adminNavItems.forEach(function(el) {
-                el.style.display = 'none';
-                el.style.background = '';
-            });
-            document.body.classList.remove('admin-mode');
-            if (isLoggedIn && navLoginBtn) {
-                navLoginBtn.innerHTML = '<i class="fas fa-user-circle" aria-hidden="true"></i> Mi Perfil';
-                navLoginBtn.setAttribute('data-page', 'perfil');
-                navLoginBtn.style.background = '#8b5cf6';
-                navLoginBtn.style.color = 'white';
-                navLoginBtn.style.border = 'none';
-                navLoginBtn.style.borderRadius = '40px';
-                navLoginBtn.style.padding = '0.4rem 1rem';
-                navLoginBtn.style.borderBottom = 'none';
-            } else if (navLoginBtn) {
-                navLoginBtn.innerHTML = '<i class="fas fa-user-circle" aria-hidden="true"></i> Iniciar sesion';
-                navLoginBtn.setAttribute('data-page', 'login');
-                navLoginBtn.style.background = '#ede6f5';
-                navLoginBtn.style.color = '#2d1b3d';
-                navLoginBtn.style.border = 'none';
-                navLoginBtn.style.borderRadius = '40px';
-                navLoginBtn.style.padding = '0.4rem 1rem';
-                navLoginBtn.style.borderBottom = 'none';
-            }
-        }
-    }
-
-    document.querySelectorAll('.nav-links a[data-page]').forEach(function(link) {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            var page = this.getAttribute('data-page');
-            if (page === 'perfil' && !isLoggedIn) { showPage('login'); return; }
-            if (page === 'admin' && !isAdmin) { showPage('login'); return; }
-            showPage(page);
-        });
-    });
-
-    document.querySelectorAll('.sidebar-menu a').forEach(function(link) {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            var page = this.getAttribute('data-admin-page');
-            showAdminPage(page);
-        });
-    });
-
-    document.querySelectorAll('.auth-link a[data-page]').forEach(function(link) {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            showPage(this.getAttribute('data-page'));
-        });
-    });
-
-    var heroBtn = document.querySelector('.hero .btn-primary');
-    if (heroBtn) {
-        heroBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            showPage('catalogo');
-            buildCategoryMenu();
-            renderCatalog(selectedCategory);
-        });
-    }
-
-    if (cartToggleBtn) {
-        cartToggleBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleCart();
-        });
-    }
-
-    var cartCloseBtn = document.getElementById('cart-close-btn');
-    if (cartCloseBtn) {
-        cartCloseBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            closeCart();
-        });
-    }
-
-    if (cartBackdrop) {
-        cartBackdrop.addEventListener('click', function(e) {
-            e.preventDefault();
-            closeCart();
-        });
-    }
-
-    var clearCartBtn = document.getElementById('clear-cart-btn');
-    if (clearCartBtn) {
-        clearCartBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            clearCart();
-        });
-    }
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeCart();
-            var modal = document.getElementById('login-required-modal');
-            if (modal) modal.classList.remove('show');
-            var confirmModal = document.getElementById('confirm-modal');
-            if (confirmModal && confirmModal.classList.contains('show')) {
-                confirmModal.classList.remove('show');
-                confirmModal.style.display = 'none';
-            }
-        }
-    });
-
-    if (checkoutBtn) {
-        checkoutBtn.addEventListener('click', function() {
-            if (cart.length === 0) return;
-            if (!isLoggedIn) {
-                var modal = document.getElementById('login-required-modal');
-                if (modal) modal.classList.add('show');
-                return;
-            }
-            processPayment();
-        });
-    }
-
-    var loginRequiredBtn = document.getElementById('login-required-btn');
-    if (loginRequiredBtn) {
-        loginRequiredBtn.addEventListener('click', function() {
-            var modal = document.getElementById('login-required-modal');
-            if (modal) modal.classList.remove('show');
-            closeCart();
-            showPage('login');
-        });
-    }
-
-    var loginRequiredCancel = document.getElementById('login-required-cancel');
-    if (loginRequiredCancel) {
-        loginRequiredCancel.addEventListener('click', function() {
-            var modal = document.getElementById('login-required-modal');
-            if (modal) modal.classList.remove('show');
-        });
-    }
-
-    var loginRequiredModal = document.getElementById('login-required-modal');
-    if (loginRequiredModal) {
-        loginRequiredModal.addEventListener('click', function(e) {
-            if (e.target === this) this.classList.remove('show');
-        });
-    }
+    // ============================================================
+    // FUNCIONES DE CATÁLOGO
+    // ============================================================
 
     function buildCategoryMenu() {
         var menu = document.getElementById('category-menu');
@@ -985,6 +806,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    // ============================================================
+    // FUNCIONES DE DETALLE DE PRODUCTO
+    // ============================================================
 
     function showDetail(id) {
         var product = null;
@@ -1071,84 +896,9 @@ document.addEventListener('DOMContentLoaded', function() {
         showPage('detalle');
     }
 
-    var qtyMinus = document.getElementById('qty-minus');
-    if (qtyMinus) {
-        qtyMinus.addEventListener('click', function() {
-            if (currentQty > 1) {
-                currentQty--;
-                var qtyValue = document.getElementById('qty-value');
-                if (qtyValue) qtyValue.textContent = currentQty;
-            }
-        });
-    }
-
-    var qtyPlus = document.getElementById('qty-plus');
-    if (qtyPlus) {
-        qtyPlus.addEventListener('click', function() {
-            if (currentQty < 20) {
-                currentQty++;
-                var qtyValue = document.getElementById('qty-value');
-                if (qtyValue) qtyValue.textContent = currentQty;
-            }
-        });
-    }
-
-    var addToCartBtn = document.getElementById('add-to-cart-btn');
-    if (addToCartBtn) {
-        addToCartBtn.addEventListener('click', function() {
-            if (currentProductId === null) return;
-            var product = null;
-            for (var i = 0; i < products.length; i++) {
-                if (products[i].id === currentProductId) {
-                    product = products[i];
-                    break;
-                }
-            }
-            if (!product) return;
-
-            addToCart(currentProductId, currentQty);
-
-            var feedback = document.getElementById('cart-feedback');
-            var total = (product.price * currentQty).toFixed(2);
-            if (feedback) {
-                feedback.textContent = currentQty + ' x "' + product.name + '" agregado al carrito. Total: $' + total;
-                feedback.style.display = 'block';
-                feedback.style.background = '#e8f5e9';
-                feedback.style.color = '#2e7d32';
-                feedback.style.borderLeftColor = '#4caf50';
-            }
-
-            var btn = this;
-            btn.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i> Agregado!';
-            btn.style.background = '#4caf50';
-            setTimeout(function() {
-                btn.innerHTML = '<i class="fas fa-shopping-cart" aria-hidden="true"></i> Agregar al carrito';
-                btn.style.background = '#8b5cf6';
-            }, 2000);
-
-            if (feedback) {
-                setTimeout(function() { feedback.style.display = 'none'; }, 4000);
-            }
-        });
-    }
-
-    var backToCatalog = document.getElementById('back-to-catalog');
-    if (backToCatalog) {
-        backToCatalog.addEventListener('click', function() {
-            showPage('catalogo');
-            buildCategoryMenu();
-            renderCatalog(selectedCategory);
-        });
-    }
-
-    var successContinueBtn = document.getElementById('success-continue-btn');
-    if (successContinueBtn) {
-        successContinueBtn.addEventListener('click', function() {
-            showPage('catalogo');
-            buildCategoryMenu();
-            renderCatalog(selectedCategory);
-        });
-    }
+    // ============================================================
+    // FUNCIONES DE ADMIN - PRODUCTOS
+    // ============================================================
 
     function renderProductTable() {
         var tbody = document.getElementById('product-table-body');
@@ -1303,6 +1053,621 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // ============================================================
+    // FUNCIONES DE ADMIN - CLIENTES
+    // ============================================================
+
+    function renderClientsTable() {
+        var tbody = document.getElementById('clients-table-body');
+        if (!tbody) return;
+
+        if (clients.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:#6b4f7a;">No hay clientes registrados</td></tr>';
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < clients.length; i++) {
+            var c = clients[i];
+            html += '<tr><td><strong>' + c.name + '</strong></td>';
+            html += '<td>' + c.email + '</td>';
+            html += '<td>' + c.phone + '</td>';
+            html += '<td>' + c.orders + '</td>';
+            html += '<td>$' + c.spent.toFixed(2) + '</td>';
+            html += '<td>' + c.registeredDate + '</td>';
+            html += '<td><div class="table-actions">';
+            html += '<button class="btn-edit" data-index="' + i + '" aria-label="Editar ' + c.name + '"><i class="fas fa-edit"></i></button>';
+            html += '<button class="btn-delete" data-index="' + i + '" aria-label="Eliminar ' + c.name + '"><i class="fas fa-trash"></i></button>';
+            html += '</div></td></tr>';
+        }
+        tbody.innerHTML = html;
+
+        tbody.querySelectorAll('.btn-edit').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var idx = parseInt(this.getAttribute('data-index'));
+                openClientForm(idx);
+            });
+        });
+
+        tbody.querySelectorAll('.btn-delete').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var idx = parseInt(this.getAttribute('data-index'));
+                var clientName = (clients[idx] && clients[idx].name && clients[idx].name !== 'Sin nombre') ? clients[idx].name : 'este cliente';
+                showConfirmModal('Eliminar a ' + clientName + '?', function(confirmed) {
+                    if (confirmed) {
+                        clients.splice(idx, 1);
+                        saveClients();
+                        renderClientsTable();
+                    }
+                });
+            });
+        });
+    }
+
+    function openClientForm(idx) {
+        if (idx === undefined) idx = null;
+        editingClientId = idx;
+        var title = document.getElementById('client-form-title');
+        var nameInput = document.getElementById('form-client-name');
+        var emailInput = document.getElementById('form-client-email');
+        var phoneInput = document.getElementById('form-client-phone');
+        var addressInput = document.getElementById('form-client-address');
+        var msg = document.getElementById('client-form-message');
+
+        if (!nameInput) return;
+        
+        if (msg) {
+            msg.classList.add('hidden');
+            msg.textContent = '';
+            msg.className = '';
+        }
+
+        if (idx !== null && idx >= 0) {
+            var c = clients[idx];
+            if (title) title.textContent = 'Editar cliente';
+            nameInput.value = c.name;
+            if (emailInput) emailInput.value = c.email;
+            if (phoneInput) phoneInput.value = c.phone;
+            if (addressInput) addressInput.value = c.address;
+        } else {
+            if (title) title.textContent = 'Agregar cliente';
+            nameInput.value = '';
+            if (emailInput) emailInput.value = '';
+            if (phoneInput) phoneInput.value = '';
+            if (addressInput) addressInput.value = '';
+        }
+
+        showAdminPage('client-form');
+    }
+
+    // ============================================================
+    // FUNCIONES DE ADMIN - PEDIDOS
+    // ============================================================
+
+    function getOrderStatusClass(status) {
+        if (status === 'entregado') return 'status-available';
+        if (status === 'en preparacion') return 'status-warning';
+        if (status === 'pendiente') return 'status-out-of-stock';
+        return 'status-inactive';
+    }
+
+    function getNextOrderStatus(status) {
+        var orderFlow = ['pendiente', 'en preparacion', 'listo para entregar', 'entregado'];
+        var index = orderFlow.indexOf(status);
+        return orderFlow[index + 1] || orderFlow[0];
+    }
+
+    function renderOrdersTable() {
+        var tbody = document.getElementById('orders-table-body');
+        if (!tbody) return;
+
+        if (orders.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:#6b4f7a;">No hay pedidos registrados.</td></tr>';
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < orders.length; i++) {
+            var order = orders[i];
+            var statusClass = getOrderStatusClass(order.status);
+            html += '<tr><td>#' + order.id + '</td>';
+            html += '<td>' + order.client + '</td>';
+            html += '<td>' + order.products + '</td>';
+            html += '<td>$' + order.total.toFixed(2) + '</td>';
+            html += '<td><span class="status-badge ' + statusClass + '">' + order.status + '</span></td>';
+            html += '<td>' + order.date + '</td>';
+            html += '<td><button class="btn-secondary order-action-btn" type="button" data-order-id="' + order.id + '">Cambiar estado</button></td></tr>';
+        }
+        tbody.innerHTML = html;
+
+        tbody.querySelectorAll('.order-action-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var orderId = parseInt(this.getAttribute('data-order-id'));
+                var order = null;
+                for (var j = 0; j < orders.length; j++) {
+                    if (orders[j].id === orderId) { order = orders[j]; break; }
+                }
+                if (!order) return;
+                order.status = getNextOrderStatus(order.status);
+                saveOrders();
+                renderOrdersTable();
+            });
+        });
+    }
+
+    // ============================================================
+    // FUNCIONES DE ADMIN - PROMOCIONES
+    // ============================================================
+
+    function renderPromotionsAdmin() {
+        var tbody = document.getElementById('promo-table-body-admin');
+        if (!tbody) return;
+
+        if (promociones.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:#6b4f7a;">No hay promociones registradas.</td></tr>';
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < promociones.length; i++) {
+            var promo = promociones[i];
+            var estadoClass = promo.estado === 'Activa' ? 'status-available' : (promo.estado === 'Vencida' ? 'status-out-of-stock' : 'status-warning');
+            html += '<tr>';
+            html += '<td><strong>' + promo.nombre + '</strong></td>';
+            html += '<td>' + promo.descuento + '</td>';
+            html += '<td>' + promo.productos + '</td>';
+            html += '<td>' + promo.vigencia + '</td>';
+            html += '<td><span class="status-badge ' + estadoClass + '">' + promo.estado + '</span></td>';
+            html += '<td><div class="table-actions">';
+            html += '<button class="btn-edit edit-promo-btn" data-index="' + i + '" aria-label="Editar promocion"><i class="fas fa-edit"></i></button>';
+            html += '<button class="btn-delete delete-promo-btn" data-index="' + i + '" aria-label="Eliminar promocion"><i class="fas fa-trash"></i></button>';
+            html += '</div></td></tr>';
+        }
+        tbody.innerHTML = html;
+
+        tbody.querySelectorAll('.edit-promo-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var index = parseInt(this.getAttribute('data-index'));
+                openPromoForm(index);
+            });
+        });
+
+        tbody.querySelectorAll('.delete-promo-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var index = parseInt(this.getAttribute('data-index'));
+                var promoName = promociones[index] ? promociones[index].nombre : 'esta promocion';
+                if (promoName === 'Sin nombre' || promoName === '') {
+                    promoName = 'esta promocion';
+                }
+                showConfirmModal('Eliminar la promocion "' + promoName + '"?', function(confirmed) {
+                    if (confirmed) {
+                        promociones.splice(index, 1);
+                        savePromociones();
+                        renderPromotionsAdmin();
+                        renderPublicPromotions();
+                    }
+                });
+            });
+        });
+    }
+
+    function openPromoForm(index) {
+        if (index === undefined) index = -1;
+        var form = document.getElementById('admin-promo-form');
+        var title = document.getElementById('promo-form-title');
+        var msg = document.getElementById('promo-form-message');
+        
+        if (!form) return;
+        
+        msg.classList.add('hidden');
+        msg.textContent = '';
+        msg.className = '';
+
+        if (index === -1) {
+            title.textContent = 'Nueva Promocion';
+            document.getElementById('promo-form-index').value = '';
+            document.getElementById('promo-form-name').value = '';
+            document.getElementById('promo-form-discount').value = '';
+            document.getElementById('promo-form-products').value = '';
+            document.getElementById('promo-form-validity').value = '';
+            document.getElementById('promo-form-status').value = 'Activa';
+        } else {
+            title.textContent = 'Editar Promocion';
+            var promo = promociones[index];
+            document.getElementById('promo-form-index').value = index;
+            document.getElementById('promo-form-name').value = promo.nombre;
+            document.getElementById('promo-form-discount').value = promo.descuento;
+            document.getElementById('promo-form-products').value = promo.productos;
+            document.getElementById('promo-form-validity').value = promo.vigencia;
+            document.getElementById('promo-form-status').value = promo.estado;
+        }
+
+        showAdminPage('promo-form');
+        form.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function savePromoForm() {
+        var name = document.getElementById('promo-form-name')?.value;
+        var discount = document.getElementById('promo-form-discount')?.value;
+        var products = document.getElementById('promo-form-products')?.value;
+        var validity = document.getElementById('promo-form-validity')?.value;
+        var status = document.getElementById('promo-form-status')?.value;
+        var index = document.getElementById('promo-form-index')?.value;
+        var msg = document.getElementById('promo-form-message');
+
+        var promoData = { 
+            nombre: name || 'Sin nombre', 
+            descuento: discount || '0%', 
+            productos: products || 'Sin productos', 
+            vigencia: validity || 'Sin fecha', 
+            estado: status || 'Activa' 
+        };
+
+        if (index === '') {
+            promociones.push(promoData);
+            showFormMessage(msg, 'Promocion creada exitosamente.', 'success');
+        } else {
+            promociones[parseInt(index)] = promoData;
+            showFormMessage(msg, 'Promocion actualizada exitosamente.', 'success');
+        }
+
+        savePromociones();
+        renderPromotionsAdmin();
+        renderPublicPromotions();
+
+        setTimeout(function() {
+            showAdminPage('promociones');
+        }, 1500);
+    }
+
+    function renderPublicPromotions() {
+        var grid = document.querySelector('.promo-grid');
+        if (!grid) return;
+
+        var publicPromos = promociones.slice(0, 2);
+        
+        if (publicPromos.length === 0) return;
+
+        var cards = grid.querySelectorAll('.promo-card');
+        cards.forEach(function(card, index) {
+            if (index < publicPromos.length) {
+                var promo = publicPromos[index];
+                var badge = card.querySelector('.promo-badge');
+                var title = card.querySelector('h3');
+                var desc = card.querySelector('p');
+                var meta = card.querySelector('.promo-meta');
+
+                if (badge) badge.textContent = promo.descuento;
+                if (title) title.textContent = promo.nombre;
+                if (desc) desc.textContent = 'Promocion especial: ' + promo.productos;
+                if (meta) {
+                    meta.innerHTML = '<span><i class="fas fa-clock" aria-hidden="true"></i> ' + promo.vigencia + '</span><span><i class="fas fa-tag" aria-hidden="true"></i> ' + promo.estado + '</span>';
+                }
+            }
+        });
+    }
+
+    // ============================================================
+    // FUNCIONES DE COMUNIDAD (SIN ESTRELLAS, SIN VALIDACIONES, PERMITE COMENTARIOS EN BLANCO)
+    // ============================================================
+
+    function renderCommunityComments() {
+        var list = document.getElementById('community-comments-list');
+        var count = document.getElementById('community-count');
+        
+        if (!list) return;
+
+        var sortedComments = [...communityComments].sort(function(a, b) {
+            return new Date(b.date.split(' ')[0].split('/').reverse().join('-')) - 
+                   new Date(a.date.split(' ')[0].split('/').reverse().join('-'));
+        });
+
+        if (sortedComments.length === 0) {
+            list.innerHTML = '<div class="empty-state" style="text-align:center; padding:2rem; color:#6b4f7a;">' +
+                '<i class="fas fa-comment-slash" style="font-size:2rem; color:#d9c4e8; display:block; margin-bottom:0.8rem;"></i>' +
+                '<p>No hay comentarios aún. Sé el primero en compartir tu experiencia.</p></div>';
+        } else {
+            var html = '';
+            for (var i = 0; i < sortedComments.length; i++) {
+                var c = sortedComments[i];
+                html += '<div class="comment-item">';
+                html += '<div class="comment-header">';
+                html += '<div class="comment-author"><strong>' + c.name + '</strong></div>';
+                html += '</div>';
+                html += '<div style="display:flex; justify-content:space-between; align-items:center;">';
+                html += '<p>' + (c.text || '') + '</p>';
+                html += '<span class="comment-date">' + c.date + '</span>';
+                html += '</div>';
+                html += '</div>';
+            }
+            list.innerHTML = html;
+        }
+
+        if (count) count.textContent = communityComments.length;
+    }
+
+    function addCommunityComment(name, text) {
+        var now = new Date();
+        var dateStr = now.getDate().toString().padStart(2, '0') + '/' + 
+                      (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                      now.getFullYear() + ' ' + 
+                      now.getHours().toString().padStart(2, '0') + ':' + 
+                      now.getMinutes().toString().padStart(2, '0');
+        
+        var newComment = {
+            id: nextCommentId++,
+            name: name || 'Anónimo',
+            text: text || '',
+            date: dateStr
+        };
+        
+        communityComments.unshift(newComment);
+        saveComments();
+        renderCommunityComments();
+        
+        var feedback = document.getElementById('community-feedback');
+        if (feedback) {
+            showFormMessage(feedback, '¡Comentario publicado exitosamente!', 'success');
+            setTimeout(function() {
+                feedback.classList.add('hidden');
+            }, 4000);
+        }
+    }
+
+    // ============================================================
+    // FUNCIONES DE CAMPAÑA
+    // ============================================================
+
+    function addCampaignProductToCart() {
+        var campaignProduct = null;
+        for (var i = 0; i < products.length; i++) {
+            if (products[i].name === 'Pizza Pepperoni' || products[i].id === 2) {
+                campaignProduct = products[i];
+                break;
+            }
+        }
+        
+        if (!campaignProduct) {
+            for (var i = 0; i < products.length; i++) {
+                if (products[i].name.toLowerCase().includes('pepperoni')) {
+                    campaignProduct = products[i];
+                    break;
+                }
+            }
+        }
+        
+        if (!campaignProduct && products.length > 0) {
+            campaignProduct = products[0];
+        }
+        
+        if (!campaignProduct) {
+            var feedback = document.getElementById('campaign-feedback');
+            if (feedback) {
+                feedback.textContent = 'No hay productos disponibles en el catálogo.';
+                feedback.style.display = 'block';
+                feedback.style.background = '#fce4ec';
+                feedback.style.color = '#c62828';
+                feedback.style.borderLeftColor = '#e53935';
+                setTimeout(function() { feedback.style.display = 'none'; }, 4000);
+            }
+            return;
+        }
+        
+        var existing = null;
+        for (var j = 0; j < cart.length; j++) {
+            if (cart[j].productId === campaignProduct.id) {
+                existing = cart[j];
+                break;
+            }
+        }
+        
+        if (existing) {
+            existing.quantity += 1;
+        } else {
+            cart.push({ productId: campaignProduct.id, quantity: 1 });
+        }
+        
+        saveCart();
+        updateCartUI();
+        
+        var feedback = document.getElementById('campaign-feedback');
+        if (feedback) {
+            feedback.textContent = '✅ "' + campaignProduct.name + '" agregado al carrito.';
+            feedback.style.display = 'block';
+            feedback.style.background = '#e8f5e9';
+            feedback.style.color = '#2e7d32';
+            feedback.style.borderLeftColor = '#4caf50';
+            setTimeout(function() { feedback.style.display = 'none'; }, 4000);
+        }
+        
+        setTimeout(function() {
+            openCart();
+        }, 300);
+    }
+
+    function goToPromotions() {
+        showPage('promociones');
+    }
+
+    // ============================================================
+    // EVENT LISTENERS - NAVEGACIÓN
+    // ============================================================
+
+    document.querySelectorAll('.nav-links a[data-page]').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            var page = this.getAttribute('data-page');
+            if (page === 'perfil' && !isLoggedIn) { showPage('login'); return; }
+            if (page === 'admin' && !isAdmin) { showPage('login'); return; }
+            showPage(page);
+        });
+    });
+
+    document.querySelectorAll('.sidebar-menu a').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            var page = this.getAttribute('data-admin-page');
+            showAdminPage(page);
+        });
+    });
+
+    document.querySelectorAll('.auth-link a[data-page]').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            showPage(this.getAttribute('data-page'));
+        });
+    });
+
+    var heroBtn = document.querySelector('.hero .btn-primary');
+    if (heroBtn) {
+        heroBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            showPage('catalogo');
+            buildCategoryMenu();
+            renderCatalog(selectedCategory);
+        });
+    }
+
+    // ============================================================
+    // EVENT LISTENERS - CARRITO
+    // ============================================================
+
+    if (cartToggleBtn) {
+        cartToggleBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleCart();
+        });
+    }
+
+    var cartCloseBtn = document.getElementById('cart-close-btn');
+    if (cartCloseBtn) {
+        cartCloseBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeCart();
+        });
+    }
+
+    if (cartBackdrop) {
+        cartBackdrop.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeCart();
+        });
+    }
+
+    var clearCartBtn = document.getElementById('clear-cart-btn');
+    if (clearCartBtn) {
+        clearCartBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            clearCart();
+        });
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeCart();
+            var confirmModal = document.getElementById('confirm-modal');
+            if (confirmModal && confirmModal.classList.contains('show')) {
+                confirmModal.classList.remove('show');
+                confirmModal.style.display = 'none';
+            }
+        }
+    });
+
+    if (checkoutBtn) {
+        checkoutBtn.addEventListener('click', function() {
+            if (cart.length === 0) return;
+            processPayment();
+        });
+    }
+
+    // ============================================================
+    // EVENT LISTENERS - DETALLE DE PRODUCTO
+    // ============================================================
+
+    var qtyMinus = document.getElementById('qty-minus');
+    if (qtyMinus) {
+        qtyMinus.addEventListener('click', function() {
+            if (currentQty > 1) {
+                currentQty--;
+                var qtyValue = document.getElementById('qty-value');
+                if (qtyValue) qtyValue.textContent = currentQty;
+            }
+        });
+    }
+
+    var qtyPlus = document.getElementById('qty-plus');
+    if (qtyPlus) {
+        qtyPlus.addEventListener('click', function() {
+            if (currentQty < 20) {
+                currentQty++;
+                var qtyValue = document.getElementById('qty-value');
+                if (qtyValue) qtyValue.textContent = currentQty;
+            }
+        });
+    }
+
+    var addToCartBtn = document.getElementById('add-to-cart-btn');
+    if (addToCartBtn) {
+        addToCartBtn.addEventListener('click', function() {
+            if (currentProductId === null) return;
+            var product = null;
+            for (var i = 0; i < products.length; i++) {
+                if (products[i].id === currentProductId) {
+                    product = products[i];
+                    break;
+                }
+            }
+            if (!product) return;
+
+            addToCart(currentProductId, currentQty);
+
+            var feedback = document.getElementById('cart-feedback');
+            var total = (product.price * currentQty).toFixed(2);
+            if (feedback) {
+                feedback.textContent = currentQty + ' x "' + product.name + '" agregado al carrito. Total: $' + total;
+                feedback.style.display = 'block';
+                feedback.style.background = '#e8f5e9';
+                feedback.style.color = '#2e7d32';
+                feedback.style.borderLeftColor = '#4caf50';
+            }
+
+            var btn = this;
+            btn.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i> Agregado!';
+            btn.style.background = '#4caf50';
+            setTimeout(function() {
+                btn.innerHTML = '<i class="fas fa-shopping-cart" aria-hidden="true"></i> Agregar al carrito';
+                btn.style.background = '#8b5cf6';
+            }, 2000);
+
+            if (feedback) {
+                setTimeout(function() { feedback.style.display = 'none'; }, 4000);
+            }
+        });
+    }
+
+    var backToCatalog = document.getElementById('back-to-catalog');
+    if (backToCatalog) {
+        backToCatalog.addEventListener('click', function() {
+            showPage('catalogo');
+            buildCategoryMenu();
+            renderCatalog(selectedCategory);
+        });
+    }
+
+    var successContinueBtn = document.getElementById('success-continue-btn');
+    if (successContinueBtn) {
+        successContinueBtn.addEventListener('click', function() {
+            showPage('catalogo');
+            buildCategoryMenu();
+            renderCatalog(selectedCategory);
+        });
+    }
+
+    // ============================================================
+    // EVENT LISTENERS - ADMIN PRODUCTOS
+    // ============================================================
+
     var formImageInput = document.getElementById('form-product-image');
     if (formImageInput) {
         formImageInput.addEventListener('input', function() {
@@ -1411,6 +1776,72 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ============================================================
+    // EVENT LISTENERS - ADMIN CLIENTES
+    // ============================================================
+
+    var adminAddClientBtn = document.getElementById('admin-add-client-btn');
+    if (adminAddClientBtn) {
+        adminAddClientBtn.addEventListener('click', function() {
+            openClientForm(null);
+        });
+    }
+
+    var clientFormSaveBtn = document.getElementById('form-client-save-btn');
+    if (clientFormSaveBtn) {
+        clientFormSaveBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var name = document.getElementById('form-client-name')?.value || 'Sin nombre';
+            var email = document.getElementById('form-client-email')?.value || 'Sin email';
+            var phone = document.getElementById('form-client-phone')?.value || 'Sin telefono';
+            var address = document.getElementById('form-client-address')?.value || 'Sin direccion';
+            var msg = document.getElementById('client-form-message');
+
+            if (editingClientId !== null && editingClientId >= 0) {
+                clients[editingClientId].name = name;
+                clients[editingClientId].email = email;
+                clients[editingClientId].phone = phone;
+                clients[editingClientId].address = address;
+                showFormMessage(msg, 'Cliente actualizado correctamente.', 'success');
+            } else {
+                var newId = 0;
+                for (var i = 0; i < clients.length; i++) {
+                    if (clients[i].id > newId) newId = clients[i].id;
+                }
+                newId++;
+                var newClient = {
+                    id: newId,
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    address: address,
+                    orders: 0,
+                    spent: 0,
+                    registeredDate: new Date().toLocaleDateString('es-ES')
+                };
+                clients.push(newClient);
+                showFormMessage(msg, 'Cliente creado correctamente.', 'success');
+            }
+
+            saveClients();
+            setTimeout(function() {
+                showAdminPage('clientes');
+                renderClientsTable();
+            }, 1500);
+        });
+    }
+
+    var clientFormCancelBtn = document.getElementById('form-client-cancel-btn');
+    if (clientFormCancelBtn) {
+        clientFormCancelBtn.addEventListener('click', function() {
+            showAdminPage('clientes');
+        });
+    }
+
+    // ============================================================
+    // EVENT LISTENERS - PRODUCT SEARCH
+    // ============================================================
+
     var productSearch = document.getElementById('product-search');
     if (productSearch) productSearch.addEventListener('input', renderProductTable);
     
@@ -1419,6 +1850,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     var statusFilterSelect = document.getElementById('status-filter');
     if (statusFilterSelect) statusFilterSelect.addEventListener('change', renderProductTable);
+
+    // ============================================================
+    // EVENT LISTENERS - AUTH
+    // ============================================================
 
     var registroBtn = document.getElementById('registro-btn');
     if (registroBtn) {
@@ -1548,6 +1983,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ============================================================
+    // EVENT LISTENERS - CONTACTO
+    // ============================================================
+
     var sendContactBtn = document.getElementById('send-contact-btn');
     if (sendContactBtn) {
         sendContactBtn.addEventListener('click', function() {
@@ -1569,197 +2008,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function renderClientsTable() {
-        var tbody = document.getElementById('clients-table-body');
-        if (!tbody) return;
-
-        if (clients.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:#6b4f7a;">No hay clientes registrados</td></tr>';
-            return;
-        }
-
-        var html = '';
-        for (var i = 0; i < clients.length; i++) {
-            var c = clients[i];
-            html += '<tr><td><strong>' + c.name + '</strong></td>';
-            html += '<td>' + c.email + '</td>';
-            html += '<td>' + c.phone + '</td>';
-            html += '<td>' + c.orders + '</td>';
-            html += '<td>$' + c.spent.toFixed(2) + '</td>';
-            html += '<td>' + c.registeredDate + '</td>';
-            html += '<td><div class="table-actions">';
-            html += '<button class="btn-edit" data-index="' + i + '" aria-label="Editar ' + c.name + '"><i class="fas fa-edit"></i></button>';
-            html += '<button class="btn-delete" data-index="' + i + '" aria-label="Eliminar ' + c.name + '"><i class="fas fa-trash"></i></button>';
-            html += '</div></td></tr>';
-        }
-        tbody.innerHTML = html;
-
-        tbody.querySelectorAll('.btn-edit').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var idx = parseInt(this.getAttribute('data-index'));
-                openClientForm(idx);
-            });
-        });
-
-        tbody.querySelectorAll('.btn-delete').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var idx = parseInt(this.getAttribute('data-index'));
-                var clientName = (clients[idx] && clients[idx].name && clients[idx].name !== 'Sin nombre') ? clients[idx].name : 'este cliente';
-                showConfirmModal('Eliminar a ' + clientName + '?', function(confirmed) {
-                    if (confirmed) {
-                        clients.splice(idx, 1);
-                        saveClients();
-                        renderClientsTable();
-                    }
-                });
-            });
-        });
-    }
-
-    function openClientForm(idx) {
-        if (idx === undefined) idx = null;
-        editingClientId = idx;
-        var title = document.getElementById('client-form-title');
-        var nameInput = document.getElementById('form-client-name');
-        var emailInput = document.getElementById('form-client-email');
-        var phoneInput = document.getElementById('form-client-phone');
-        var addressInput = document.getElementById('form-client-address');
-        var msg = document.getElementById('client-form-message');
-
-        if (!nameInput) return;
-        
-        if (msg) {
-            msg.classList.add('hidden');
-            msg.textContent = '';
-            msg.className = '';
-        }
-
-        if (idx !== null && idx >= 0) {
-            var c = clients[idx];
-            if (title) title.textContent = 'Editar cliente';
-            nameInput.value = c.name;
-            if (emailInput) emailInput.value = c.email;
-            if (phoneInput) phoneInput.value = c.phone;
-            if (addressInput) addressInput.value = c.address;
-        } else {
-            if (title) title.textContent = 'Agregar cliente';
-            nameInput.value = '';
-            if (emailInput) emailInput.value = '';
-            if (phoneInput) phoneInput.value = '';
-            if (addressInput) addressInput.value = '';
-        }
-
-        showAdminPage('client-form');
-    }
-
-    var adminAddClientBtn = document.getElementById('admin-add-client-btn');
-    if (adminAddClientBtn) {
-        adminAddClientBtn.addEventListener('click', function() {
-            openClientForm(null);
-        });
-    }
-
-    var clientFormSaveBtn = document.getElementById('form-client-save-btn');
-    if (clientFormSaveBtn) {
-        clientFormSaveBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            var name = document.getElementById('form-client-name')?.value || 'Sin nombre';
-            var email = document.getElementById('form-client-email')?.value || 'Sin email';
-            var phone = document.getElementById('form-client-phone')?.value || 'Sin telefono';
-            var address = document.getElementById('form-client-address')?.value || 'Sin direccion';
-            var msg = document.getElementById('client-form-message');
-
-            if (editingClientId !== null && editingClientId >= 0) {
-                clients[editingClientId].name = name;
-                clients[editingClientId].email = email;
-                clients[editingClientId].phone = phone;
-                clients[editingClientId].address = address;
-                showFormMessage(msg, 'Cliente actualizado correctamente.', 'success');
-            } else {
-                var newId = 0;
-                for (var i = 0; i < clients.length; i++) {
-                    if (clients[i].id > newId) newId = clients[i].id;
-                }
-                newId++;
-                var newClient = {
-                    id: newId,
-                    name: name,
-                    email: email,
-                    phone: phone,
-                    address: address,
-                    orders: 0,
-                    spent: 0,
-                    registeredDate: new Date().toLocaleDateString('es-ES')
-                };
-                clients.push(newClient);
-                showFormMessage(msg, 'Cliente creado correctamente.', 'success');
-            }
-
-            saveClients();
-            setTimeout(function() {
-                showAdminPage('clientes');
-                renderClientsTable();
-            }, 1500);
-        });
-    }
-
-    var clientFormCancelBtn = document.getElementById('form-client-cancel-btn');
-    if (clientFormCancelBtn) {
-        clientFormCancelBtn.addEventListener('click', function() {
-            showAdminPage('clientes');
-        });
-    }
-
-    function getOrderStatusClass(status) {
-        if (status === 'entregado') return 'status-available';
-        if (status === 'en preparacion') return 'status-warning';
-        if (status === 'pendiente') return 'status-out-of-stock';
-        return 'status-inactive';
-    }
-
-    function getNextOrderStatus(status) {
-        var orderFlow = ['pendiente', 'en preparacion', 'listo para entregar', 'entregado'];
-        var index = orderFlow.indexOf(status);
-        return orderFlow[index + 1] || orderFlow[0];
-    }
-
-    function renderOrdersTable() {
-        var tbody = document.getElementById('orders-table-body');
-        if (!tbody) return;
-
-        if (orders.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:#6b4f7a;">No hay pedidos registrados.</td></tr>';
-            return;
-        }
-
-        var html = '';
-        for (var i = 0; i < orders.length; i++) {
-            var order = orders[i];
-            var statusClass = getOrderStatusClass(order.status);
-            html += '<tr><td>#' + order.id + '</td>';
-            html += '<td>' + order.client + '</td>';
-            html += '<td>' + order.products + '</td>';
-            html += '<td>$' + order.total.toFixed(2) + '</td>';
-            html += '<td><span class="status-badge ' + statusClass + '">' + order.status + '</span></td>';
-            html += '<td>' + order.date + '</td>';
-            html += '<td><button class="btn-secondary order-action-btn" type="button" data-order-id="' + order.id + '">Cambiar estado</button></td></tr>';
-        }
-        tbody.innerHTML = html;
-
-        tbody.querySelectorAll('.order-action-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var orderId = parseInt(this.getAttribute('data-order-id'));
-                var order = null;
-                for (var j = 0; j < orders.length; j++) {
-                    if (orders[j].id === orderId) { order = orders[j]; break; }
-                }
-                if (!order) return;
-                order.status = getNextOrderStatus(order.status);
-                saveOrders();
-                renderOrdersTable();
-            });
-        });
-    }
+    // ============================================================
+    // EVENT LISTENERS - PROMOCIONES
+    // ============================================================
 
     var promoApplyBtn = document.getElementById('apply-promo-btn');
     var promoFeedback = document.getElementById('promo-feedback');
@@ -1779,168 +2030,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // COMUNIDAD - GESTIÓN DE COMENTARIOS
+    // EVENT LISTENERS - COMUNIDAD (SIN ESTRELLAS, SIN VALIDACIONES, PERMITE COMENTARIOS EN BLANCO)
     // ============================================================
-
-    var communityComments = [
-        { 
-            id: 1, 
-            name: 'María García', 
-            rating: 5, 
-            text: '¡La pizza Margarita es espectacular! La masa crujiente y los ingredientes frescos hacen una combinación perfecta. Definitivamente volveré a pedir.', 
-            date: '15/01/2025 14:30' 
-        },
-        { 
-            id: 2, 
-            name: 'Carlos López', 
-            rating: 4, 
-            text: 'Muy buena atención y la comida llegó caliente. La hamburguesa BBQ estaba deliciosa, aunque me hubiera gustado más salsa.', 
-            date: '14/01/2025 18:45' 
-        },
-        { 
-            id: 3, 
-            name: 'Ana Martínez', 
-            rating: 5, 
-            text: 'El ceviche de camarón es el mejor que he probado. Fresco, bien sazonado y con una presentación impecable. ¡100% recomendado!', 
-            date: '13/01/2025 12:20' 
-        },
-        { 
-            id: 4, 
-            name: 'Pedro Ramírez', 
-            rating: 3, 
-            text: 'Buena comida pero el tiempo de entrega fue un poco largo. La ensalada Cesar estaba rica pero le faltaba un poco de aderezo.', 
-            date: '12/01/2025 20:10' 
-        }
-    ];
-
-    var nextCommentId = 5;
-
-    function renderCommunityComments() {
-        var list = document.getElementById('community-comments-list');
-        var count = document.getElementById('community-count');
-        var avgRating = document.getElementById('avg-rating');
-        var totalComments = document.getElementById('total-comments');
-        
-        if (!list) return;
-
-        var sortedComments = [...communityComments].sort(function(a, b) {
-            return new Date(b.date.split(' ')[0].split('/').reverse().join('-')) - 
-                   new Date(a.date.split(' ')[0].split('/').reverse().join('-'));
-        });
-
-        if (sortedComments.length === 0) {
-            list.innerHTML = '<div class="empty-state" style="text-align:center; padding:2rem; color:#6b4f7a;">' +
-                '<i class="fas fa-comment-slash" style="font-size:2rem; color:#d9c4e8; display:block; margin-bottom:0.8rem;"></i>' +
-                '<p>No hay comentarios aún. Sé el primero en compartir tu experiencia.</p></div>';
-        } else {
-            var html = '';
-            for (var i = 0; i < sortedComments.length; i++) {
-                var c = sortedComments[i];
-                var stars = '';
-                for (var j = 0; j < 5; j++) {
-                    stars += j < c.rating ? '★' : '☆';
-                }
-                html += '<div class="comment-item">';
-                html += '<div class="comment-header">';
-                html += '<div class="comment-author"><strong>' + c.name + '</strong></div>';
-                html += '<span class="comment-rating">' + stars + '</span>';
-                html += '</div>';
-                html += '<div style="display:flex; justify-content:space-between; align-items:center;">';
-                html += '<p>' + c.text + '</p>';
-                html += '<span class="comment-date">' + c.date + '</span>';
-                html += '</div>';
-                html += '</div>';
-            }
-            list.innerHTML = html;
-        }
-
-        if (count) count.textContent = communityComments.length;
-        if (totalComments) totalComments.textContent = communityComments.length;
-        
-        if (communityComments.length > 0) {
-            var total = 0;
-            for (var k = 0; k < communityComments.length; k++) {
-                total += communityComments[k].rating;
-            }
-            var avg = (total / communityComments.length).toFixed(1);
-            if (avgRating) avgRating.textContent = avg;
-        } else {
-            if (avgRating) avgRating.textContent = '0.0';
-        }
-    }
-
-    function addCommunityComment(name, rating, text) {
-        var now = new Date();
-        var dateStr = now.getDate().toString().padStart(2, '0') + '/' + 
-                      (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
-                      now.getFullYear() + ' ' + 
-                      now.getHours().toString().padStart(2, '0') + ':' + 
-                      now.getMinutes().toString().padStart(2, '0');
-        
-        var newComment = {
-            id: nextCommentId++,
-            name: name,
-            rating: rating,
-            text: text,
-            date: dateStr
-        };
-        
-        communityComments.unshift(newComment);
-        renderCommunityComments();
-        
-        var feedback = document.getElementById('community-feedback');
-        if (feedback) {
-            showFormMessage(feedback, '¡Comentario publicado exitosamente!', 'success');
-            setTimeout(function() {
-                feedback.classList.add('hidden');
-            }, 4000);
-        }
-    }
-
-    var stars = document.querySelectorAll('.star-rating .star');
-    var selectedRating = 0;
-
-    if (stars.length > 0) {
-        stars.forEach(function(star) {
-            star.addEventListener('click', function() {
-                var value = parseInt(this.getAttribute('data-value'));
-                selectedRating = value;
-                updateStars(value);
-                var label = document.getElementById('rating-label');
-                if (label) {
-                    var labels = ['', 'Muy malo', 'Malo', 'Regular', 'Bueno', 'Excelente'];
-                    label.textContent = labels[value] || 'Selecciona una calificación';
-                }
-            });
-            
-            star.addEventListener('mouseenter', function() {
-                var value = parseInt(this.getAttribute('data-value'));
-                updateStars(value);
-            });
-            
-            star.addEventListener('mouseleave', function() {
-                updateStars(selectedRating);
-            });
-            
-            star.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    this.click();
-                }
-            });
-        });
-    }
-
-    function updateStars(rating) {
-        stars.forEach(function(star) {
-            var value = parseInt(star.getAttribute('data-value'));
-            if (value <= rating) {
-                star.classList.add('active');
-            } else {
-                star.classList.remove('active');
-            }
-        });
-    }
 
     var communityForm = document.getElementById('community-form');
     if (communityForm) {
@@ -1949,67 +2040,110 @@ document.addEventListener('DOMContentLoaded', function() {
             
             var nameInput = document.getElementById('community-name');
             var commentInput = document.getElementById('community-comment');
-            var feedback = document.getElementById('community-feedback');
             
-            if (!nameInput || !commentInput) return;
+            // Si el nombre está vacío, se pone "Anónimo"
+            var name = nameInput ? (nameInput.value.trim() || 'Anónimo') : 'Anónimo';
+            // El comentario puede estar vacío
+            var text = commentInput ? commentInput.value : '';
             
-            var name = nameInput.value.trim() || 'Anónimo';
-            var text = commentInput.value.trim() || 'Sin comentario';
+            addCommunityComment(name, text);
             
-            var rating = selectedRating || 3;
-            
-            addCommunityComment(name, rating, text);
-            
-            nameInput.value = '';
-            commentInput.value = '';
-            selectedRating = 0;
-            updateStars(0);
-            var label = document.getElementById('rating-label');
-            if (label) label.textContent = 'Selecciona una calificación';
-            
-            setTimeout(function() {
-                if (feedback) feedback.classList.add('hidden');
-            }, 5000);
+            if (nameInput) nameInput.value = '';
+            if (commentInput) commentInput.value = '';
         });
     }
 
-    var campaignComments = [
-        { name: 'Maria', text: 'La pizza estuvo deliciosa y la promocion fue genial.' },
-        { name: 'Luis', text: 'Muy buena experiencia, volveria a pedirla sin duda.' }
-    ];
+    // ============================================================
+    // EVENT LISTENERS - CAMPAÑA
+    // ============================================================
 
-    function renderCampaignComments() {
-        var list = document.getElementById('campaign-comments-list');
-        var count = document.getElementById('campaign-community-count');
-        if (!list) return;
-        list.innerHTML = '';
-        for (var i = 0; i < campaignComments.length; i++) {
-            var comment = campaignComments[i];
-            var div = document.createElement('div');
-            div.className = 'comment-item';
-            div.innerHTML = '<strong>' + comment.name + '</strong><p>' + comment.text + '</p>';
-            list.appendChild(div);
-        }
-        if (count) count.textContent = campaignComments.length;
-    }
-
-    var campaignCommentForm = document.getElementById('campaign-comment-form');
-    if (campaignCommentForm) {
-        campaignCommentForm.addEventListener('submit', function(e) {
+    var campaignBuyBtn = document.getElementById('campaign-buy-btn');
+    if (campaignBuyBtn) {
+        campaignBuyBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            var nameInput = document.getElementById('campaign-comment-name');
-            var textInput = document.getElementById('campaign-comment-text');
-            if (!nameInput || !textInput) return;
-            var name = nameInput.value.trim() || 'Anónimo';
-            var text = textInput.value.trim() || 'Sin comentario';
-            campaignComments.unshift({ name: name, text: text });
-            renderCampaignComments();
-            campaignCommentForm.reset();
+            addCampaignProductToCart();
         });
     }
 
-    renderCampaignComments();
-    renderCommunityComments();
+    var campaignPromoBtn = document.getElementById('campaign-promo-btn');
+    if (campaignPromoBtn) {
+        campaignPromoBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            goToPromotions();
+        });
+    }
+
+    // ============================================================
+    // EVENT LISTENERS - PERFIL (IR A COMUNIDAD)
+    // ============================================================
+
+    var goToCommunityBtn = document.getElementById('go-to-community-btn');
+    if (goToCommunityBtn) {
+        goToCommunityBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            showPage('comunidad');
+        });
+    }
+
+    // ============================================================
+    // FUNCIÓN DE NAVEGACIÓN
+    // ============================================================
+
+    function updateNavVisibility() {
+        var userNavItems = document.querySelectorAll('.user-nav');
+        var adminNavItems = document.querySelectorAll('.admin-nav');
+        var navLoginBtn = document.getElementById('nav-login-btn');
+
+        if (isAdmin) {
+            userNavItems.forEach(function(el) { el.style.display = 'none'; });
+            adminNavItems.forEach(function(el) {
+                el.style.display = 'list-item';
+                el.style.background = 'transparent';
+            });
+            document.body.classList.add('admin-mode');
+            if (navLoginBtn) {
+                navLoginBtn.innerHTML = '<i class="fas fa-user-shield" aria-hidden="true"></i> Admin';
+                navLoginBtn.setAttribute('data-page', 'admin');
+                navLoginBtn.style.background = 'transparent';
+                navLoginBtn.style.color = '#8b5cf6';
+                navLoginBtn.style.padding = '0.3rem 0.8rem';
+                navLoginBtn.style.border = 'none';
+                navLoginBtn.style.borderRadius = '40px';
+                navLoginBtn.style.fontWeight = '600';
+                navLoginBtn.style.borderBottom = 'none';
+            }
+        } else {
+            userNavItems.forEach(function(el) { el.style.display = 'list-item'; });
+            adminNavItems.forEach(function(el) {
+                el.style.display = 'none';
+                el.style.background = '';
+            });
+            document.body.classList.remove('admin-mode');
+            if (isLoggedIn && navLoginBtn) {
+                navLoginBtn.innerHTML = '<i class="fas fa-user-circle" aria-hidden="true"></i> Mi Perfil';
+                navLoginBtn.setAttribute('data-page', 'perfil');
+                navLoginBtn.style.background = '#8b5cf6';
+                navLoginBtn.style.color = 'white';
+                navLoginBtn.style.border = 'none';
+                navLoginBtn.style.borderRadius = '40px';
+                navLoginBtn.style.padding = '0.4rem 1rem';
+                navLoginBtn.style.borderBottom = 'none';
+            } else if (navLoginBtn) {
+                navLoginBtn.innerHTML = '<i class="fas fa-user-circle" aria-hidden="true"></i> Iniciar sesion';
+                navLoginBtn.setAttribute('data-page', 'login');
+                navLoginBtn.style.background = '#ede6f5';
+                navLoginBtn.style.color = '#2d1b3d';
+                navLoginBtn.style.border = 'none';
+                navLoginBtn.style.borderRadius = '40px';
+                navLoginBtn.style.padding = '0.4rem 1rem';
+                navLoginBtn.style.borderBottom = 'none';
+            }
+        }
+    }
+
+    // ============================================================
+    // INICIALIZACIÓN
+    // ============================================================
 
     buildCategoryMenu();
     renderCatalog(selectedCategory);
@@ -2018,10 +2152,10 @@ document.addEventListener('DOMContentLoaded', function() {
     renderOrdersTable();
     renderPromotionsAdmin();
     renderPublicPromotions();
+    renderCommunityComments();
     updateCartUI();
     updateNavVisibility();
     updateDashboardStats();
     showPage('inicio');
-    renderComments();
 
 });

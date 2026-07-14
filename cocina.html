@@ -179,7 +179,7 @@
             </div>
         </section>
 
-        <!-- ===== PÁGINA CAMPAÑA ===== -->
+        <!-- ===== PÁGINA CAMPAÑA (SIN COMENTARIOS) ===== -->
         <section id="page-campana" class="page-section" aria-labelledby="campana-title">
             <div class="campaign-hero">
                 <div class="campaign-copy">
@@ -187,9 +187,10 @@
                     <h2 id="campana-title">Pizza Pepperoni con sabor irresistible</h2>
                     <p>Una combinación perfecta de salsa de tomate, pepperoni crujiente y queso derretido para una experiencia que no te puedes perder.</p>
                     <div class="campaign-actions">
-                        <a href="#" class="btn-primary" data-page="catalogo"><i class="fas fa-shopping-bag" aria-hidden="true"></i> Comprar ahora</a>
-                        <a href="#" class="btn-secondary" data-page="promociones"><i class="fas fa-tags" aria-hidden="true"></i> Ver promociones</a>
+                        <button class="btn-primary" id="campaign-buy-btn"><i class="fas fa-shopping-bag" aria-hidden="true"></i> Comprar ahora</button>
+                        <button class="btn-secondary" id="campaign-promo-btn"><i class="fas fa-tags" aria-hidden="true"></i> Ver promociones</button>
                     </div>
+                    <div id="campaign-feedback" style="margin-top:0.8rem; padding:0.5rem 1rem; border-radius:12px; display:none;"></div>
                 </div>
                 <div class="campaign-visual">
                     <img src="pepperoni.jpg" alt="Pizza Pepperoni deliciosa" class="campaign-image">
@@ -217,30 +218,9 @@
                     </article>
                 </div>
             </div>
-
-            <div class="campaign-comments">
-                <div class="community-form-card">
-                    <h3>Déjanos tu comentario</h3>
-                    <p>Tu opinión ayuda a otros clientes a descubrir lo mejor de esta campaña.</p>
-                    <form id="campaign-comment-form" onsubmit="return false;">
-                        <label for="campaign-comment-name">Tu nombre</label>
-                        <input type="text" id="campaign-comment-name" placeholder="Ej: Andrea" required>
-                        <label for="campaign-comment-text">Comentario</label>
-                        <textarea id="campaign-comment-text" placeholder="Escribe tu opinión aquí..." required></textarea>
-                        <button class="btn-primary" id="campaign-comment-btn" type="submit"><i class="fas fa-paper-plane" aria-hidden="true"></i> Publicar</button>
-                    </form>
-                </div>
-                <div class="community-list-card">
-                    <div class="community-list-header">
-                        <h3><i class="fas fa-heart" aria-hidden="true"></i> Comentarios recientes</h3>
-                        <span class="community-count" id="campaign-community-count">0</span>
-                    </div>
-                    <div id="campaign-comments-list" class="comments-list"></div>
-                </div>
-            </div>
         </section>
 
-        <!-- ===== PÁGINA COMUNIDAD ===== -->
+        <!-- ===== PÁGINA COMUNIDAD (SIN ESTRELLAS Y SIN REQUIRED) ===== -->
         <section id="page-comunidad" class="page-section" aria-labelledby="comunidad-title">
             <h2 id="comunidad-title" class="section-title"><i class="fas fa-comments" aria-hidden="true"></i> Comunidad</h2>
             
@@ -255,24 +235,12 @@
                     <form id="community-form" onsubmit="return false;">
                         <div class="form-group">
                             <label for="community-name"><i class="fas fa-user" aria-hidden="true"></i> Tu nombre</label>
-                            <input type="text" id="community-name" placeholder="Ej: Juan Pérez" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Calificación</label>
-                            <div class="star-rating" role="group" aria-label="Calificación de estrellas">
-                                <span class="star" data-value="1" role="button" tabindex="0" aria-label="1 estrella">★</span>
-                                <span class="star" data-value="2" role="button" tabindex="0" aria-label="2 estrellas">★</span>
-                                <span class="star" data-value="3" role="button" tabindex="0" aria-label="3 estrellas">★</span>
-                                <span class="star" data-value="4" role="button" tabindex="0" aria-label="4 estrellas">★</span>
-                                <span class="star" data-value="5" role="button" tabindex="0" aria-label="5 estrellas">★</span>
-                            </div>
-                            <span class="rating-label" id="rating-label">Selecciona una calificación</span>
+                            <input type="text" id="community-name" placeholder="Ej: Juan Pérez">
                         </div>
                         
                         <div class="form-group">
                             <label for="community-comment"><i class="fas fa-comment" aria-hidden="true"></i> Comentario</label>
-                            <textarea id="community-comment" placeholder="Escribe tu opinión aquí..." required></textarea>
+                            <textarea id="community-comment" placeholder="Escribe tu opinión aquí..."></textarea>
                         </div>
                         
                         <button class="btn-primary" type="submit" style="width:100%; justify-content:center;">
@@ -288,17 +256,6 @@
                     <div class="community-list-header">
                         <h3><i class="fas fa-heart" aria-hidden="true"></i> Comentarios recientes</h3>
                         <span class="community-count" id="community-count">0</span>
-                    </div>
-                    
-                    <div class="community-stats">
-                        <div class="stat-item">
-                            <span class="stat-value" id="avg-rating">0.0</span>
-                            <span class="stat-label">⭐ Calificación promedio</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value" id="total-comments">0</span>
-                            <span class="stat-label">💬 Comentarios</span>
-                        </div>
                     </div>
                     
                     <div id="community-comments-list" class="comments-list"></div>
@@ -391,30 +348,38 @@
             </div>
         </section>
 
-        <!-- ===== PÁGINA PERFIL ===== -->
+        <!-- ===== PÁGINA PERFIL (CON BOTÓN A COMUNIDAD) ===== -->
         <section id="page-perfil" class="page-section" aria-labelledby="perfil-title">
             <h2 id="perfil-title" class="section-title"><i class="fas fa-user-circle" aria-hidden="true"></i> Mi Perfil</h2>
             <div class="profile-container">
                 <div class="profile-header">
-                    <div class="profile-avatar" aria-hidden="true">JP</div>
+                    <div class="profile-avatar" aria-hidden="true" id="profile-avatar-text">JP</div>
                     <div class="profile-user-info">
-                        <h3>Juan Pérez</h3>
-                        <p><i class="fas fa-envelope" style="color:#8b5cf6;" aria-hidden="true"></i> juan.perez@email.com</p>
+                        <h3 id="profile-name">Juan Pérez</h3>
+                        <p><i class="fas fa-envelope" style="color:#8b5cf6;" aria-hidden="true"></i> <span id="profile-email">juan.perez@email.com</span></p>
                         <p><i class="fas fa-calendar-alt" style="color:#8b5cf6;" aria-hidden="true"></i> Miembro desde 2024</p>
                     </div>
                 </div>
                 <div class="profile-section">
                     <h4><i class="fas fa-id-card" aria-hidden="true"></i> Mis datos</h4>
-                    <div class="profile-field"><span class="label">Nombre completo</span><span class="value">Juan Pérez</span></div>
-                    <div class="profile-field"><span class="label">Correo electrónico</span><span class="value">juan.perez@email.com</span></div>
-                    <div class="profile-field"><span class="label">Teléfono</span><span class="value">+52 55 1234 5678</span></div>
-                    <div class="profile-field"><span class="label">Dirección</span><span class="value">Calle Principal 123, Colonia Centro</span></div>
+                    <div class="profile-field"><span class="label">Nombre completo</span><span class="value" id="profile-fullname">Juan Pérez</span></div>
+                    <div class="profile-field"><span class="label">Correo electrónico</span><span class="value" id="profile-user-email">juan.perez@email.com</span></div>
+                    <div class="profile-field"><span class="label">Teléfono</span><span class="value" id="profile-phone">+52 55 1234 5678</span></div>
+                    <div class="profile-field"><span class="label">Dirección</span><span class="value" id="profile-address">Calle Principal 123, Colonia Centro</span></div>
                 </div>
+                
+                <!-- Mis comentarios -->
+                <div class="profile-section">
+                    <h4><i class="fas fa-comment" aria-hidden="true"></i> Mis comentarios en la comunidad</h4>
+                    <div id="profile-comments-list"></div>
+                </div>
+                
                 <div class="profile-section">
                     <h4><i class="fas fa-shopping-bag" aria-hidden="true"></i> Mis compras <span class="coming-soon">Próximamente</span></h4>
                     <p style="color:#6b4f7a; font-size:0.9rem; margin-top:0.3rem;"><i class="fas fa-clock" style="color:#8b5cf6;" aria-hidden="true"></i> Pronto podrás ver el historial de tus pedidos aquí.</p>
                 </div>
                 <div class="profile-actions">
+                    <button class="btn-secondary" id="go-to-community-btn"><i class="fas fa-users" aria-hidden="true"></i> Ir a comunidad</button>
                     <button class="btn-secondary" id="edit-profile-btn"><i class="fas fa-edit" aria-hidden="true"></i> Editar perfil</button>
                     <button class="btn-danger" id="logout-btn"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Cerrar sesión</button>
                 </div>
