@@ -13,6 +13,7 @@
 
     <div class="app" id="main-content" role="main">
 
+        <!-- ===== NAVBAR ===== -->
         <nav class="navbar" aria-label="Navegación principal">
             <div class="logo-area">
                 <div class="logo-icon" aria-hidden="true"><i class="fas fa-utensils"></i></div>
@@ -26,6 +27,9 @@
                 <li class="user-nav"><a href="#" data-page="promociones">Promociones</a></li>
                 <li class="user-nav"><a href="#" data-page="campana">Campaña</a></li>
                 <li class="user-nav"><a href="#" data-page="comunidad">Comunidad</a></li>
+                <li class="user-nav"><a href="#" data-page="marketplace" style="color: var(--primary); font-weight: 700;">
+                    <i class="fas fa-store-alt" aria-hidden="true"></i> Marketplace
+                </a></li>
                 <li class="admin-nav"><span style="color:var(--primary); font-weight:600; padding:0.3rem 0.5rem;"></span></li>
                 <li><a href="#" class="login-btn" id="nav-login-btn" data-page="login"><i class="fas fa-user-circle" aria-hidden="true"></i> Iniciar sesión</a></li>
                 <li class="admin-nav">
@@ -44,6 +48,7 @@
             </ul>
         </nav>
 
+        <!-- ===== CARRITO OVERLAY ===== -->
         <div class="cart-overlay-backdrop" id="cart-backdrop" aria-hidden="true"></div>
         <div class="cart-overlay" id="cart-overlay" role="dialog" aria-modal="true" aria-label="Carrito de compras">
             <div class="cart-header">
@@ -73,7 +78,8 @@
             </div>
         </div>
 
-        <div class="modal-overlay" id="login-required-modal" role="dialog" aria-modal="true" aria-label="Inicio de sesión requerido">
+        <!-- ===== MODAL LOGIN REQUERIDO ===== -->
+        <div class="modal-overlay" id="login-required-modal" role="dialog" aria-modal="true" aria-label="Inicio de sesión requerido" style="display: none;">
             <div class="modal-box">
                 <div class="modal-icon" aria-hidden="true"><i class="fas fa-user-lock"></i></div>
                 <h2>Inicio de sesión requerido</h2>
@@ -82,6 +88,19 @@
                     <i class="fas fa-sign-in-alt" aria-hidden="true"></i> Iniciar sesión
                 </button>
                 <button class="btn-secondary" id="login-required-cancel">Cancelar</button>
+            </div>
+        </div>
+
+        <!-- ===== MODAL CONFIRMACIÓN ===== -->
+        <div class="modal-overlay" id="confirm-modal" style="display: none;">
+            <div class="modal-box">
+                <div class="modal-icon" aria-hidden="true"><i class="fas fa-question-circle"></i></div>
+                <h2>Confirmar</h2>
+                <p id="confirm-message">¿Estás seguro?</p>
+                <div style="display:flex; gap:0.8rem; justify-content:center; flex-wrap:wrap; margin-top:0.5rem;">
+                    <button class="btn-primary" id="confirm-btn" style="min-width:100px;">Aceptar</button>
+                    <button class="btn-secondary" id="confirm-cancel-btn" style="min-width:100px;">Cancelar</button>
+                </div>
             </div>
         </div>
 
@@ -179,7 +198,7 @@
             </div>
         </section>
 
-        <!-- ===== PÁGINA CAMPAÑA (SIN COMENTARIOS) ===== -->
+        <!-- ===== PÁGINA CAMPAÑA ===== -->
         <section id="page-campana" class="page-section" aria-labelledby="campana-title">
             <div class="campaign-hero">
                 <div class="campaign-copy">
@@ -220,12 +239,11 @@
             </div>
         </section>
 
-        <!-- ===== PÁGINA COMUNIDAD (SIN ESTRELLAS Y SIN REQUIRED) ===== -->
+        <!-- ===== PÁGINA COMUNIDAD ===== -->
         <section id="page-comunidad" class="page-section" aria-labelledby="comunidad-title">
             <h2 id="comunidad-title" class="section-title"><i class="fas fa-comments" aria-hidden="true"></i> Comunidad</h2>
             
             <div class="community-container">
-                <!-- Formulario para publicar comentario -->
                 <div class="community-form-card">
                     <div class="community-form-header">
                         <h3><i class="fas fa-pen-fancy" aria-hidden="true"></i> Deja tu comentario</h3>
@@ -251,7 +269,6 @@
                     </form>
                 </div>
 
-                <!-- Lista de comentarios -->
                 <div class="community-list-card">
                     <div class="community-list-header">
                         <h3><i class="fas fa-heart" aria-hidden="true"></i> Comentarios recientes</h3>
@@ -259,6 +276,167 @@
                     </div>
                     
                     <div id="community-comments-list" class="comments-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== PÁGINA MARKETPLACE ===== -->
+        <section id="page-marketplace" class="page-section" aria-labelledby="marketplace-title">
+            <h2 id="marketplace-title" class="section-title"><i class="fas fa-store-alt" aria-hidden="true"></i> Marketplace</h2>
+            
+            <div class="marketplace-dashboard">
+                <div class="marketplace-resumen">
+                    <div class="resumen-card">
+                        <div class="resumen-icon" style="background: #ede6f5; color: var(--primary);">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <div>
+                            <div class="resumen-number" id="resumen-publicaciones">0</div>
+                            <div class="resumen-label">Productos publicados</div>
+                        </div>
+                    </div>
+                    <div class="resumen-card">
+                        <div class="resumen-icon" style="background: #e8f5e9; color: #4caf50;">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div>
+                            <div class="resumen-number" id="resumen-compras">0</div>
+                            <div class="resumen-label">Compras realizadas</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="marketplace-ultimas">
+                    <h3><i class="fas fa-clock" style="color: var(--primary);"></i> Productos disponibles</h3>
+                    <div id="ultimas-publicaciones-list" class="ultimas-grid"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== PÁGINA MARKETPLACE ===== -->
+<section id="page-marketplace" class="page-section" aria-labelledby="marketplace-title">
+    <h2 id="marketplace-title" class="section-title"><i class="fas fa-store-alt" aria-hidden="true"></i> Marketplace</h2>
+    
+    <div class="marketplace-dashboard">
+        <div class="marketplace-resumen">
+            <div class="resumen-card">
+                <div class="resumen-icon" style="background: #ede6f5; color: var(--primary);">
+                    <i class="fas fa-boxes"></i>
+                </div>
+                <div>
+                    <div class="resumen-number" id="resumen-publicaciones">0</div>
+                    <div class="resumen-label">Productos publicados</div>
+                </div>
+            </div>
+            <!-- Eliminado el contador de compras realizadas -->
+        </div>
+
+        <!-- ===== SECCIÓN DE SUBASTA ===== -->
+        <div class="subasta-container">
+            <div class="subasta-header">
+                <h3><i class="fas fa-gavel" style="color: var(--primary);"></i> Subasta en vivo</h3>
+                <div class="subasta-timer" id="subasta-timer">
+                    <i class="fas fa-clock" aria-hidden="true"></i>
+                    <span id="timer-display">02:30</span>
+                </div>
+            </div>
+
+            <div class="subasta-producto">
+                <div class="subasta-imagen">
+                    <img src="https://via.placeholder.com/400x300/8b5cf6/ffffff?text=Producto+en+Subasta" alt="Producto en subasta">
+                </div>
+                <div class="subasta-info">
+                    <h4 id="subasta-nombre">Pizza Artesanal Premium</h4>
+                    <p id="subasta-descripcion">Edición limitada con ingredientes seleccionados. ¡Oferta ahora!</p>
+                    <div class="subasta-precios">
+                        <div class="precio-actual">
+                            <span>Precio actual</span>
+                            <strong id="precio-actual">$25.00</strong>
+                        </div>
+                        <div class="precio-oferta">
+                            <span>Tu oferta</span>
+                            <div class="oferta-input-group">
+                                <span class="moneda-simbolo">$</span>
+                                <input type="number" id="oferta-input" placeholder="0.00" step="0.50" min="0">
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn-primary btn-ofertar" id="btn-ofertar">
+                        <i class="fas fa-gavel" aria-hidden="true"></i> Ofertar
+                    </button>
+                    <div id="oferta-feedback" class="oferta-feedback" style="display:none;"></div>
+                </div>
+            </div>
+
+            <div class="subasta-ofertas">
+                <h4><i class="fas fa-list" style="color: var(--primary);"></i> Ofertas recientes</h4>
+                <div id="lista-ofertas" class="lista-ofertas">
+                    <!-- Las ofertas se cargarán dinámicamente -->
+                </div>
+            </div>
+        </div>
+
+        <div class="marketplace-ultimas">
+            <h3><i class="fas fa-clock" style="color: var(--primary);"></i> Productos disponibles</h3>
+            <div id="ultimas-publicaciones-list" class="ultimas-grid"></div>
+        </div>
+    </div>
+</section>
+
+        <!-- ===== PÁGINA PUBLICAR PRODUCTO ===== -->
+        <section id="page-publicar-producto" class="page-section" aria-labelledby="publicar-title">
+            <h2 id="publicar-title" class="section-title"><i class="fas fa-plus-circle" aria-hidden="true"></i> Publica tu producto</h2>
+            <div class="auth-container" style="max-width: 600px;">
+                <div id="publicar-message" class="hidden"></div>
+                <form id="publicar-form" onsubmit="return false;">
+                    <div class="form-group">
+                        <label for="publicar-nombre"><i class="fas fa-tag" aria-hidden="true"></i> Nombre del producto <span style="color: #c62828;">*</span></label>
+                        <input type="text" id="publicar-nombre" placeholder="Ej: Pizza Hawaiana" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="publicar-precio"><i class="fas fa-dollar-sign" aria-hidden="true"></i> Precio <span style="color: #c62828;">*</span></label>
+                        <input type="number" step="0.01" id="publicar-precio" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="publicar-categoria"><i class="fas fa-utensils" aria-hidden="true"></i> Categoría</label>
+                        <select id="publicar-categoria">
+                            <option value="Pizzas">Pizzas</option>
+                            <option value="Hamburguesas">Hamburguesas</option>
+                            <option value="Pescados">Pescados</option>
+                            <option value="Bebidas">Bebidas</option>
+                            <option value="Ensaladas">Ensaladas</option>
+                            <option value="Postres">Postres</option>
+                            <option value="Otros">Otros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="publicar-descripcion"><i class="fas fa-align-left" aria-hidden="true"></i> Descripción <span class="campo-opcional">(opcional)</span></label>
+                        <textarea id="publicar-descripcion" placeholder="Describe tu producto..." style="min-height: 100px;"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="publicar-foto"><i class="fas fa-image" aria-hidden="true"></i> Foto (URL) <span class="campo-opcional">(opcional)</span></label>
+                        <input type="text" id="publicar-foto" placeholder="https://ejemplo.com/foto.jpg">
+                        <div class="image-preview" id="publicar-image-preview" style="margin-top: 0.5rem;">
+                            <div class="empty-preview"><i class="fas fa-image" style="font-size:1.5rem; display:block; margin-bottom:0.3rem;" aria-hidden="true"></i>Vista previa</div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" id="publicar-btn" style="width:100%; justify-content:center;">
+                        <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> Publicar producto
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- ===== PÁGINA MIS PUBLICACIONES ===== -->
+        <section id="page-mis-publicaciones" class="page-section" aria-labelledby="mis-publicaciones-title">
+            <h2 id="mis-publicaciones-title" class="section-title"><i class="fas fa-boxes" aria-hidden="true"></i> Mis publicaciones</h2>
+            <div class="community-container" style="grid-template-columns: 1fr;">
+                <div class="community-list-card">
+                    <div class="community-list-header">
+                        <h3><i class="fas fa-shopping-bag" aria-hidden="true"></i> Productos publicados</h3>
+                        <span class="community-count" id="publicaciones-count">0</span>
+                    </div>
+                    <div id="mis-publicaciones-list" class="comments-list" style="max-height: 600px;"></div>
                 </div>
             </div>
         </section>
@@ -348,7 +526,7 @@
             </div>
         </section>
 
-        <!-- ===== PÁGINA PERFIL (CON BOTÓN A COMUNIDAD) ===== -->
+        <!-- ===== PÁGINA PERFIL ===== -->
         <section id="page-perfil" class="page-section" aria-labelledby="perfil-title">
             <h2 id="perfil-title" class="section-title"><i class="fas fa-user-circle" aria-hidden="true"></i> Mi Perfil</h2>
             <div class="profile-container">
@@ -360,6 +538,7 @@
                         <p><i class="fas fa-calendar-alt" style="color:#8b5cf6;" aria-hidden="true"></i> Miembro desde 2024</p>
                     </div>
                 </div>
+                
                 <div class="profile-section">
                     <h4><i class="fas fa-id-card" aria-hidden="true"></i> Mis datos</h4>
                     <div class="profile-field"><span class="label">Nombre completo</span><span class="value" id="profile-fullname">Juan Pérez</span></div>
@@ -367,8 +546,36 @@
                     <div class="profile-field"><span class="label">Teléfono</span><span class="value" id="profile-phone">+52 55 1234 5678</span></div>
                     <div class="profile-field"><span class="label">Dirección</span><span class="value" id="profile-address">Calle Principal 123, Colonia Centro</span></div>
                 </div>
+
+                <div class="profile-section" style="border: 2px solid var(--primary);">
+                    <h4 style="color: var(--primary);"><i class="fas fa-store-alt" style="color: var(--primary);"></i> Mi Marketplace</h4>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
+                        <button class="btn-primary" id="profile-publicar-btn" style="width: 100%; justify-content: center;">
+                            <i class="fas fa-plus-circle" aria-hidden="true"></i> Publicar producto
+                        </button>
+                        <button class="btn-secondary" id="profile-mis-publicaciones-btn" style="width: 100%; justify-content: center;">
+                            <i class="fas fa-boxes" aria-hidden="true"></i> Mis publicaciones
+                        </button>
+                    </div>
+                </div>
                 
-                <!-- Mis comentarios -->
+                <div class="profile-section">
+                    <h4><i class="fas fa-pen-fancy" aria-hidden="true"></i> Publicar comentario</h4>
+                    <form id="profile-comment-form" style="margin-top: 0.5rem;" onsubmit="return false;">
+                        <div class="form-group" style="margin-bottom: 0.8rem;">
+                            <label for="profile-comment-text" style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: block; margin-bottom: 0.3rem;">
+                                <i class="fas fa-comment" aria-hidden="true"></i> Escribe tu comentario
+                            </label>
+                            <textarea id="profile-comment-text" placeholder="Comparte tu opinión con la comunidad..." 
+                                style="width: 100%; padding: 0.7rem 0.9rem; border-radius: 14px; border: 1px solid var(--border); background: #faf8fc; font-size: 0.95rem; resize: vertical; min-height: 80px;"></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; min-height: 44px;">
+                            <i class="fas fa-paper-plane" aria-hidden="true"></i> Publicar en comunidad
+                        </button>
+                        <div id="profile-comment-feedback" class="hidden alert-message" style="margin-top: 0.8rem; width: 100%; text-align: center;"></div>
+                    </form>
+                </div>
+                
                 <div class="profile-section">
                     <h4><i class="fas fa-comment" aria-hidden="true"></i> Mis comentarios en la comunidad</h4>
                     <div id="profile-comments-list"></div>
@@ -378,6 +585,7 @@
                     <h4><i class="fas fa-shopping-bag" aria-hidden="true"></i> Mis compras <span class="coming-soon">Próximamente</span></h4>
                     <p style="color:#6b4f7a; font-size:0.9rem; margin-top:0.3rem;"><i class="fas fa-clock" style="color:#8b5cf6;" aria-hidden="true"></i> Pronto podrás ver el historial de tus pedidos aquí.</p>
                 </div>
+                
                 <div class="profile-actions">
                     <button class="btn-secondary" id="go-to-community-btn"><i class="fas fa-users" aria-hidden="true"></i> Ir a comunidad</button>
                     <button class="btn-secondary" id="edit-profile-btn"><i class="fas fa-edit" aria-hidden="true"></i> Editar perfil</button>
@@ -411,7 +619,6 @@
                 </aside>
 
                 <div class="admin-content">
-
                     <div id="admin-dashboard" class="admin-page active">
                         <div class="admin-dashboard-grid">
                             <div class="stat-card">
@@ -671,13 +878,7 @@
                                     <thead>
                                         <tr><th>Cliente</th><th>Email</th><th>Teléfono</th><th>Pedidos</th><th>Total gastado</th><th>Fecha registro</th><th>Acciones</th></tr>
                                     </thead>
-                                    <tbody id="clients-table-body">
-                                        <tr><td>María García</td><td>maria@email.com</td><td>55 1234 5678</td><td>8</td><td>$340.50</td><td>10/01/2024</td><td><div class="table-actions"><button class="btn-delete" aria-label="Eliminar"><i class="fas fa-trash"></i></button></div></td></tr>
-                                        <tr><td>Carlos López</td><td>carlos@email.com</td><td>55 2345 6789</td><td>5</td><td>$210.80</td><td>15/03/2024</td><td><div class="table-actions"><button class="btn-delete" aria-label="Eliminar"><i class="fas fa-trash"></i></button></div></td></tr>
-                                        <tr><td>Ana Martínez</td><td>ana@email.com</td><td>55 3456 7890</td><td>12</td><td>$520.30</td><td>02/06/2024</td><td><div class="table-actions"><button class="btn-delete" aria-label="Eliminar"><i class="fas fa-trash"></i></button></div></td></tr>
-                                        <tr><td>Pedro Ramírez</td><td>pedro@email.com</td><td>55 4567 8901</td><td>3</td><td>$95.20</td><td>20/08/2024</td><td><div class="table-actions"><button class="btn-delete" aria-label="Eliminar"><i class="fas fa-trash"></i></button></div></td></tr>
-                                        <tr><td>Laura Fernández</td><td>laura@email.com</td><td>55 5678 9012</td><td>6</td><td>$280.00</td><td>05/10/2024</td><td><div class="table-actions"><button class="btn-delete" aria-label="Eliminar"><i class="fas fa-trash"></i></button></div></td></tr>
-                                    </tbody>
+                                    <tbody id="clients-table-body"></tbody>
                                 </table>
                             </div>
                         </div>

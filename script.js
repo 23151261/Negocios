@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
             name: 'Pizza Margarita', 
             category: 'Pizzas', 
             price: 12.50, 
-            desc: 'Clasica pizza con mozzarella, tomate fresco y albahaca.', 
+            desc: 'Clásica pizza con mozzarella, tomate fresco y albahaca.', 
             image: 'pizza.jpg',
             badge: 'popular', 
             badgeText: 'Popular', 
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         { 
             id: 3, 
-            name: 'Hamburguesa Clasica', 
+            name: 'Hamburguesa Clásica', 
             category: 'Hamburguesas', 
             price: 10.90, 
             desc: 'Carne 100% premium de res, lechuga, tomate, cebolla morada y salsa especial.', 
@@ -56,10 +56,10 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         { 
             id: 5, 
-            name: 'Salmon a la plancha', 
+            name: 'Salmón a la plancha', 
             category: 'Pescados', 
             price: 18.40, 
-            desc: 'Salmon fresco sellado a la plancha, con vegetales asados.', 
+            desc: 'Salmón fresco sellado a la plancha, con vegetales asados.', 
             image: 'salmon.jpg',
             badge: 'popular', 
             badgeText: 'Popular', 
@@ -68,10 +68,10 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         { 
             id: 6, 
-            name: 'Ceviche de camaron', 
+            name: 'Ceviche de camarón', 
             category: 'Pescados', 
             price: 15.20, 
-            desc: 'Camarones frescos marinados en jugo de limon con cebolla y cilantro.', 
+            desc: 'Camarones frescos marinados en jugo de limón con cebolla y cilantro.', 
             image: 'ceviche.jpg',
             badge: 'new', 
             badgeText: 'Nuevo', 
@@ -80,10 +80,10 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         { 
             id: 7, 
-            name: 'Cafe de especialidad', 
+            name: 'Café de especialidad', 
             category: 'Bebidas', 
             price: 4.20, 
-            desc: 'Cafe de origen mexicano, tueste medio, con notas de chocolate.', 
+            desc: 'Café de origen mexicano, tueste medio, con notas de chocolate.', 
             image: 'cafe.jpg',
             badge: null, 
             badgeText: null, 
@@ -92,10 +92,10 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         { 
             id: 8, 
-            name: 'Ensalada Cesar', 
+            name: 'Ensalada César', 
             category: 'Ensaladas', 
             price: 11.80, 
-            desc: 'Lechuga romana, pollo a la plancha, parmesano y aderezo Cesar.', 
+            desc: 'Lechuga romana, pollo a la plancha, parmesano y aderezo César.', 
             image: 'cesar.jpg',
             badge: 'vegan', 
             badgeText: 'Vegano', 
@@ -124,30 +124,38 @@ document.addEventListener('DOMContentLoaded', function() {
         { 
             id: 1, 
             name: 'María García', 
-            text: '¡La pizza Margarita es espectacular! La masa crujiente y los ingredientes frescos hacen una combinación perfecta. Definitivamente volveré a pedir.', 
+            text: '¡La pizza Margarita es espectacular! La masa crujiente y los ingredientes frescos hacen una combinación perfecta.', 
             date: '15/01/2025 14:30' 
         },
         { 
             id: 2, 
             name: 'Carlos López', 
-            text: 'Muy buena atención y la comida llegó caliente. La hamburguesa BBQ estaba deliciosa, aunque me hubiera gustado más salsa.', 
+            text: 'Muy buena atención y la comida llegó caliente. La hamburguesa BBQ estaba deliciosa.', 
             date: '14/01/2025 18:45' 
         },
         { 
             id: 3, 
             name: 'Ana Martínez', 
-            text: 'El ceviche de camarón es el mejor que he probado. Fresco, bien sazonado y con una presentación impecable. ¡100% recomendado!', 
+            text: 'El ceviche de camarón es el mejor que he probado. Fresco, bien sazonado y con una presentación impecable.', 
             date: '13/01/2025 12:20' 
         },
         { 
             id: 4, 
             name: 'Pedro Ramírez', 
-            text: 'Buena comida pero el tiempo de entrega fue un poco largo. La ensalada Cesar estaba rica pero le faltaba un poco de aderezo.', 
+            text: 'Buena comida pero el tiempo de entrega fue un poco largo. La ensalada César estaba rica.', 
             date: '12/01/2025 20:10' 
         }
     ];
 
     let nextCommentId = 5;
+
+    // ============================================================
+    // C2C - PUBLICACIONES DE USUARIOS
+    // ============================================================
+    
+    let userPublications = [];
+    let nextPublicationId = 1;
+    let editingPublicationId = null;
 
     // ============================================================
     // VARIABLES DE ESTADO
@@ -197,20 +205,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     } catch (e) {}
 
+    try {
+        const savedPublications = localStorage.getItem('delicias_publications');
+        if (savedPublications) {
+            userPublications = JSON.parse(savedPublications);
+            let maxId = 0;
+            userPublications.forEach(function(p) {
+                if (p.id > maxId) maxId = p.id;
+            });
+            nextPublicationId = maxId + 1;
+        }
+    } catch (e) {}
+
     const defaultClients = [
-        { id: 1, name: 'Maria Garcia', email: 'maria@email.com', phone: '55 1234 5678', address: 'Av. Principal 123', orders: 8, spent: 340.50, registeredDate: '10/01/2024' },
-        { id: 2, name: 'Carlos Lopez', email: 'carlos@email.com', phone: '55 2345 6789', address: 'Calle Centro 456', orders: 5, spent: 210.80, registeredDate: '15/03/2024' },
-        { id: 3, name: 'Ana Martinez', email: 'ana@email.com', phone: '55 3456 7890', address: 'Boulevard Sur 789', orders: 12, spent: 520.30, registeredDate: '02/06/2024' },
-        { id: 4, name: 'Pedro Ramirez', email: 'pedro@email.com', phone: '55 4567 8901', address: 'Paseo Norte 321', orders: 3, spent: 95.20, registeredDate: '20/08/2024' },
-        { id: 5, name: 'Laura Fernandez', email: 'laura@email.com', phone: '55 5678 9012', address: 'Avenida Este 654', orders: 6, spent: 280.00, registeredDate: '05/10/2024' }
+        { id: 1, name: 'María García', email: 'maria@email.com', phone: '55 1234 5678', address: 'Av. Principal 123', orders: 8, spent: 340.50, registeredDate: '10/01/2024' },
+        { id: 2, name: 'Carlos López', email: 'carlos@email.com', phone: '55 2345 6789', address: 'Calle Centro 456', orders: 5, spent: 210.80, registeredDate: '15/03/2024' },
+        { id: 3, name: 'Ana Martínez', email: 'ana@email.com', phone: '55 3456 7890', address: 'Boulevard Sur 789', orders: 12, spent: 520.30, registeredDate: '02/06/2024' },
+        { id: 4, name: 'Pedro Ramírez', email: 'pedro@email.com', phone: '55 4567 8901', address: 'Paseo Norte 321', orders: 3, spent: 95.20, registeredDate: '20/08/2024' },
+        { id: 5, name: 'Laura Fernández', email: 'laura@email.com', phone: '55 5678 9012', address: 'Avenida Este 654', orders: 6, spent: 280.00, registeredDate: '05/10/2024' }
     ];
 
     const defaultOrders = [
-        { id: 125, client: 'Maria Garcia', products: 'Pizza Margarita (2)', total: 25.00, status: 'entregado', date: '15/01/2025 14:30' },
-        { id: 124, client: 'Carlos Lopez', products: 'Hamburguesa Clasica (1)', total: 10.90, status: 'entregado', date: '15/01/2025 13:15' },
-        { id: 123, client: 'Ana Martinez', products: 'Salmon a la plancha (1)', total: 18.40, status: 'en preparacion', date: '15/01/2025 12:45' },
-        { id: 122, client: 'Pedro Ramirez', products: 'Ceviche de camaron (2)', total: 30.40, status: 'pendiente', date: '15/01/2025 12:00' },
-        { id: 121, client: 'Laura Fernandez', products: 'Ensalada Cesar (1)', total: 11.80, status: 'entregado', date: '15/01/2025 11:20' }
+        { id: 125, client: 'María García', products: 'Pizza Margarita (2)', total: 25.00, status: 'entregado', date: '15/01/2025 14:30' },
+        { id: 124, client: 'Carlos López', products: 'Hamburguesa Clásica (1)', total: 10.90, status: 'entregado', date: '15/01/2025 13:15' },
+        { id: 123, client: 'Ana Martínez', products: 'Salmón a la plancha (1)', total: 18.40, status: 'en preparacion', date: '15/01/2025 12:45' },
+        { id: 122, client: 'Pedro Ramírez', products: 'Ceviche de camarón (2)', total: 30.40, status: 'pendiente', date: '15/01/2025 12:00' },
+        { id: 121, client: 'Laura Fernández', products: 'Ensalada César (1)', total: 11.80, status: 'entregado', date: '15/01/2025 11:20' }
     ];
 
     try {
@@ -231,8 +251,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const savedPromos = localStorage.getItem('delicias_promociones');
         promociones = savedPromos ? JSON.parse(savedPromos) : [
             { nombre: 'Oferta de fin de semana', descuento: '20%', productos: 'Pizza Pepperoni, Hamburguesa BBQ', vigencia: '18-20 Ene', estado: 'Activa' },
-            { nombre: 'Combo Familiar', descuento: '15%', productos: 'Pizza Margarita + Ensalada Cesar', vigencia: '15-31 Ene', estado: 'Activa' },
-            { nombre: '2x1 en bebidas', descuento: '50%', productos: 'Cafe de especialidad', vigencia: '10-20 Ene', estado: 'Vencida' }
+            { nombre: 'Combo Familiar', descuento: '15%', productos: 'Pizza Margarita + Ensalada César', vigencia: '15-31 Ene', estado: 'Activa' },
+            { nombre: '2x1 en bebidas', descuento: '50%', productos: 'Café de especialidad', vigencia: '10-20 Ene', estado: 'Vencida' }
         ];
     } catch (e) {}
 
@@ -276,6 +296,12 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (e) {}
     }
 
+    function savePublications() {
+        try {
+            localStorage.setItem('delicias_publications', JSON.stringify(userPublications));
+        } catch (e) {}
+    }
+
     // ============================================================
     // FUNCIONES DE UTILIDAD
     // ============================================================
@@ -303,7 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="modal-box">
                     <div class="modal-icon" aria-hidden="true"><i class="fas fa-question-circle"></i></div>
                     <h2>Confirmar</h2>
-                    <p id="confirm-message">¿Estas seguro?</p>
+                    <p id="confirm-message">¿Estás seguro?</p>
                     <div style="display:flex; gap:0.8rem; justify-content:center; flex-wrap:wrap; margin-top:0.5rem;">
                         <button class="btn-primary" id="confirm-btn" style="min-width:100px;">Aceptar</button>
                         <button class="btn-secondary" id="confirm-cancel-btn" style="min-width:100px;">Cancelar</button>
@@ -348,7 +374,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // FUNCIONES DE NAVEGACIÓN
+    // NAVEGACIÓN - PÁGINAS
     // ============================================================
 
     const pages = {
@@ -364,7 +390,10 @@ document.addEventListener('DOMContentLoaded', function() {
         registro: document.getElementById('page-registro'),
         login: document.getElementById('page-login'),
         perfil: document.getElementById('page-perfil'),
-        exito: document.getElementById('page-exito')
+        exito: document.getElementById('page-exito'),
+        marketplace: document.getElementById('page-marketplace'),
+        'publicar-producto': document.getElementById('page-publicar-producto'),
+        'mis-publicaciones': document.getElementById('page-mis-publicaciones')
     };
 
     const adminPages = {
@@ -415,6 +444,26 @@ document.addEventListener('DOMContentLoaded', function() {
             renderCommunityComments();
         }
 
+        if (pageId === 'marketplace') {
+            renderMarketplace();
+        }
+
+        if (pageId === 'mis-publicaciones') {
+            renderMisPublicaciones();
+        }
+
+        if (pageId === 'publicar-producto') {
+            if (editingPublicationId === null) {
+                document.getElementById('publicar-nombre').value = '';
+                document.getElementById('publicar-precio').value = '';
+                document.getElementById('publicar-descripcion').value = '';
+                document.getElementById('publicar-foto').value = '';
+                document.getElementById('publicar-image-preview').innerHTML = '<div class="empty-preview"><i class="fas fa-image" style="font-size:1.5rem; display:block; margin-bottom:0.3rem;" aria-hidden="true"></i>Vista previa</div>';
+                document.getElementById('publicar-btn').innerHTML = '<i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> Publicar producto';
+                document.getElementById('publicar-title').textContent = 'Publica tu producto';
+            }
+        }
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -456,59 +505,56 @@ document.addEventListener('DOMContentLoaded', function() {
         if (statOutOfStock) statOutOfStock.textContent = outOfStock;
     }
 
-    // ============================================================
-    // FUNCIONES DE PERFIL
-    // ============================================================
+    function updateNavVisibility() {
+        var userNavItems = document.querySelectorAll('.user-nav');
+        var adminNavItems = document.querySelectorAll('.admin-nav');
+        var navLoginBtn = document.getElementById('nav-login-btn');
 
-    function updateProfileUI() {
-        var avatarText = document.getElementById('profile-avatar-text');
-        var profileName = document.getElementById('profile-name');
-        var profileEmail = document.getElementById('profile-email');
-        var profileFullname = document.getElementById('profile-fullname');
-        var profileUserEmail = document.getElementById('profile-user-email');
-        var profilePhone = document.getElementById('profile-phone');
-        var profileAddress = document.getElementById('profile-address');
-
-        if (avatarText) {
-            var initials = currentUser.name.split(' ').map(function(n) { return n[0]; }).join('');
-            avatarText.textContent = initials;
+        if (isAdmin) {
+            userNavItems.forEach(function(el) { el.style.display = 'none'; });
+            adminNavItems.forEach(function(el) {
+                el.style.display = 'list-item';
+                el.style.background = 'transparent';
+            });
+            document.body.classList.add('admin-mode');
+            if (navLoginBtn) {
+                navLoginBtn.innerHTML = '<i class="fas fa-user-shield" aria-hidden="true"></i> Admin';
+                navLoginBtn.setAttribute('data-page', 'admin');
+                navLoginBtn.style.background = 'transparent';
+                navLoginBtn.style.color = '#8b5cf6';
+                navLoginBtn.style.padding = '0.3rem 0.8rem';
+                navLoginBtn.style.border = 'none';
+                navLoginBtn.style.borderRadius = '40px';
+                navLoginBtn.style.fontWeight = '600';
+                navLoginBtn.style.borderBottom = 'none';
+            }
+        } else {
+            userNavItems.forEach(function(el) { el.style.display = 'list-item'; });
+            adminNavItems.forEach(function(el) {
+                el.style.display = 'none';
+                el.style.background = '';
+            });
+            document.body.classList.remove('admin-mode');
+            if (isLoggedIn && navLoginBtn) {
+                navLoginBtn.innerHTML = '<i class="fas fa-user-circle" aria-hidden="true"></i> Mi Perfil';
+                navLoginBtn.setAttribute('data-page', 'perfil');
+                navLoginBtn.style.background = '#8b5cf6';
+                navLoginBtn.style.color = 'white';
+                navLoginBtn.style.border = 'none';
+                navLoginBtn.style.borderRadius = '40px';
+                navLoginBtn.style.padding = '0.4rem 1rem';
+                navLoginBtn.style.borderBottom = 'none';
+            } else if (navLoginBtn) {
+                navLoginBtn.innerHTML = '<i class="fas fa-user-circle" aria-hidden="true"></i> Iniciar sesión';
+                navLoginBtn.setAttribute('data-page', 'login');
+                navLoginBtn.style.background = '#ede6f5';
+                navLoginBtn.style.color = '#2d1b3d';
+                navLoginBtn.style.border = 'none';
+                navLoginBtn.style.borderRadius = '40px';
+                navLoginBtn.style.padding = '0.4rem 1rem';
+                navLoginBtn.style.borderBottom = 'none';
+            }
         }
-        if (profileName) profileName.textContent = currentUser.name;
-        if (profileEmail) profileEmail.textContent = currentUser.email;
-        if (profileFullname) profileFullname.textContent = currentUser.name;
-        if (profileUserEmail) profileUserEmail.textContent = currentUser.email;
-        if (profilePhone) profilePhone.textContent = currentUser.phone || '+52 55 1234 5678';
-        if (profileAddress) profileAddress.textContent = currentUser.address || 'Calle Principal 123, Colonia Centro';
-        renderUserComments();
-    }
-
-    function renderUserComments() {
-        var container = document.getElementById('profile-comments-list');
-        if (!container) return;
-
-        var userComments = communityComments.filter(function(c) {
-            return c.name.toLowerCase() === currentUser.name.toLowerCase();
-        });
-
-        if (userComments.length === 0) {
-            container.innerHTML = '<p style="color:#6b4f7a; font-size:0.9rem; text-align:center; padding:0.5rem;">' +
-                '<i class="fas fa-comment-slash" style="color:#d9c4e8; display:block; font-size:1.5rem; margin-bottom:0.5rem;"></i>' +
-                'Aún no has publicado comentarios en la comunidad.' +
-                '</p>';
-            return;
-        }
-
-        var html = '';
-        for (var i = 0; i < userComments.length; i++) {
-            var c = userComments[i];
-            html += '<div class="profile-comment-item" style="background:#faf8fc; border-radius:12px; padding:0.8rem; margin-bottom:0.6rem; border:1px solid #ede6f5;">';
-            html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">';
-            html += '<span style="font-size:0.7rem; color:#6b4f7a;">' + c.date + '</span>';
-            html += '</div>';
-            html += '<p style="color:#2d1b3d; font-size:0.9rem; margin:0;">"' + c.text + '"</p>';
-            html += '</div>';
-        }
-        container.innerHTML = html;
     }
 
     // ============================================================
@@ -525,46 +571,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const cartToggleBtn = document.getElementById('cart-toggle-btn');
 
     function openCart() {
-        if (cartOverlay) {
-            cartOverlay.classList.add('open');
-        }
-        if (cartBackdrop) {
-            cartBackdrop.classList.add('show');
-        }
+        if (cartOverlay) cartOverlay.classList.add('open');
+        if (cartBackdrop) cartBackdrop.classList.add('show');
         document.body.style.overflow = 'hidden';
-        if (cartToggleBtn) {
-            cartToggleBtn.setAttribute('aria-expanded', 'true');
-        }
+        if (cartToggleBtn) cartToggleBtn.setAttribute('aria-expanded', 'true');
         cartOpen = true;
     }
 
     function closeCart() {
-        if (cartOverlay) {
-            cartOverlay.classList.remove('open');
-        }
-        if (cartBackdrop) {
-            cartBackdrop.classList.remove('show');
-        }
+        if (cartOverlay) cartOverlay.classList.remove('open');
+        if (cartBackdrop) cartBackdrop.classList.remove('show');
         document.body.style.overflow = '';
-        if (cartToggleBtn) {
-            cartToggleBtn.setAttribute('aria-expanded', 'false');
-        }
+        if (cartToggleBtn) cartToggleBtn.setAttribute('aria-expanded', 'false');
         cartOpen = false;
     }
 
     function toggleCart() {
-        if (cartOpen) {
-            closeCart();
-        } else {
-            openCart();
-        }
+        cartOpen ? closeCart() : openCart();
     }
 
     function updateCartUI() {
         var totalItems = 0;
-        for (var i = 0; i < cart.length; i++) {
-            totalItems += cart[i].quantity;
-        }
+        for (var i = 0; i < cart.length; i++) totalItems += cart[i].quantity;
         if (cartBadge) cartBadge.textContent = totalItems;
 
         var totalPrice = 0;
@@ -575,14 +603,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (cartTotalBadge) cartTotalBadge.textContent = '$' + totalPrice.toFixed(0);
 
         var clearCartBtn = document.getElementById('clear-cart-btn');
-        if (clearCartBtn) {
-            clearCartBtn.disabled = cart.length === 0;
-        }
+        if (clearCartBtn) clearCartBtn.disabled = cart.length === 0;
 
         if (!cartItemsContainer) return;
 
         if (cart.length === 0) {
-            cartItemsContainer.innerHTML = '<div class="cart-empty" role="status"><i class="fas fa-shopping-basket" aria-hidden="true"></i><p>Tu carrito esta vacio</p><small>Explora nuestro catalogo y agrega tus productos favoritos</small></div>';
+            cartItemsContainer.innerHTML = '<div class="cart-empty" role="status"><i class="fas fa-shopping-basket" aria-hidden="true"></i><p>Tu carrito está vacío</p><small>Explora nuestro catálogo y agrega tus productos favoritos</small></div>';
             if (checkoutBtn) checkoutBtn.disabled = true;
             if (cartTotalAmount) cartTotalAmount.textContent = '$0.00';
             return;
@@ -663,21 +689,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         saveCart();
         updateCartUI();
-        
-        setTimeout(function() {
-            openCart();
-        }, 300);
+        setTimeout(function() { openCart(); }, 300);
     }
 
     function clearCart() {
         if (cart.length === 0) return;
-        
         showConfirmModal('¿Estás seguro de que quieres vaciar tu carrito?', function(confirmed) {
             if (confirmed) {
                 cart = [];
                 saveCart();
                 updateCartUI();
-                
                 var feedback = document.getElementById('cart-feedback');
                 if (feedback) {
                     feedback.textContent = 'Carrito vaciado correctamente.';
@@ -693,17 +714,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function processPayment() {
         if (cart.length === 0) return;
-        
         var orderItems = cart.map(function(item) {
             var p = products.find(function(pr) { return pr.id === item.productId; });
             return { ...item, name: p ? p.name : 'Producto', price: p ? p.price : 0 };
         });
-        
         var total = 0;
         for (var i = 0; i < orderItems.length; i++) {
             total += orderItems[i].price * orderItems[i].quantity;
         }
-
         closeCart();
         cart = [];
         saveCart();
@@ -774,7 +792,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (filtered.length === 0) {
-            container.innerHTML = '<div class="no-results" style="grid-column:1/-1; text-align:center; padding:2rem; color:#6b4f7a;"><i class="fas fa-utensils" style="font-size:2rem; color:#d9c4e8; display:block; margin-bottom:0.8rem;"></i>No hay productos en esta categoria.</div>';
+            container.innerHTML = '<div class="no-results" style="grid-column:1/-1; text-align:center; padding:2rem; color:#6b4f7a;"><i class="fas fa-utensils" style="font-size:2rem; color:#d9c4e8; display:block; margin-bottom:0.8rem;"></i>No hay productos en esta categoría.</div>';
             return;
         }
 
@@ -897,6 +915,61 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
+    // FUNCIONES DE PERFIL
+    // ============================================================
+
+    function updateProfileUI() {
+        var avatarText = document.getElementById('profile-avatar-text');
+        var profileName = document.getElementById('profile-name');
+        var profileEmail = document.getElementById('profile-email');
+        var profileFullname = document.getElementById('profile-fullname');
+        var profileUserEmail = document.getElementById('profile-user-email');
+        var profilePhone = document.getElementById('profile-phone');
+        var profileAddress = document.getElementById('profile-address');
+
+        if (avatarText) {
+            var initials = currentUser.name.split(' ').map(function(n) { return n[0]; }).join('');
+            avatarText.textContent = initials;
+        }
+        if (profileName) profileName.textContent = currentUser.name;
+        if (profileEmail) profileEmail.textContent = currentUser.email;
+        if (profileFullname) profileFullname.textContent = currentUser.name;
+        if (profileUserEmail) profileUserEmail.textContent = currentUser.email;
+        if (profilePhone) profilePhone.textContent = currentUser.phone || '+52 55 1234 5678';
+        if (profileAddress) profileAddress.textContent = currentUser.address || 'Calle Principal 123, Colonia Centro';
+        renderUserComments();
+    }
+
+    function renderUserComments() {
+        var container = document.getElementById('profile-comments-list');
+        if (!container) return;
+
+        var userComments = communityComments.filter(function(c) {
+            return c.name.toLowerCase() === currentUser.name.toLowerCase();
+        });
+
+        if (userComments.length === 0) {
+            container.innerHTML = '<p style="color:#6b4f7a; font-size:0.9rem; text-align:center; padding:0.5rem;">' +
+                '<i class="fas fa-comment-slash" style="color:#d9c4e8; display:block; font-size:1.5rem; margin-bottom:0.5rem;"></i>' +
+                'Aún no has publicado comentarios en la comunidad.' +
+                '</p>';
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < userComments.length; i++) {
+            var c = userComments[i];
+            html += '<div class="profile-comment-item" style="background:#faf8fc; border-radius:12px; padding:0.8rem; margin-bottom:0.6rem; border:1px solid #ede6f5;">';
+            html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">';
+            html += '<span style="font-size:0.7rem; color:#6b4f7a;">' + c.date + '</span>';
+            html += '</div>';
+            html += '<p style="color:#2d1b3d; font-size:0.9rem; margin:0;">' + (c.text || '<em style="color:#999;">[Comentario vacío]</em>') + '</p>';
+            html += '</div>';
+        }
+        container.innerHTML = html;
+    }
+
+    // ============================================================
     // FUNCIONES DE ADMIN - PRODUCTOS
     // ============================================================
 
@@ -974,10 +1047,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             renderProductTable();
                             renderCatalog(selectedCategory);
                             updateDashboardStats();
-                            var msg = document.getElementById('form-message');
-                            if (msg) {
-                                showFormMessage(msg, 'Producto eliminado correctamente.', 'success');
-                            }
                         }
                     }
                 });
@@ -1219,8 +1288,8 @@ document.addEventListener('DOMContentLoaded', function() {
             html += '<td>' + promo.vigencia + '</td>';
             html += '<td><span class="status-badge ' + estadoClass + '">' + promo.estado + '</span></td>';
             html += '<td><div class="table-actions">';
-            html += '<button class="btn-edit edit-promo-btn" data-index="' + i + '" aria-label="Editar promocion"><i class="fas fa-edit"></i></button>';
-            html += '<button class="btn-delete delete-promo-btn" data-index="' + i + '" aria-label="Eliminar promocion"><i class="fas fa-trash"></i></button>';
+            html += '<button class="btn-edit edit-promo-btn" data-index="' + i + '" aria-label="Editar promoción"><i class="fas fa-edit"></i></button>';
+            html += '<button class="btn-delete delete-promo-btn" data-index="' + i + '" aria-label="Eliminar promoción"><i class="fas fa-trash"></i></button>';
             html += '</div></td></tr>';
         }
         tbody.innerHTML = html;
@@ -1235,11 +1304,11 @@ document.addEventListener('DOMContentLoaded', function() {
         tbody.querySelectorAll('.delete-promo-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 var index = parseInt(this.getAttribute('data-index'));
-                var promoName = promociones[index] ? promociones[index].nombre : 'esta promocion';
+                var promoName = promociones[index] ? promociones[index].nombre : 'esta promoción';
                 if (promoName === 'Sin nombre' || promoName === '') {
-                    promoName = 'esta promocion';
+                    promoName = 'esta promoción';
                 }
-                showConfirmModal('Eliminar la promocion "' + promoName + '"?', function(confirmed) {
+                showConfirmModal('Eliminar la promoción "' + promoName + '"?', function(confirmed) {
                     if (confirmed) {
                         promociones.splice(index, 1);
                         savePromociones();
@@ -1264,7 +1333,7 @@ document.addEventListener('DOMContentLoaded', function() {
         msg.className = '';
 
         if (index === -1) {
-            title.textContent = 'Nueva Promocion';
+            title.textContent = 'Nueva Promoción';
             document.getElementById('promo-form-index').value = '';
             document.getElementById('promo-form-name').value = '';
             document.getElementById('promo-form-discount').value = '';
@@ -1272,7 +1341,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('promo-form-validity').value = '';
             document.getElementById('promo-form-status').value = 'Activa';
         } else {
-            title.textContent = 'Editar Promocion';
+            title.textContent = 'Editar Promoción';
             var promo = promociones[index];
             document.getElementById('promo-form-index').value = index;
             document.getElementById('promo-form-name').value = promo.nombre;
@@ -1305,10 +1374,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (index === '') {
             promociones.push(promoData);
-            showFormMessage(msg, 'Promocion creada exitosamente.', 'success');
+            showFormMessage(msg, 'Promoción creada exitosamente.', 'success');
         } else {
             promociones[parseInt(index)] = promoData;
-            showFormMessage(msg, 'Promocion actualizada exitosamente.', 'success');
+            showFormMessage(msg, 'Promoción actualizada exitosamente.', 'success');
         }
 
         savePromociones();
@@ -1339,7 +1408,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (badge) badge.textContent = promo.descuento;
                 if (title) title.textContent = promo.nombre;
-                if (desc) desc.textContent = 'Promocion especial: ' + promo.productos;
+                if (desc) desc.textContent = 'Promoción especial: ' + promo.productos;
                 if (meta) {
                     meta.innerHTML = '<span><i class="fas fa-clock" aria-hidden="true"></i> ' + promo.vigencia + '</span><span><i class="fas fa-tag" aria-hidden="true"></i> ' + promo.estado + '</span>';
                 }
@@ -1348,7 +1417,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // FUNCIONES DE COMUNIDAD (SIN ESTRELLAS, SIN VALIDACIONES, PERMITE COMENTARIOS EN BLANCO)
+    // FUNCIONES DE COMUNIDAD
     // ============================================================
 
     function renderCommunityComments() {
@@ -1374,9 +1443,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 html += '<div class="comment-header">';
                 html += '<div class="comment-author"><strong>' + c.name + '</strong></div>';
                 html += '</div>';
-                html += '<div style="display:flex; justify-content:space-between; align-items:center;">';
-                html += '<p>' + (c.text || '') + '</p>';
-                html += '<span class="comment-date">' + c.date + '</span>';
+                html += '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">';
+                html += '<p style="margin:0.4rem 0 0 0; flex:1;">' + (c.text || '<em style="color:#999;">[Comentario vacío]</em>') + '</p>';
+                html += '<span class="comment-date" style="white-space:nowrap;">' + c.date + '</span>';
                 html += '</div>';
                 html += '</div>';
             }
@@ -1412,6 +1481,335 @@ document.addEventListener('DOMContentLoaded', function() {
                 feedback.classList.add('hidden');
             }, 4000);
         }
+        return true;
+    }
+
+    function publishCommentFromProfile(name, text) {
+        var now = new Date();
+        var dateStr = now.getDate().toString().padStart(2, '0') + '/' + 
+                      (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                      now.getFullYear() + ' ' + 
+                      now.getHours().toString().padStart(2, '0') + ':' + 
+                      now.getMinutes().toString().padStart(2, '0');
+        
+        var newComment = {
+            id: nextCommentId++,
+            name: name || 'Anónimo',
+            text: text || '',
+            date: dateStr
+        };
+        
+        communityComments.unshift(newComment);
+        saveComments();
+        renderCommunityComments();
+        renderUserComments();
+        
+        var feedback = document.getElementById('profile-comment-feedback');
+        if (feedback) {
+            showFormMessage(feedback, '¡Comentario publicado en la comunidad!', 'success');
+            setTimeout(function() {
+                feedback.classList.add('hidden');
+            }, 4000);
+        }
+        return true;
+    }
+
+    // ============================================================
+    // MARKETPLACE - FUNCIONES
+    // ============================================================
+
+    function renderMarketplace() {
+        var totalPublicaciones = userPublications.length;
+        var totalCompras = 0;
+        
+        // Simular compras realizadas (solo para mostrar)
+        for (var i = 0; i < userPublications.length; i++) {
+            if (userPublications[i].compras) {
+                totalCompras += userPublications[i].compras;
+            }
+        }
+        
+        var resumenPublicaciones = document.getElementById('resumen-publicaciones');
+        var resumenCompras = document.getElementById('resumen-compras');
+        
+        if (resumenPublicaciones) resumenPublicaciones.textContent = totalPublicaciones;
+        if (resumenCompras) resumenCompras.textContent = totalCompras;
+
+        var container = document.getElementById('ultimas-publicaciones-list');
+        if (!container) return;
+
+        var sorted = [...userPublications].sort(function(a, b) {
+            return new Date(b.fecha.split('/').reverse().join('-')) - 
+                   new Date(a.fecha.split('/').reverse().join('-'));
+        });
+
+        var ultimas = sorted.slice(0, 6);
+
+        if (ultimas.length === 0) {
+            container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:1rem; color:var(--text-secondary);">' +
+                '<i class="fas fa-box-open" style="font-size:2rem; color:#d9c4e8; display:block; margin-bottom:0.5rem;"></i>' +
+                'No hay productos disponibles. ¡Sé el primero en publicar!' +
+                '<br><button class="btn-primary" id="ir-publicar-marketplace" style="margin-top:0.5rem;"><i class="fas fa-plus" aria-hidden="true"></i> Publicar producto</button>' +
+                '</div>';
+            
+            var irBtn = document.getElementById('ir-publicar-marketplace');
+            if (irBtn) {
+                irBtn.addEventListener('click', function() {
+                    showPage('publicar-producto');
+                });
+            }
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < ultimas.length; i++) {
+            var p = ultimas[i];
+            html += '<div class="ultima-publicacion" data-id="' + p.id + '">';
+            html += '<div class="ultima-img"><img src="' + (p.foto || 'https://via.placeholder.com/200x100/8b5cf6/ffffff?text=Producto') + '" alt="' + p.nombre + '" onerror="this.src=\'https://via.placeholder.com/200x100/8b5cf6/ffffff?text=Producto\'"></div>';
+            html += '<div class="ultima-nombre">' + p.nombre + '</div>';
+            html += '<div class="ultima-precio">$' + parseFloat(p.precio).toFixed(2) + '</div>';
+            html += '<div class="ultima-fecha">' + p.fecha + '</div>';
+            html += '<button class="btn-comprar-marketplace comprar-marketplace-btn" data-id="' + p.id + '" data-nombre="' + p.nombre + '" data-precio="' + p.precio + '">';
+            html += '<i class="fas fa-shopping-cart" aria-hidden="true"></i> Comprar';
+            html += '</button>';
+            html += '</div>';
+        }
+        container.innerHTML = html;
+
+        // Event listeners para los botones de compra
+        container.querySelectorAll('.comprar-marketplace-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var id = parseInt(this.getAttribute('data-id'));
+                var nombre = this.getAttribute('data-nombre');
+                var precio = parseFloat(this.getAttribute('data-precio'));
+                agregarProductoMarketplaceAlCarrito(id, nombre, precio);
+            });
+        });
+    }
+
+    function agregarProductoMarketplaceAlCarrito(id, nombre, precio) {
+        // Buscar si el producto ya existe en el carrito
+        var existing = null;
+        for (var i = 0; i < cart.length; i++) {
+            if (cart[i].productId === id) {
+                existing = cart[i];
+                break;
+            }
+        }
+        
+        if (existing) {
+            existing.quantity += 1;
+        } else {
+            // Crear un producto temporal en el carrito
+            cart.push({ 
+                productId: id, 
+                quantity: 1,
+                nombre: nombre,
+                precio: precio,
+                esMarketplace: true
+            });
+        }
+        
+        saveCart();
+        updateCartUI();
+        
+        // Mostrar feedback
+        var feedback = document.createElement('div');
+        feedback.style.cssText = 'position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:#4caf50; color:white; padding:12px 24px; border-radius:40px; font-weight:600; z-index:9999; box-shadow:0 4px 20px rgba(0,0,0,0.2); animation:fadeIn 0.3s ease;';
+        feedback.textContent = '✅ "' + nombre + '" agregado al carrito';
+        document.body.appendChild(feedback);
+        
+        setTimeout(function() {
+            feedback.style.opacity = '0';
+            feedback.style.transition = 'opacity 0.5s ease';
+            setTimeout(function() {
+                feedback.remove();
+            }, 500);
+        }, 3000);
+        
+        // Abrir carrito
+        setTimeout(function() {
+            openCart();
+        }, 400);
+    }
+
+    // ============================================================
+    // C2C - PUBLICAR PRODUCTO
+    // ============================================================
+
+    function renderMisPublicaciones() {
+        var container = document.getElementById('mis-publicaciones-list');
+        var count = document.getElementById('publicaciones-count');
+        
+        if (!container) return;
+
+        if (userPublications.length === 0) {
+            container.innerHTML = '<div class="empty-state" style="text-align:center; padding:2rem; color:#6b4f7a;">' +
+                '<i class="fas fa-box-open" style="font-size:2rem; color:#d9c4e8; display:block; margin-bottom:0.8rem;"></i>' +
+                '<p>No has publicado ningún producto aún.</p>' +
+                '<button class="btn-primary" id="ir-a-publicar-btn" style="margin-top:0.5rem;"><i class="fas fa-plus" aria-hidden="true"></i> Publicar producto</button>' +
+                '</div>';
+            
+            var irBtn = document.getElementById('ir-a-publicar-btn');
+            if (irBtn) {
+                irBtn.addEventListener('click', function() {
+                    showPage('publicar-producto');
+                });
+            }
+            if (count) count.textContent = '0';
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < userPublications.length; i++) {
+            var p = userPublications[i];
+            html += '<div class="publicacion-item" data-id="' + p.id + '">';
+            html += '<div class="publicacion-img"><img src="' + (p.foto || 'https://via.placeholder.com/80x80/8b5cf6/ffffff?text=Producto') + '" alt="' + p.nombre + '" onerror="this.src=\'https://via.placeholder.com/80x80/8b5cf6/ffffff?text=Producto\'"></div>';
+            html += '<div class="publicacion-info">';
+            html += '<h4>' + p.nombre + '</h4>';
+            html += '<span class="publicacion-precio">$' + parseFloat(p.precio).toFixed(2) + '</span>';
+            html += ' <span class="publicacion-categoria">' + p.categoria + '</span>';
+            html += '<p style="font-size:0.85rem; color:var(--text-secondary); margin-top:0.2rem;">' + (p.descripcion || '') + '</p>';
+            html += '<span style="font-size:0.7rem; color:var(--text-secondary);">Publicado: ' + p.fecha + '</span>';
+            html += '</div>';
+            html += '<div class="publicacion-actions">';
+            html += '<button class="btn-edit-pub" data-id="' + p.id + '" aria-label="Editar"><i class="fas fa-edit"></i> Editar</button>';
+            html += '<button class="btn-delete-pub" data-id="' + p.id + '" aria-label="Eliminar"><i class="fas fa-trash"></i> Eliminar</button>';
+            html += '</div>';
+            html += '</div>';
+        }
+        container.innerHTML = html;
+
+        if (count) count.textContent = userPublications.length;
+
+        container.querySelectorAll('.btn-edit-pub').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var id = parseInt(this.getAttribute('data-id'));
+                editarPublicacion(id);
+            });
+        });
+
+        container.querySelectorAll('.btn-delete-pub').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var id = parseInt(this.getAttribute('data-id'));
+                eliminarPublicacion(id);
+            });
+        });
+    }
+
+    function publicarProducto() {
+        var nombre = document.getElementById('publicar-nombre')?.value;
+        var precio = document.getElementById('publicar-precio')?.value;
+        var categoria = document.getElementById('publicar-categoria')?.value;
+        var descripcion = document.getElementById('publicar-descripcion')?.value;
+        var foto = document.getElementById('publicar-foto')?.value;
+        var msg = document.getElementById('publicar-message');
+
+        if (!nombre || !precio) {
+            showFormMessage(msg, 'Por favor completa el nombre y precio del producto.', 'error');
+            return;
+        }
+
+        if (!foto) {
+            foto = 'https://via.placeholder.com/400x250/8b5cf6/ffffff?text=Producto';
+        }
+
+        if (!descripcion) {
+            descripcion = '';
+        }
+
+        var now = new Date();
+        var dateStr = now.getDate().toString().padStart(2, '0') + '/' + 
+                      (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                      now.getFullYear();
+
+        var newPublication = {
+            id: nextPublicationId++,
+            nombre: nombre,
+            precio: parseFloat(precio),
+            categoria: categoria || 'Otros',
+            descripcion: descripcion,
+            foto: foto,
+            fecha: dateStr,
+            usuario: currentUser.name || 'Usuario',
+            compras: 0
+        };
+
+        userPublications.push(newPublication);
+        savePublications();
+        renderMisPublicaciones();
+
+        showFormMessage(msg, '¡Producto publicado exitosamente!', 'success');
+
+        document.getElementById('publicar-nombre').value = '';
+        document.getElementById('publicar-precio').value = '';
+        document.getElementById('publicar-descripcion').value = '';
+        document.getElementById('publicar-foto').value = '';
+        document.getElementById('publicar-image-preview').innerHTML = '<div class="empty-preview"><i class="fas fa-image" style="font-size:1.5rem; display:block; margin-bottom:0.3rem;" aria-hidden="true"></i>Vista previa</div>';
+
+        setTimeout(function() {
+            showPage('mis-publicaciones');
+        }, 1500);
+    }
+
+    function editarPublicacion(id) {
+        var pub = null;
+        for (var i = 0; i < userPublications.length; i++) {
+            if (userPublications[i].id === id) {
+                pub = userPublications[i];
+                break;
+            }
+        }
+        if (!pub) return;
+
+        editingPublicationId = id;
+        document.getElementById('publicar-nombre').value = pub.nombre;
+        document.getElementById('publicar-precio').value = pub.precio;
+        document.getElementById('publicar-categoria').value = pub.categoria;
+        document.getElementById('publicar-descripcion').value = pub.descripcion || '';
+        document.getElementById('publicar-foto').value = pub.foto || '';
+        
+        var preview = document.getElementById('publicar-image-preview');
+        if (preview && pub.foto) {
+            preview.innerHTML = '<img src="' + pub.foto + '" alt="Vista previa" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.innerHTML=\'<div class=\\"empty-preview\\"><i class=\\"fas fa-image\\" style=\\"font-size:1.5rem; display:block; margin-bottom:0.3rem;\\" aria-hidden=\\"true\\"></i>Imagen no encontrada</div>\'">';
+        }
+
+        var btn = document.getElementById('publicar-btn');
+        if (btn) btn.innerHTML = '<i class="fas fa-save" aria-hidden="true"></i> Actualizar producto';
+        
+        var title = document.getElementById('publicar-title');
+        if (title) title.textContent = 'Editar producto';
+
+        showPage('publicar-producto');
+    }
+
+    function eliminarPublicacion(id) {
+        var pub = null;
+        for (var i = 0; i < userPublications.length; i++) {
+            if (userPublications[i].id === id) {
+                pub = userPublications[i];
+                break;
+            }
+        }
+        if (!pub) return;
+
+        showConfirmModal('¿Eliminar la publicación "' + pub.nombre + '"?', function(confirmed) {
+            if (confirmed) {
+                var idx = -1;
+                for (var i = 0; i < userPublications.length; i++) {
+                    if (userPublications[i].id === id) {
+                        idx = i;
+                        break;
+                    }
+                }
+                if (idx !== -1) {
+                    userPublications.splice(idx, 1);
+                    savePublications();
+                    renderMisPublicaciones();
+                }
+            }
+        });
     }
 
     // ============================================================
@@ -1682,7 +2080,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var name = document.getElementById('form-product-name')?.value || 'Sin nombre';
             var category = document.getElementById('form-product-category')?.value || 'Pizzas';
             var price = parseFloat(document.getElementById('form-product-price')?.value) || 0;
-            var desc = document.getElementById('form-product-desc')?.value || 'Sin descripcion';
+            var desc = document.getElementById('form-product-desc')?.value || 'Sin descripción';
             var stock = parseInt(document.getElementById('form-product-stock')?.value) || 0;
             var status = document.getElementById('form-product-status')?.value || 'disponible';
             var image = document.getElementById('form-product-image')?.value || 'https://via.placeholder.com/200x200/8b5cf6/ffffff?text=Producto';
@@ -1793,8 +2191,8 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             var name = document.getElementById('form-client-name')?.value || 'Sin nombre';
             var email = document.getElementById('form-client-email')?.value || 'Sin email';
-            var phone = document.getElementById('form-client-phone')?.value || 'Sin telefono';
-            var address = document.getElementById('form-client-address')?.value || 'Sin direccion';
+            var phone = document.getElementById('form-client-phone')?.value || 'Sin teléfono';
+            var address = document.getElementById('form-client-address')?.value || 'Sin dirección';
             var msg = document.getElementById('client-form-message');
 
             if (editingClientId !== null && editingClientId >= 0) {
@@ -1839,19 +2237,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // EVENT LISTENERS - PRODUCT SEARCH
-    // ============================================================
-
-    var productSearch = document.getElementById('product-search');
-    if (productSearch) productSearch.addEventListener('input', renderProductTable);
-    
-    var categoryFilterSelect = document.getElementById('category-filter');
-    if (categoryFilterSelect) categoryFilterSelect.addEventListener('change', renderProductTable);
-    
-    var statusFilterSelect = document.getElementById('status-filter');
-    if (statusFilterSelect) statusFilterSelect.addEventListener('change', renderProductTable);
-
-    // ============================================================
     // EVENT LISTENERS - AUTH
     // ============================================================
 
@@ -1859,22 +2244,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (registroBtn) {
         registroBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            var nombre = document.getElementById('registro-nombre')?.value || '';
-            var email = document.getElementById('registro-email')?.value || '';
-            var password = document.getElementById('registro-password')?.value || '';
             var msg = document.getElementById('registro-message');
-
-            if (msg) {
-                showFormMessage(msg, 'Registro exitoso (simulado).', 'success');
-            }
-
-            var nombreInput = document.getElementById('registro-nombre');
-            var emailInput = document.getElementById('registro-email');
-            var passwordInput = document.getElementById('registro-password');
-            if (nombreInput) nombreInput.value = '';
-            if (emailInput) emailInput.value = '';
-            if (passwordInput) passwordInput.value = '';
-
+            if (msg) showFormMessage(msg, 'Registro exitoso (simulado).', 'success');
+            document.getElementById('registro-nombre').value = '';
+            document.getElementById('registro-email').value = '';
+            document.getElementById('registro-password').value = '';
             setTimeout(function() { showPage('login'); }, 1500);
         });
     }
@@ -1883,21 +2257,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (loginBtn) {
         loginBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            var email = document.getElementById('login-email')?.value || '';
-            var password = document.getElementById('login-password')?.value || '';
             var msg = document.getElementById('login-message');
-
             isLoggedIn = true;
             isAdmin = false;
-            if (msg) {
-                showFormMessage(msg, 'Inicio de sesion exitoso.', 'success');
-            }
-
-            var emailInput = document.getElementById('login-email');
-            var passwordInput = document.getElementById('login-password');
-            if (emailInput) emailInput.value = '';
-            if (passwordInput) passwordInput.value = '';
-
+            if (msg) showFormMessage(msg, 'Inicio de sesión exitoso.', 'success');
+            document.getElementById('login-email').value = '';
+            document.getElementById('login-password').value = '';
             setTimeout(function() {
                 updateNavVisibility();
                 showPage('perfil');
@@ -1909,21 +2274,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (adminLoginBtn) {
         adminLoginBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            var email = document.getElementById('login-email')?.value || '';
-            var password = document.getElementById('login-password')?.value || '';
             var msg = document.getElementById('login-message');
-
             isLoggedIn = true;
             isAdmin = true;
-            if (msg) {
-                showFormMessage(msg, 'Acceso de administrador concedido.', 'success');
-            }
-
-            var emailInput = document.getElementById('login-email');
-            var passwordInput = document.getElementById('login-password');
-            if (emailInput) emailInput.value = '';
-            if (passwordInput) passwordInput.value = '';
-
+            if (msg) showFormMessage(msg, 'Acceso de administrador concedido.', 'success');
+            document.getElementById('login-email').value = '';
+            document.getElementById('login-password').value = '';
             setTimeout(function() {
                 updateNavVisibility();
                 showPage('admin');
@@ -1936,9 +2292,7 @@ document.addEventListener('DOMContentLoaded', function() {
         forgotPasswordLink.addEventListener('click', function(e) {
             e.preventDefault();
             var msg = document.getElementById('login-message');
-            if (msg) {
-                showFormMessage(msg, 'Se ha enviado un enlace de restablecimiento (simulado).', 'success');
-            }
+            if (msg) showFormMessage(msg, 'Se ha enviado un enlace de restablecimiento (simulado).', 'success');
         });
     }
 
@@ -1948,9 +2302,7 @@ document.addEventListener('DOMContentLoaded', function() {
             isLoggedIn = false;
             isAdmin = false;
             var msg = document.getElementById('profile-message');
-            if (msg) {
-                showFormMessage(msg, 'Has cerrado sesion exitosamente.', 'success');
-            }
+            if (msg) showFormMessage(msg, 'Has cerrado sesión exitosamente.', 'success');
             updateNavVisibility();
             setTimeout(function() {
                 if (msg) msg.classList.add('hidden');
@@ -1966,10 +2318,6 @@ document.addEventListener('DOMContentLoaded', function() {
             isAdmin = false;
             updateNavVisibility();
             showPage('inicio');
-            var msg = document.getElementById('profile-message');
-            if (msg) {
-                showFormMessage(msg, 'Has cerrado sesion exitosamente.', 'success');
-            }
         });
     }
 
@@ -1977,9 +2325,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (editProfileBtn) {
         editProfileBtn.addEventListener('click', function() {
             var msg = document.getElementById('profile-message');
-            if (msg) {
-                showFormMessage(msg, 'Funcion de edicion de perfil (simulada).', 'success');
-            }
+            if (msg) showFormMessage(msg, 'Función de edición de perfil (simulada).', 'success');
         });
     }
 
@@ -1990,21 +2336,11 @@ document.addEventListener('DOMContentLoaded', function() {
     var sendContactBtn = document.getElementById('send-contact-btn');
     if (sendContactBtn) {
         sendContactBtn.addEventListener('click', function() {
-            var name = document.getElementById('contact-name')?.value || '';
-            var email = document.getElementById('contact-email')?.value || '';
-            var msg = document.getElementById('contact-message')?.value || '';
             var feedback = document.getElementById('contact-feedback');
-
-            if (feedback) {
-                showFormMessage(feedback, 'Mensaje enviado (simulado).', 'success');
-            }
-
-            var nameInput = document.getElementById('contact-name');
-            var emailInput = document.getElementById('contact-email');
-            var msgInput = document.getElementById('contact-message');
-            if (nameInput) nameInput.value = '';
-            if (emailInput) emailInput.value = '';
-            if (msgInput) msgInput.value = '';
+            if (feedback) showFormMessage(feedback, 'Mensaje enviado (simulado).', 'success');
+            document.getElementById('contact-name').value = '';
+            document.getElementById('contact-email').value = '';
+            document.getElementById('contact-message').value = '';
         });
     }
 
@@ -2030,26 +2366,125 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // EVENT LISTENERS - COMUNIDAD (SIN ESTRELLAS, SIN VALIDACIONES, PERMITE COMENTARIOS EN BLANCO)
+    // EVENT LISTENERS - COMUNIDAD
     // ============================================================
 
     var communityForm = document.getElementById('community-form');
     if (communityForm) {
         communityForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            
             var nameInput = document.getElementById('community-name');
             var commentInput = document.getElementById('community-comment');
-            
-            // Si el nombre está vacío, se pone "Anónimo"
             var name = nameInput ? (nameInput.value.trim() || 'Anónimo') : 'Anónimo';
-            // El comentario puede estar vacío
             var text = commentInput ? commentInput.value : '';
-            
             addCommunityComment(name, text);
-            
             if (nameInput) nameInput.value = '';
             if (commentInput) commentInput.value = '';
+        });
+    }
+
+    // ============================================================
+    // EVENT LISTENERS - PERFIL (PUBLICAR COMENTARIO)
+    // ============================================================
+
+    var profileCommentForm = document.getElementById('profile-comment-form');
+    if (profileCommentForm) {
+        profileCommentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var textInput = document.getElementById('profile-comment-text');
+            var text = textInput ? textInput.value : '';
+            var userName = currentUser && currentUser.name ? currentUser.name : 'Anónimo';
+            publishCommentFromProfile(userName, text);
+            if (textInput) textInput.value = '';
+        });
+    }
+
+    // ============================================================
+    // EVENT LISTENERS - PERFIL (BOTONES MARKETPLACE)
+    // ============================================================
+
+    var profilePublicarBtn = document.getElementById('profile-publicar-btn');
+    if (profilePublicarBtn) {
+        profilePublicarBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            editingPublicationId = null;
+            document.getElementById('publicar-nombre').value = '';
+            document.getElementById('publicar-precio').value = '';
+            document.getElementById('publicar-descripcion').value = '';
+            document.getElementById('publicar-foto').value = '';
+            document.getElementById('publicar-image-preview').innerHTML = '<div class="empty-preview"><i class="fas fa-image" style="font-size:1.5rem; display:block; margin-bottom:0.3rem;" aria-hidden="true"></i>Vista previa</div>';
+            document.getElementById('publicar-btn').innerHTML = '<i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> Publicar producto';
+            document.getElementById('publicar-title').textContent = 'Publica tu producto';
+            showPage('publicar-producto');
+        });
+    }
+
+    var profileMisPublicacionesBtn = document.getElementById('profile-mis-publicaciones-btn');
+    if (profileMisPublicacionesBtn) {
+        profileMisPublicacionesBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            renderMisPublicaciones();
+            showPage('mis-publicaciones');
+        });
+    }
+
+    // ============================================================
+    // EVENT LISTENERS - C2C PUBLICAR PRODUCTO
+    // ============================================================
+
+    var publicarForm = document.getElementById('publicar-form');
+    if (publicarForm) {
+        publicarForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (editingPublicationId !== null) {
+                var pub = null;
+                for (var i = 0; i < userPublications.length; i++) {
+                    if (userPublications[i].id === editingPublicationId) {
+                        pub = userPublications[i];
+                        break;
+                    }
+                }
+                if (pub) {
+                    pub.nombre = document.getElementById('publicar-nombre').value || pub.nombre;
+                    pub.precio = parseFloat(document.getElementById('publicar-precio').value) || pub.precio;
+                    pub.categoria = document.getElementById('publicar-categoria').value || pub.categoria;
+                    pub.descripcion = document.getElementById('publicar-descripcion').value || pub.descripcion;
+                    pub.foto = document.getElementById('publicar-foto').value || pub.foto;
+                    
+                    savePublications();
+                    renderMisPublicaciones();
+                    
+                    var msg = document.getElementById('publicar-message');
+                    showFormMessage(msg, '¡Producto actualizado exitosamente!', 'success');
+                    
+                    editingPublicationId = null;
+                    document.getElementById('publicar-btn').innerHTML = '<i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> Publicar producto';
+                    document.getElementById('publicar-title').textContent = 'Publica tu producto';
+                    
+                    setTimeout(function() {
+                        showPage('mis-publicaciones');
+                    }, 1500);
+                }
+            } else {
+                publicarProducto();
+            }
+        });
+    }
+
+    // ============================================================
+    // EVENT LISTENERS - C2C VISTA PREVIA DE IMAGEN
+    // ============================================================
+
+    var publicarFotoInput = document.getElementById('publicar-foto');
+    if (publicarFotoInput) {
+        publicarFotoInput.addEventListener('input', function() {
+            var preview = document.getElementById('publicar-image-preview');
+            if (preview && this.value) {
+                preview.innerHTML = '<img src="' + this.value + '" alt="Vista previa" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.innerHTML=\'<div class=\\"empty-preview\\"><i class=\\"fas fa-image\\" style=\\"font-size:1.5rem; display:block; margin-bottom:0.3rem;\\" aria-hidden=\\"true\\"></i>Imagen no encontrada</div>\'">';
+            } else if (preview) {
+                preview.innerHTML = '<div class="empty-preview"><i class="fas fa-image" style="font-size:1.5rem; display:block; margin-bottom:0.3rem;" aria-hidden="true"></i>Vista previa</div>';
+            }
         });
     }
 
@@ -2086,59 +2521,364 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // FUNCIÓN DE NAVEGACIÓN
-    // ============================================================
+// SUBASTA SIMULADA - MARKETPLACE
+// ============================================================
 
-    function updateNavVisibility() {
-        var userNavItems = document.querySelectorAll('.user-nav');
-        var adminNavItems = document.querySelectorAll('.admin-nav');
-        var navLoginBtn = document.getElementById('nav-login-btn');
+// Variables de la subasta
+let subastaActiva = true;
+let tiempoRestante = 150; // 2 minutos y 30 segundos en segundos
+let ofertas = [];
+let ofertaDestacada = null;
+let intervaloTimer = null;
 
-        if (isAdmin) {
-            userNavItems.forEach(function(el) { el.style.display = 'none'; });
-            adminNavItems.forEach(function(el) {
-                el.style.display = 'list-item';
-                el.style.background = 'transparent';
-            });
-            document.body.classList.add('admin-mode');
-            if (navLoginBtn) {
-                navLoginBtn.innerHTML = '<i class="fas fa-user-shield" aria-hidden="true"></i> Admin';
-                navLoginBtn.setAttribute('data-page', 'admin');
-                navLoginBtn.style.background = 'transparent';
-                navLoginBtn.style.color = '#8b5cf6';
-                navLoginBtn.style.padding = '0.3rem 0.8rem';
-                navLoginBtn.style.border = 'none';
-                navLoginBtn.style.borderRadius = '40px';
-                navLoginBtn.style.fontWeight = '600';
-                navLoginBtn.style.borderBottom = 'none';
-            }
-        } else {
-            userNavItems.forEach(function(el) { el.style.display = 'list-item'; });
-            adminNavItems.forEach(function(el) {
-                el.style.display = 'none';
-                el.style.background = '';
-            });
-            document.body.classList.remove('admin-mode');
-            if (isLoggedIn && navLoginBtn) {
-                navLoginBtn.innerHTML = '<i class="fas fa-user-circle" aria-hidden="true"></i> Mi Perfil';
-                navLoginBtn.setAttribute('data-page', 'perfil');
-                navLoginBtn.style.background = '#8b5cf6';
-                navLoginBtn.style.color = 'white';
-                navLoginBtn.style.border = 'none';
-                navLoginBtn.style.borderRadius = '40px';
-                navLoginBtn.style.padding = '0.4rem 1rem';
-                navLoginBtn.style.borderBottom = 'none';
-            } else if (navLoginBtn) {
-                navLoginBtn.innerHTML = '<i class="fas fa-user-circle" aria-hidden="true"></i> Iniciar sesion';
-                navLoginBtn.setAttribute('data-page', 'login');
-                navLoginBtn.style.background = '#ede6f5';
-                navLoginBtn.style.color = '#2d1b3d';
-                navLoginBtn.style.border = 'none';
-                navLoginBtn.style.borderRadius = '40px';
-                navLoginBtn.style.padding = '0.4rem 1rem';
-                navLoginBtn.style.borderBottom = 'none';
-            }
+// Ofertas simuladas iniciales
+const ofertasIniciales = [
+    { usuario: 'María G.', monto: 25.00, fecha: '15:30:12' },
+    { usuario: 'Carlos R.', monto: 24.50, fecha: '15:28:45' },
+    { usuario: 'Laura M.', monto: 23.00, fecha: '15:25:30' }
+];
+
+// Función para formatear el tiempo
+function formatearTiempo(segundos) {
+    const minutos = Math.floor(segundos / 60);
+    const segs = segundos % 60;
+    return `${minutos.toString().padStart(2, '0')}:${segs.toString().padStart(2, '0')}`;
+}
+
+// Función para actualizar el temporizador
+function actualizarTimer() {
+    const timerDisplay = document.getElementById('timer-display');
+    if (!timerDisplay) return;
+    
+    if (tiempoRestante <= 0) {
+        timerDisplay.textContent = '00:00';
+        if (intervaloTimer) {
+            clearInterval(intervaloTimer);
+            intervaloTimer = null;
         }
+        // Mostrar mensaje de subasta finalizada
+        const feedback = document.getElementById('oferta-feedback');
+        if (feedback) {
+            feedback.textContent = '⏰ ¡Subasta finalizada!';
+            feedback.className = 'oferta-feedback error';
+            feedback.style.display = 'block';
+        }
+        const btnOfertar = document.getElementById('btn-ofertar');
+        if (btnOfertar) {
+            btnOfertar.disabled = true;
+            btnOfertar.textContent = 'Subasta finalizada';
+            btnOfertar.style.opacity = '0.6';
+            btnOfertar.style.cursor = 'not-allowed';
+        }
+        return;
+    }
+    
+    tiempoRestante--;
+    timerDisplay.textContent = formatearTiempo(tiempoRestante);
+    
+    // Cambiar color cuando queden menos de 30 segundos
+    const timerContainer = document.getElementById('subasta-timer');
+    if (tiempoRestante <= 30) {
+        timerContainer.style.background = 'linear-gradient(135deg, #e53935, #ef5350)';
+        timerContainer.style.animation = 'pulse-timer 0.5s ease-in-out infinite';
+    } else {
+        timerContainer.style.background = 'linear-gradient(135deg, #8b5cf6, #a78bfa)';
+        timerContainer.style.animation = 'pulse-timer 1s ease-in-out infinite';
+    }
+}
+
+// Función para renderizar la lista de ofertas
+function renderizarOfertas() {
+    const container = document.getElementById('lista-ofertas');
+    if (!container) return;
+    
+    if (ofertas.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:1rem; color:var(--text-secondary);">' +
+            '<i class="fas fa-gavel" style="font-size:1.2rem; color:#d9c4e8; display:block; margin-bottom:0.3rem;"></i>' +
+            'No hay ofertas aún. ¡Sé el primero en ofertar!' +
+            '</div>';
+        return;
+    }
+    
+    // Ordenar de mayor a menor
+    const ofertasOrdenadas = [...ofertas].sort((a, b) => b.monto - a.monto);
+    
+    let html = '';
+    ofertasOrdenadas.forEach((oferta, index) => {
+        const esDestacada = index === 0;
+        const claseDestacada = esDestacada ? 'destacada' : '';
+        const medalla = esDestacada ? '🏆 ' : '';
+        const montoFormateado = oferta.monto.toFixed(2);
+        
+        html += `
+            <div class="oferta-item ${claseDestacada}">
+                <span class="oferta-usuario">${medalla}${oferta.usuario}</span>
+                <span class="oferta-monto">$${montoFormateado}</span>
+                <span class="oferta-fecha">${oferta.fecha}</span>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    
+    // Actualizar el precio actual con la oferta más alta
+    const precioActual = document.getElementById('precio-actual');
+    if (precioActual && ofertasOrdenadas.length > 0) {
+        precioActual.textContent = `$${ofertasOrdenadas[0].monto.toFixed(2)}`;
+    }
+}
+
+// Función para agregar una nueva oferta
+function agregarOferta(usuario, monto) {
+    const ahora = new Date();
+    const hora = ahora.getHours().toString().padStart(2, '0');
+    const minutos = ahora.getMinutes().toString().padStart(2, '0');
+    const segundos = ahora.getSeconds().toString().padStart(2, '0');
+    const fechaStr = `${hora}:${minutos}:${segundos}`;
+    
+    const nuevaOferta = {
+        usuario: usuario || 'Ofertante Anónimo',
+        monto: parseFloat(monto),
+        fecha: fechaStr
+    };
+    
+    ofertas.push(nuevaOferta);
+    renderizarOfertas();
+    return nuevaOferta;
+}
+
+// Función para manejar la oferta
+function handleOfertar() {
+    const input = document.getElementById('oferta-input');
+    const feedback = document.getElementById('oferta-feedback');
+    const btn = document.getElementById('btn-ofertar');
+    
+    if (!input || !feedback) return;
+    
+    const monto = parseFloat(input.value);
+    
+    if (isNaN(monto) || monto <= 0) {
+        feedback.textContent = '⚠️ Ingresa un monto válido mayor a $0';
+        feedback.className = 'oferta-feedback error';
+        feedback.style.display = 'block';
+        return;
+    }
+    
+    // Obtener la oferta más alta actual
+    const ofertasOrdenadas = [...ofertas].sort((a, b) => b.monto - a.monto);
+    const ofertaMasAlta = ofertasOrdenadas.length > 0 ? ofertasOrdenadas[0].monto : 0;
+    
+    if (monto <= ofertaMasAlta) {
+        feedback.textContent = `⚠️ Tu oferta debe ser mayor a $${ofertaMasAlta.toFixed(2)}`;
+        feedback.className = 'oferta-feedback error';
+        feedback.style.display = 'block';
+        return;
+    }
+    
+    // Usuario simulado (combinación de nombre aleatorio)
+    const nombres = ['Ana', 'Carlos', 'María', 'Jorge', 'Laura', 'Pedro', 'Sofía', 'Diego', 'Valentina', 'Andrés'];
+    const apellidos = ['García', 'Martínez', 'López', 'Rodríguez', 'Fernández', 'Sánchez', 'Pérez', 'González'];
+    const nombreAleatorio = `${nombres[Math.floor(Math.random() * nombres.length)]} ${apellidos[Math.floor(Math.random() * apellidos.length)]}`;
+    
+    // Agregar la oferta
+    agregarOferta(nombreAleatorio, monto);
+    
+    // Mostrar feedback de éxito
+    feedback.textContent = `✅ ¡Oferta registrada (simulado)! ${nombreAleatorio} ofertó $${monto.toFixed(2)}`;
+    feedback.className = 'oferta-feedback success';
+    feedback.style.display = 'block';
+    
+    // Limpiar el input
+    input.value = '';
+    
+    // Deshabilitar temporalmente el botón
+    btn.disabled = true;
+    btn.textContent = 'Oferta registrada';
+    btn.style.opacity = '0.6';
+    
+    setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-gavel" aria-hidden="true"></i> Ofertar';
+        btn.style.opacity = '1';
+        feedback.style.display = 'none';
+    }, 3000);
+}
+
+// Función para generar ofertas automáticas (simuladas)
+function generarOfertasAutomaticas() {
+    // Solo generar ofertas automáticas si la subasta está activa
+    if (!subastaActiva || tiempoRestante <= 0) return;
+    
+    // Cada 5-8 segundos generar una oferta automática
+    const intervalo = Math.floor(Math.random() * 3000) + 5000; // 5-8 segundos
+    
+    setTimeout(() => {
+        if (!subastaActiva || tiempoRestante <= 0) return;
+        
+        const ofertasOrdenadas = [...ofertas].sort((a, b) => b.monto - a.monto);
+        const precioBase = ofertasOrdenadas.length > 0 ? ofertasOrdenadas[0].monto : 20.00;
+        const incremento = (Math.random() * 1.5 + 0.5); // Incremento entre $0.50 y $2.00
+        const nuevoMonto = precioBase + incremento;
+        
+        const nombres = ['Roberto', 'Diana', 'Eduardo', 'Paula', 'Miguel', 'Claudia', 'Rafael', 'Angela'];
+        const apellidos = ['Rojas', 'Cruz', 'Mendoza', 'Núñez', 'Herrera', 'Moreno', 'Castro', 'Paredes'];
+        const nombreAleatorio = `${nombres[Math.floor(Math.random() * nombres.length)]} ${apellidos[Math.floor(Math.random() * apellidos.length)]}`;
+        
+        agregarOferta(nombreAleatorio, nuevoMonto);
+        
+        // Si la subasta sigue activa, programar la siguiente
+        if (subastaActiva && tiempoRestante > 0) {
+            generarOfertasAutomaticas();
+        }
+    }, intervalo);
+}
+
+// Función para inicializar la subasta
+function inicializarSubasta() {
+    // Cargar ofertas iniciales
+    ofertas = [...ofertasIniciales];
+    renderizarOfertas();
+    
+    // Iniciar temporizador
+    if (intervaloTimer) {
+        clearInterval(intervaloTimer);
+        intervaloTimer = null;
+    }
+    
+    tiempoRestante = 150;
+    const timerDisplay = document.getElementById('timer-display');
+    if (timerDisplay) {
+        timerDisplay.textContent = formatearTiempo(tiempoRestante);
+    }
+    
+    // Resetear el estilo del timer
+    const timerContainer = document.getElementById('subasta-timer');
+    if (timerContainer) {
+        timerContainer.style.background = 'linear-gradient(135deg, #8b5cf6, #a78bfa)';
+        timerContainer.style.animation = 'pulse-timer 1s ease-in-out infinite';
+    }
+    
+    // Habilitar el botón de ofertar
+    const btnOfertar = document.getElementById('btn-ofertar');
+    if (btnOfertar) {
+        btnOfertar.disabled = false;
+        btnOfertar.innerHTML = '<i class="fas fa-gavel" aria-hidden="true"></i> Ofertar';
+        btnOfertar.style.opacity = '1';
+        btnOfertar.style.cursor = 'pointer';
+    }
+    
+    // Limpiar feedback
+    const feedback = document.getElementById('oferta-feedback');
+    if (feedback) {
+        feedback.style.display = 'none';
+    }
+    
+    // Iniciar el timer
+    intervaloTimer = setInterval(actualizarTimer, 1000);
+    
+    // Iniciar generación de ofertas automáticas
+    subastaActiva = true;
+    setTimeout(generarOfertasAutomaticas, 2000);
+}
+
+// ============================================================
+// EVENT LISTENER - BOTÓN OFERTAR
+// ============================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // ... (código existente) ...
+    
+    // Agregar event listener para el botón de ofertar
+    const btnOfertar = document.getElementById('btn-ofertar');
+    if (btnOfertar) {
+        btnOfertar.addEventListener('click', function(e) {
+            e.preventDefault();
+            handleOfertar();
+        });
+        
+        // Soporte para tecla Enter en el input
+        const inputOferta = document.getElementById('oferta-input');
+        if (inputOferta) {
+            inputOferta.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleOfertar();
+                }
+            });
+        }
+    }
+});
+
+// ============================================================
+// MODIFICAR LA FUNCIÓN renderMarketplace PARA INCLUIR SUBASTA
+// ============================================================
+
+// Reemplazar la función renderMarketplace existente con esta versión
+function renderMarketplace() {
+    var totalPublicaciones = userPublications.length;
+    
+    var resumenPublicaciones = document.getElementById('resumen-publicaciones');
+    if (resumenPublicaciones) resumenPublicaciones.textContent = totalPublicaciones;
+
+    // Inicializar la subasta (solo la primera vez o si no está iniciada)
+    if (!window._subastaInicializada) {
+        window._subastaInicializada = true;
+        inicializarSubasta();
+    } else {
+        // Si ya está inicializada, solo renderizar ofertas
+        renderizarOfertas();
+    }
+
+    var container = document.getElementById('ultimas-publicaciones-list');
+    if (!container) return;
+
+    var sorted = [...userPublications].sort(function(a, b) {
+        return new Date(b.fecha.split('/').reverse().join('-')) - 
+               new Date(a.fecha.split('/').reverse().join('-'));
+    });
+
+    var ultimas = sorted.slice(0, 6);
+
+    if (ultimas.length === 0) {
+        container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:1rem; color:var(--text-secondary);">' +
+            '<i class="fas fa-box-open" style="font-size:2rem; color:#d9c4e8; display:block; margin-bottom:0.5rem;"></i>' +
+            'No hay productos disponibles. ¡Sé el primero en publicar!' +
+            '<br><button class="btn-primary" id="ir-publicar-marketplace" style="margin-top:0.5rem;"><i class="fas fa-plus" aria-hidden="true"></i> Publicar producto</button>' +
+            '</div>';
+        
+        var irBtn = document.getElementById('ir-publicar-marketplace');
+        if (irBtn) {
+            irBtn.addEventListener('click', function() {
+                showPage('publicar-producto');
+            });
+        }
+        return;
+    }
+
+    var html = '';
+    for (var i = 0; i < ultimas.length; i++) {
+        var p = ultimas[i];
+        html += '<div class="ultima-publicacion" data-id="' + p.id + '">';
+        html += '<div class="ultima-img"><img src="' + (p.foto || 'https://via.placeholder.com/200x100/8b5cf6/ffffff?text=Producto') + '" alt="' + p.nombre + '" onerror="this.src=\'https://via.placeholder.com/200x100/8b5cf6/ffffff?text=Producto\'"></div>';
+        html += '<div class="ultima-nombre">' + p.nombre + '</div>';
+        html += '<div class="ultima-precio">$' + parseFloat(p.precio).toFixed(2) + '</div>';
+        html += '<div class="ultima-fecha">' + p.fecha + '</div>';
+        html += '<button class="btn-comprar-marketplace comprar-marketplace-btn" data-id="' + p.id + '" data-nombre="' + p.nombre + '" data-precio="' + p.precio + '">';
+        html += '<i class="fas fa-shopping-cart" aria-hidden="true"></i> Comprar';
+        html += '</button>';
+        html += '</div>';
+    }
+    container.innerHTML = html;
+
+    container.querySelectorAll('.comprar-marketplace-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var id = parseInt(this.getAttribute('data-id'));
+            var nombre = this.getAttribute('data-nombre');
+            var precio = parseFloat(this.getAttribute('data-precio'));
+            agregarProductoMarketplaceAlCarrito(id, nombre, precio);
+        });
+    });
     }
 
     // ============================================================
@@ -2153,6 +2893,8 @@ document.addEventListener('DOMContentLoaded', function() {
     renderPromotionsAdmin();
     renderPublicPromotions();
     renderCommunityComments();
+    renderMisPublicaciones();
+    renderMarketplace();
     updateCartUI();
     updateNavVisibility();
     updateDashboardStats();
