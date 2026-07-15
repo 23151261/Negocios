@@ -446,6 +446,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (pageId === 'marketplace') {
             renderMarketplace();
+            setTimeout(function() {
+                var activeTab = document.querySelector('.marketplace-tab.active');
+                if (activeTab && activeTab.getAttribute('data-tab') === 'subasta') {
+                    iniciarSubasta();
+                }
+            }, 100);
         }
 
         if (pageId === 'mis-publicaciones') {
@@ -1522,7 +1528,6 @@ document.addEventListener('DOMContentLoaded', function() {
         var totalPublicaciones = userPublications.length;
         var totalCompras = 0;
         
-        // Simular compras realizadas (solo para mostrar)
         for (var i = 0; i < userPublications.length; i++) {
             if (userPublications[i].compras) {
                 totalCompras += userPublications[i].compras;
@@ -1545,22 +1550,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         var ultimas = sorted.slice(0, 6);
 
-        if (ultimas.length === 0) {
-            container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:1rem; color:var(--text-secondary);">' +
-                '<i class="fas fa-box-open" style="font-size:2rem; color:#d9c4e8; display:block; margin-bottom:0.5rem;"></i>' +
-                'No hay productos disponibles. ¡Sé el primero en publicar!' +
-                '<br><button class="btn-primary" id="ir-publicar-marketplace" style="margin-top:0.5rem;"><i class="fas fa-plus" aria-hidden="true"></i> Publicar producto</button>' +
-                '</div>';
-            
-            var irBtn = document.getElementById('ir-publicar-marketplace');
-            if (irBtn) {
-                irBtn.addEventListener('click', function() {
-                    showPage('publicar-producto');
-                });
-            }
-            return;
-        }
-
         var html = '';
         for (var i = 0; i < ultimas.length; i++) {
             var p = ultimas[i];
@@ -1576,7 +1565,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         container.innerHTML = html;
 
-        // Event listeners para los botones de compra
         container.querySelectorAll('.comprar-marketplace-btn').forEach(function(btn) {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
@@ -1589,7 +1577,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function agregarProductoMarketplaceAlCarrito(id, nombre, precio) {
-        // Buscar si el producto ya existe en el carrito
         var existing = null;
         for (var i = 0; i < cart.length; i++) {
             if (cart[i].productId === id) {
@@ -1601,7 +1588,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (existing) {
             existing.quantity += 1;
         } else {
-            // Crear un producto temporal en el carrito
             cart.push({ 
                 productId: id, 
                 quantity: 1,
@@ -1614,7 +1600,6 @@ document.addEventListener('DOMContentLoaded', function() {
         saveCart();
         updateCartUI();
         
-        // Mostrar feedback
         var feedback = document.createElement('div');
         feedback.style.cssText = 'position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:#4caf50; color:white; padding:12px 24px; border-radius:40px; font-weight:600; z-index:9999; box-shadow:0 4px 20px rgba(0,0,0,0.2); animation:fadeIn 0.3s ease;';
         feedback.textContent = '✅ "' + nombre + '" agregado al carrito';
@@ -1628,14 +1613,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 500);
         }, 3000);
         
-        // Abrir carrito
         setTimeout(function() {
             openCart();
         }, 400);
     }
 
     // ============================================================
-    // C2C - PUBLICAR PRODUCTO
+    // C2C - PUBLICAR PRODUCTO (MODIFICADO PARA PERMITIR CAMPOS VACÍOS)
     // ============================================================
 
     function renderMisPublicaciones() {
@@ -1698,17 +1682,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // FUNCIÓN MODIFICADA: Permite campos vacíos
     function publicarProducto() {
         var nombre = document.getElementById('publicar-nombre')?.value;
         var precio = document.getElementById('publicar-precio')?.value;
-        var categoria = document.getElementById('publicar-categoria')?.value;
-        var descripcion = document.getElementById('publicar-descripcion')?.value;
-        var foto = document.getElementById('publicar-foto')?.value;
+        var categoria = document.getElementById('publicar-categoria')?.value || 'Otros';
+        var descripcion = document.getElementById('publicar-descripcion')?.value || '';
+        var foto = document.getElementById('publicar-foto')?.value || 'https://via.placeholder.com/400x250/8b5cf6/ffffff?text=Producto';
         var msg = document.getElementById('publicar-message');
 
-        if (!nombre || !precio) {
-            showFormMessage(msg, 'Por favor completa el nombre y precio del producto.', 'error');
-            return;
+        // Asignar valores por defecto si están vacíos
+        if (!nombre || nombre.trim() === '') {
+            nombre = 'Producto sin nombre';
+        }
+        
+        var precioNum = parseFloat(precio);
+        if (isNaN(precioNum) || precioNum < 0) {
+            precioNum = 0;
         }
 
         if (!foto) {
@@ -1727,8 +1717,8 @@ document.addEventListener('DOMContentLoaded', function() {
         var newPublication = {
             id: nextPublicationId++,
             nombre: nombre,
-            precio: parseFloat(precio),
-            categoria: categoria || 'Otros',
+            precio: precioNum,
+            categoria: categoria,
             descripcion: descripcion,
             foto: foto,
             fecha: dateStr,
@@ -1742,6 +1732,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         showFormMessage(msg, '¡Producto publicado exitosamente!', 'success');
 
+        // Limpiar campos
         document.getElementById('publicar-nombre').value = '';
         document.getElementById('publicar-precio').value = '';
         document.getElementById('publicar-descripcion').value = '';
@@ -1753,6 +1744,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1500);
     }
 
+    // FUNCIÓN MODIFICADA: Maneja valores vacíos en edición
     function editarPublicacion(id) {
         var pub = null;
         for (var i = 0; i < userPublications.length; i++) {
@@ -1764,9 +1756,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!pub) return;
 
         editingPublicationId = id;
-        document.getElementById('publicar-nombre').value = pub.nombre;
-        document.getElementById('publicar-precio').value = pub.precio;
-        document.getElementById('publicar-categoria').value = pub.categoria;
+        document.getElementById('publicar-nombre').value = pub.nombre || '';
+        document.getElementById('publicar-precio').value = pub.precio || '';
+        document.getElementById('publicar-categoria').value = pub.categoria || 'Otros';
         document.getElementById('publicar-descripcion').value = pub.descripcion || '';
         document.getElementById('publicar-foto').value = pub.foto || '';
         
@@ -1813,78 +1805,289 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // FUNCIONES DE CAMPAÑA
+    // SUBASTA - FUNCIONALIDAD
     // ============================================================
 
-    function addCampaignProductToCart() {
-        var campaignProduct = null;
-        for (var i = 0; i < products.length; i++) {
-            if (products[i].name === 'Pizza Pepperoni' || products[i].id === 2) {
-                campaignProduct = products[i];
-                break;
-            }
+    let subastaActiva = false;
+    let subastaTimerId = null;
+    let subastaTiempoRestante = 1800;
+    let subastaOfertaActual = 6.00;
+    let subastaOfertas = [];
+
+    function iniciarSubasta() {
+        subastaActiva = true;
+        subastaTiempoRestante = 1800;
+        subastaOfertaActual = 6.00;
+        subastaOfertas = [];
+        
+        const ofertaActual = document.getElementById('subasta-oferta-actual-main');
+        const temporizador = document.getElementById('subasta-temporizador-main');
+        const progreso = document.getElementById('subasta-progreso');
+        const ofertasCount = document.getElementById('subasta-ofertas-count-main');
+        const inputOferta = document.getElementById('subasta-oferta-main');
+        const btnOfertar = document.getElementById('subasta-ofertar-main');
+        const listaOfertas = document.getElementById('subasta-lista-ofertas-main');
+        const feedback = document.getElementById('subasta-feedback-main');
+        
+        if (ofertaActual) ofertaActual.textContent = '$6.00';
+        if (temporizador) {
+            temporizador.textContent = '00:30';
+            temporizador.className = 'subasta-temporizador';
+        }
+        if (progreso) {
+            progreso.style.width = '100%';
+            progreso.className = 'subasta-temporizador-progreso';
+        }
+        if (ofertasCount) ofertasCount.textContent = '0';
+        if (inputOferta) {
+            inputOferta.value = '6.50';
+            inputOferta.disabled = false;
+        }
+        if (btnOfertar) {
+            btnOfertar.disabled = false;
+            btnOfertar.style.opacity = '1';
+            btnOfertar.style.cursor = 'pointer';
         }
         
-        if (!campaignProduct) {
-            for (var i = 0; i < products.length; i++) {
-                if (products[i].name.toLowerCase().includes('pepperoni')) {
-                    campaignProduct = products[i];
-                    break;
+        if (listaOfertas) {
+            listaOfertas.innerHTML = `
+                <div class="subasta-sin-ofertas">
+                    <i class="fas fa-inbox" aria-hidden="true"></i>
+                    <p>No hay ofertas aún. ¡Sé el primero en ofertar!</p>
+                </div>
+            `;
+        }
+        
+        if (feedback) {
+            feedback.style.display = 'none';
+            feedback.textContent = '';
+            feedback.className = 'subasta-feedback';
+        }
+        
+        iniciarTemporizadorSubasta();
+    }
+
+    function iniciarTemporizadorSubasta() {
+        if (subastaTimerId) {
+            clearInterval(subastaTimerId);
+        }
+        
+        subastaTimerId = setInterval(function() {
+            subastaTiempoRestante--;
+            actualizarTemporizadorSubasta();
+            
+            if (subastaTiempoRestante <= 0) {
+                clearInterval(subastaTimerId);
+                subastaTimerId = null;
+                subastaActiva = false;
+                
+                const inputOferta = document.getElementById('subasta-oferta-main');
+                const btnOfertar = document.getElementById('subasta-ofertar-main');
+                const feedback = document.getElementById('subasta-feedback-main');
+                
+                if (inputOferta) inputOferta.disabled = true;
+                if (btnOfertar) {
+                    btnOfertar.disabled = true;
+                    btnOfertar.style.opacity = '0.5';
+                    btnOfertar.style.cursor = 'not-allowed';
+                }
+                
+                if (feedback) {
+                    feedback.style.display = 'block';
+                    feedback.textContent = '⏰ ¡Tiempo agotado! La subasta ha finalizado.';
+                    feedback.className = 'subasta-feedback error';
                 }
             }
+        }, 1000);
+    }
+
+    function actualizarTemporizadorSubasta() {
+        const minutos = Math.floor(subastaTiempoRestante / 60);
+        const segundos = subastaTiempoRestante % 60;
+        const timerStr = String(minutos).padStart(2, '0') + ':' + String(segundos).padStart(2, '0');
+        
+        const timerElement = document.getElementById('subasta-temporizador-main');
+        const progresoElement = document.getElementById('subasta-progreso');
+        
+        if (timerElement) timerElement.textContent = timerStr;
+        
+        const porcentaje = (subastaTiempoRestante / 30) * 100;
+        if (progresoElement) progresoElement.style.width = porcentaje + '%';
+        
+        if (timerElement) {
+            timerElement.className = 'subasta-temporizador';
+            if (subastaTiempoRestante <= 5) {
+                timerElement.classList.add('danger');
+            } else if (subastaTiempoRestante <= 10) {
+                timerElement.classList.add('warning');
+            }
         }
         
-        if (!campaignProduct && products.length > 0) {
-            campaignProduct = products[0];
+        if (progresoElement) {
+            progresoElement.className = 'subasta-temporizador-progreso';
+            if (subastaTiempoRestante <= 5) {
+                progresoElement.classList.add('danger');
+            } else if (subastaTiempoRestante <= 10) {
+                progresoElement.classList.add('warning');
+            }
         }
-        
-        if (!campaignProduct) {
-            var feedback = document.getElementById('campaign-feedback');
+    }
+
+    function realizarOfertaSubasta() {
+        if (!subastaActiva) {
+            const feedback = document.getElementById('subasta-feedback-main');
             if (feedback) {
-                feedback.textContent = 'No hay productos disponibles en el catálogo.';
                 feedback.style.display = 'block';
-                feedback.style.background = '#fce4ec';
-                feedback.style.color = '#c62828';
-                feedback.style.borderLeftColor = '#e53935';
-                setTimeout(function() { feedback.style.display = 'none'; }, 4000);
+                feedback.textContent = '⏰ La subasta ha finalizado.';
+                feedback.className = 'subasta-feedback error';
             }
             return;
         }
         
-        var existing = null;
-        for (var j = 0; j < cart.length; j++) {
-            if (cart[j].productId === campaignProduct.id) {
-                existing = cart[j];
-                break;
+        const input = document.getElementById('subasta-oferta-main');
+        const ofertaValor = parseFloat(input ? input.value : 0);
+        
+        if (isNaN(ofertaValor) || ofertaValor <= 0) {
+            const feedback = document.getElementById('subasta-feedback-main');
+            if (feedback) {
+                feedback.style.display = 'block';
+                feedback.textContent = '⚠️ Por favor ingresa una oferta válida mayor a 0.';
+                feedback.className = 'subasta-feedback error';
             }
+            return;
         }
         
-        if (existing) {
-            existing.quantity += 1;
-        } else {
-            cart.push({ productId: campaignProduct.id, quantity: 1 });
+        if (ofertaValor <= subastaOfertaActual) {
+            const feedback = document.getElementById('subasta-feedback-main');
+            if (feedback) {
+                feedback.style.display = 'block';
+                feedback.textContent = '⚠️ La oferta debe ser mayor a $' + subastaOfertaActual.toFixed(2);
+                feedback.className = 'subasta-feedback error';
+            }
+            return;
         }
         
-        saveCart();
-        updateCartUI();
+        const usuario = isLoggedIn ? (currentUser ? currentUser.name : 'Usuario') : 'Invitado';
+        const ahora = new Date();
+        const timestamp = ahora.getHours().toString().padStart(2, '0') + ':' + 
+                          ahora.getMinutes().toString().padStart(2, '0') + ':' + 
+                          ahora.getSeconds().toString().padStart(2, '0');
         
-        var feedback = document.getElementById('campaign-feedback');
+        const nuevaOferta = {
+            usuario: usuario,
+            monto: ofertaValor,
+            timestamp: timestamp
+        };
+        
+        subastaOfertas.push(nuevaOferta);
+        subastaOfertaActual = ofertaValor;
+        
+        const ofertaActual = document.getElementById('subasta-oferta-actual-main');
+        const ofertasCount = document.getElementById('subasta-ofertas-count-main');
+        
+        if (ofertaActual) ofertaActual.textContent = '$' + ofertaValor.toFixed(2);
+        if (ofertasCount) ofertasCount.textContent = subastaOfertas.length;
+        
+        const feedback = document.getElementById('subasta-feedback-main');
         if (feedback) {
-            feedback.textContent = '✅ "' + campaignProduct.name + '" agregado al carrito.';
             feedback.style.display = 'block';
-            feedback.style.background = '#e8f5e9';
-            feedback.style.color = '#2e7d32';
-            feedback.style.borderLeftColor = '#4caf50';
-            setTimeout(function() { feedback.style.display = 'none'; }, 4000);
+            feedback.textContent = '✅ ¡Oferta registrada (simulado)! $' + ofertaValor.toFixed(2) + ' - ' + usuario;
+            feedback.className = 'subasta-feedback success';
         }
+        
+        const siguienteOferta = ofertaValor + 0.50;
+        if (input) input.value = siguienteOferta.toFixed(2);
+        
+        actualizarListaOfertasSubasta();
         
         setTimeout(function() {
-            openCart();
-        }, 300);
+            if (feedback) {
+                feedback.style.display = 'none';
+            }
+        }, 3000);
     }
 
-    function goToPromotions() {
-        showPage('promociones');
+    function actualizarListaOfertasSubasta() {
+        const lista = document.getElementById('subasta-lista-ofertas-main');
+        
+        if (!lista) return;
+        
+        if (subastaOfertas.length === 0) {
+            lista.innerHTML = `
+                <div class="subasta-sin-ofertas">
+                    <i class="fas fa-inbox" aria-hidden="true"></i>
+                    <p>No hay ofertas aún. ¡Sé el primero en ofertar!</p>
+                </div>
+            `;
+            return;
+        }
+        
+        const ofertasOrdenadas = [...subastaOfertas].reverse();
+        
+        let html = '';
+        for (let i = 0; i < ofertasOrdenadas.length; i++) {
+            const oferta = ofertasOrdenadas[i];
+            const esMayor = i === 0;
+            let claseItem = 'subasta-oferta-item';
+            if (esMayor) claseItem += ' highest';
+            
+            const icono = esMayor ? '<i class="fas fa-crown" aria-hidden="true"></i> ' : '';
+            
+            html += '<div class="' + claseItem + '">';
+            html += '<span class="oferta-usuario">' + icono + oferta.usuario + '</span>';
+            html += '<span class="oferta-monto">$' + oferta.monto.toFixed(2) + '</span>';
+            html += '<span class="oferta-timestamp">' + oferta.timestamp + '</span>';
+            html += '</div>';
+        }
+        
+        lista.innerHTML = html;
+    }
+
+    // ============================================================
+    // EVENT LISTENERS - MARKETPLACE TABS
+    // ============================================================
+
+    document.querySelectorAll('.marketplace-tab').forEach(function(tab) {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            document.querySelectorAll('.marketplace-tab').forEach(function(t) {
+                t.classList.remove('active');
+            });
+            this.classList.add('active');
+            
+            const tabName = this.getAttribute('data-tab');
+            document.querySelectorAll('.marketplace-tab-content').forEach(function(content) {
+                content.classList.remove('active');
+            });
+            
+            const targetContent = document.getElementById('marketplace-' + tabName);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+            
+            if (tabName === 'subasta') {
+                iniciarSubasta();
+            }
+        });
+    });
+
+    const btnOfertar = document.getElementById('subasta-ofertar-main');
+    if (btnOfertar) {
+        btnOfertar.addEventListener('click', function(e) {
+            e.preventDefault();
+            realizarOfertaSubasta();
+        });
+    }
+
+    const inputOferta = document.getElementById('subasta-oferta-main');
+    if (inputOferta) {
+        inputOferta.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                realizarOfertaSubasta();
+            }
+        });
     }
 
     // ============================================================
@@ -2429,7 +2632,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // EVENT LISTENERS - C2C PUBLICAR PRODUCTO
+    // EVENT LISTENERS - C2C PUBLICAR PRODUCTO (MODIFICADO)
     // ============================================================
 
     var publicarForm = document.getElementById('publicar-form');
@@ -2446,11 +2649,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 if (pub) {
-                    pub.nombre = document.getElementById('publicar-nombre').value || pub.nombre;
-                    pub.precio = parseFloat(document.getElementById('publicar-precio').value) || pub.precio;
-                    pub.categoria = document.getElementById('publicar-categoria').value || pub.categoria;
-                    pub.descripcion = document.getElementById('publicar-descripcion').value || pub.descripcion;
-                    pub.foto = document.getElementById('publicar-foto').value || pub.foto;
+                    var nombre = document.getElementById('publicar-nombre').value;
+                    var precio = document.getElementById('publicar-precio').value;
+                    var categoria = document.getElementById('publicar-categoria').value;
+                    var descripcion = document.getElementById('publicar-descripcion').value;
+                    var foto = document.getElementById('publicar-foto').value;
+                    
+                    // Asignar valores por defecto si están vacíos
+                    pub.nombre = (nombre && nombre.trim() !== '') ? nombre : 'Producto sin nombre';
+                    var precioNum = parseFloat(precio);
+                    pub.precio = !isNaN(precioNum) && precioNum >= 0 ? precioNum : 0;
+                    pub.categoria = categoria || 'Otros';
+                    pub.descripcion = descripcion || '';
+                    pub.foto = foto || 'https://via.placeholder.com/400x250/8b5cf6/ffffff?text=Producto';
                     
                     savePublications();
                     renderMisPublicaciones();
@@ -2521,364 +2732,78 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-// SUBASTA SIMULADA - MARKETPLACE
-// ============================================================
+    // FUNCIONES DE CAMPAÑA
+    // ============================================================
 
-// Variables de la subasta
-let subastaActiva = true;
-let tiempoRestante = 150; // 2 minutos y 30 segundos en segundos
-let ofertas = [];
-let ofertaDestacada = null;
-let intervaloTimer = null;
-
-// Ofertas simuladas iniciales
-const ofertasIniciales = [
-    { usuario: 'María G.', monto: 25.00, fecha: '15:30:12' },
-    { usuario: 'Carlos R.', monto: 24.50, fecha: '15:28:45' },
-    { usuario: 'Laura M.', monto: 23.00, fecha: '15:25:30' }
-];
-
-// Función para formatear el tiempo
-function formatearTiempo(segundos) {
-    const minutos = Math.floor(segundos / 60);
-    const segs = segundos % 60;
-    return `${minutos.toString().padStart(2, '0')}:${segs.toString().padStart(2, '0')}`;
-}
-
-// Función para actualizar el temporizador
-function actualizarTimer() {
-    const timerDisplay = document.getElementById('timer-display');
-    if (!timerDisplay) return;
-    
-    if (tiempoRestante <= 0) {
-        timerDisplay.textContent = '00:00';
-        if (intervaloTimer) {
-            clearInterval(intervaloTimer);
-            intervaloTimer = null;
+    function addCampaignProductToCart() {
+        var campaignProduct = null;
+        for (var i = 0; i < products.length; i++) {
+            if (products[i].name === 'Pizza Pepperoni' || products[i].id === 2) {
+                campaignProduct = products[i];
+                break;
+            }
         }
-        // Mostrar mensaje de subasta finalizada
-        const feedback = document.getElementById('oferta-feedback');
-        if (feedback) {
-            feedback.textContent = '⏰ ¡Subasta finalizada!';
-            feedback.className = 'oferta-feedback error';
-            feedback.style.display = 'block';
-        }
-        const btnOfertar = document.getElementById('btn-ofertar');
-        if (btnOfertar) {
-            btnOfertar.disabled = true;
-            btnOfertar.textContent = 'Subasta finalizada';
-            btnOfertar.style.opacity = '0.6';
-            btnOfertar.style.cursor = 'not-allowed';
-        }
-        return;
-    }
-    
-    tiempoRestante--;
-    timerDisplay.textContent = formatearTiempo(tiempoRestante);
-    
-    // Cambiar color cuando queden menos de 30 segundos
-    const timerContainer = document.getElementById('subasta-timer');
-    if (tiempoRestante <= 30) {
-        timerContainer.style.background = 'linear-gradient(135deg, #e53935, #ef5350)';
-        timerContainer.style.animation = 'pulse-timer 0.5s ease-in-out infinite';
-    } else {
-        timerContainer.style.background = 'linear-gradient(135deg, #8b5cf6, #a78bfa)';
-        timerContainer.style.animation = 'pulse-timer 1s ease-in-out infinite';
-    }
-}
-
-// Función para renderizar la lista de ofertas
-function renderizarOfertas() {
-    const container = document.getElementById('lista-ofertas');
-    if (!container) return;
-    
-    if (ofertas.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:1rem; color:var(--text-secondary);">' +
-            '<i class="fas fa-gavel" style="font-size:1.2rem; color:#d9c4e8; display:block; margin-bottom:0.3rem;"></i>' +
-            'No hay ofertas aún. ¡Sé el primero en ofertar!' +
-            '</div>';
-        return;
-    }
-    
-    // Ordenar de mayor a menor
-    const ofertasOrdenadas = [...ofertas].sort((a, b) => b.monto - a.monto);
-    
-    let html = '';
-    ofertasOrdenadas.forEach((oferta, index) => {
-        const esDestacada = index === 0;
-        const claseDestacada = esDestacada ? 'destacada' : '';
-        const medalla = esDestacada ? '🏆 ' : '';
-        const montoFormateado = oferta.monto.toFixed(2);
         
-        html += `
-            <div class="oferta-item ${claseDestacada}">
-                <span class="oferta-usuario">${medalla}${oferta.usuario}</span>
-                <span class="oferta-monto">$${montoFormateado}</span>
-                <span class="oferta-fecha">${oferta.fecha}</span>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = html;
-    
-    // Actualizar el precio actual con la oferta más alta
-    const precioActual = document.getElementById('precio-actual');
-    if (precioActual && ofertasOrdenadas.length > 0) {
-        precioActual.textContent = `$${ofertasOrdenadas[0].monto.toFixed(2)}`;
-    }
-}
-
-// Función para agregar una nueva oferta
-function agregarOferta(usuario, monto) {
-    const ahora = new Date();
-    const hora = ahora.getHours().toString().padStart(2, '0');
-    const minutos = ahora.getMinutes().toString().padStart(2, '0');
-    const segundos = ahora.getSeconds().toString().padStart(2, '0');
-    const fechaStr = `${hora}:${minutos}:${segundos}`;
-    
-    const nuevaOferta = {
-        usuario: usuario || 'Ofertante Anónimo',
-        monto: parseFloat(monto),
-        fecha: fechaStr
-    };
-    
-    ofertas.push(nuevaOferta);
-    renderizarOfertas();
-    return nuevaOferta;
-}
-
-// Función para manejar la oferta
-function handleOfertar() {
-    const input = document.getElementById('oferta-input');
-    const feedback = document.getElementById('oferta-feedback');
-    const btn = document.getElementById('btn-ofertar');
-    
-    if (!input || !feedback) return;
-    
-    const monto = parseFloat(input.value);
-    
-    if (isNaN(monto) || monto <= 0) {
-        feedback.textContent = '⚠️ Ingresa un monto válido mayor a $0';
-        feedback.className = 'oferta-feedback error';
-        feedback.style.display = 'block';
-        return;
-    }
-    
-    // Obtener la oferta más alta actual
-    const ofertasOrdenadas = [...ofertas].sort((a, b) => b.monto - a.monto);
-    const ofertaMasAlta = ofertasOrdenadas.length > 0 ? ofertasOrdenadas[0].monto : 0;
-    
-    if (monto <= ofertaMasAlta) {
-        feedback.textContent = `⚠️ Tu oferta debe ser mayor a $${ofertaMasAlta.toFixed(2)}`;
-        feedback.className = 'oferta-feedback error';
-        feedback.style.display = 'block';
-        return;
-    }
-    
-    // Usuario simulado (combinación de nombre aleatorio)
-    const nombres = ['Ana', 'Carlos', 'María', 'Jorge', 'Laura', 'Pedro', 'Sofía', 'Diego', 'Valentina', 'Andrés'];
-    const apellidos = ['García', 'Martínez', 'López', 'Rodríguez', 'Fernández', 'Sánchez', 'Pérez', 'González'];
-    const nombreAleatorio = `${nombres[Math.floor(Math.random() * nombres.length)]} ${apellidos[Math.floor(Math.random() * apellidos.length)]}`;
-    
-    // Agregar la oferta
-    agregarOferta(nombreAleatorio, monto);
-    
-    // Mostrar feedback de éxito
-    feedback.textContent = `✅ ¡Oferta registrada (simulado)! ${nombreAleatorio} ofertó $${monto.toFixed(2)}`;
-    feedback.className = 'oferta-feedback success';
-    feedback.style.display = 'block';
-    
-    // Limpiar el input
-    input.value = '';
-    
-    // Deshabilitar temporalmente el botón
-    btn.disabled = true;
-    btn.textContent = 'Oferta registrada';
-    btn.style.opacity = '0.6';
-    
-    setTimeout(() => {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-gavel" aria-hidden="true"></i> Ofertar';
-        btn.style.opacity = '1';
-        feedback.style.display = 'none';
-    }, 3000);
-}
-
-// Función para generar ofertas automáticas (simuladas)
-function generarOfertasAutomaticas() {
-    // Solo generar ofertas automáticas si la subasta está activa
-    if (!subastaActiva || tiempoRestante <= 0) return;
-    
-    // Cada 5-8 segundos generar una oferta automática
-    const intervalo = Math.floor(Math.random() * 3000) + 5000; // 5-8 segundos
-    
-    setTimeout(() => {
-        if (!subastaActiva || tiempoRestante <= 0) return;
-        
-        const ofertasOrdenadas = [...ofertas].sort((a, b) => b.monto - a.monto);
-        const precioBase = ofertasOrdenadas.length > 0 ? ofertasOrdenadas[0].monto : 20.00;
-        const incremento = (Math.random() * 1.5 + 0.5); // Incremento entre $0.50 y $2.00
-        const nuevoMonto = precioBase + incremento;
-        
-        const nombres = ['Roberto', 'Diana', 'Eduardo', 'Paula', 'Miguel', 'Claudia', 'Rafael', 'Angela'];
-        const apellidos = ['Rojas', 'Cruz', 'Mendoza', 'Núñez', 'Herrera', 'Moreno', 'Castro', 'Paredes'];
-        const nombreAleatorio = `${nombres[Math.floor(Math.random() * nombres.length)]} ${apellidos[Math.floor(Math.random() * apellidos.length)]}`;
-        
-        agregarOferta(nombreAleatorio, nuevoMonto);
-        
-        // Si la subasta sigue activa, programar la siguiente
-        if (subastaActiva && tiempoRestante > 0) {
-            generarOfertasAutomaticas();
-        }
-    }, intervalo);
-}
-
-// Función para inicializar la subasta
-function inicializarSubasta() {
-    // Cargar ofertas iniciales
-    ofertas = [...ofertasIniciales];
-    renderizarOfertas();
-    
-    // Iniciar temporizador
-    if (intervaloTimer) {
-        clearInterval(intervaloTimer);
-        intervaloTimer = null;
-    }
-    
-    tiempoRestante = 150;
-    const timerDisplay = document.getElementById('timer-display');
-    if (timerDisplay) {
-        timerDisplay.textContent = formatearTiempo(tiempoRestante);
-    }
-    
-    // Resetear el estilo del timer
-    const timerContainer = document.getElementById('subasta-timer');
-    if (timerContainer) {
-        timerContainer.style.background = 'linear-gradient(135deg, #8b5cf6, #a78bfa)';
-        timerContainer.style.animation = 'pulse-timer 1s ease-in-out infinite';
-    }
-    
-    // Habilitar el botón de ofertar
-    const btnOfertar = document.getElementById('btn-ofertar');
-    if (btnOfertar) {
-        btnOfertar.disabled = false;
-        btnOfertar.innerHTML = '<i class="fas fa-gavel" aria-hidden="true"></i> Ofertar';
-        btnOfertar.style.opacity = '1';
-        btnOfertar.style.cursor = 'pointer';
-    }
-    
-    // Limpiar feedback
-    const feedback = document.getElementById('oferta-feedback');
-    if (feedback) {
-        feedback.style.display = 'none';
-    }
-    
-    // Iniciar el timer
-    intervaloTimer = setInterval(actualizarTimer, 1000);
-    
-    // Iniciar generación de ofertas automáticas
-    subastaActiva = true;
-    setTimeout(generarOfertasAutomaticas, 2000);
-}
-
-// ============================================================
-// EVENT LISTENER - BOTÓN OFERTAR
-// ============================================================
-
-document.addEventListener('DOMContentLoaded', function() {
-    // ... (código existente) ...
-    
-    // Agregar event listener para el botón de ofertar
-    const btnOfertar = document.getElementById('btn-ofertar');
-    if (btnOfertar) {
-        btnOfertar.addEventListener('click', function(e) {
-            e.preventDefault();
-            handleOfertar();
-        });
-        
-        // Soporte para tecla Enter en el input
-        const inputOferta = document.getElementById('oferta-input');
-        if (inputOferta) {
-            inputOferta.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleOfertar();
+        if (!campaignProduct) {
+            for (var i = 0; i < products.length; i++) {
+                if (products[i].name.toLowerCase().includes('pepperoni')) {
+                    campaignProduct = products[i];
+                    break;
                 }
-            });
+            }
         }
-    }
-});
-
-// ============================================================
-// MODIFICAR LA FUNCIÓN renderMarketplace PARA INCLUIR SUBASTA
-// ============================================================
-
-// Reemplazar la función renderMarketplace existente con esta versión
-function renderMarketplace() {
-    var totalPublicaciones = userPublications.length;
-    
-    var resumenPublicaciones = document.getElementById('resumen-publicaciones');
-    if (resumenPublicaciones) resumenPublicaciones.textContent = totalPublicaciones;
-
-    // Inicializar la subasta (solo la primera vez o si no está iniciada)
-    if (!window._subastaInicializada) {
-        window._subastaInicializada = true;
-        inicializarSubasta();
-    } else {
-        // Si ya está inicializada, solo renderizar ofertas
-        renderizarOfertas();
-    }
-
-    var container = document.getElementById('ultimas-publicaciones-list');
-    if (!container) return;
-
-    var sorted = [...userPublications].sort(function(a, b) {
-        return new Date(b.fecha.split('/').reverse().join('-')) - 
-               new Date(a.fecha.split('/').reverse().join('-'));
-    });
-
-    var ultimas = sorted.slice(0, 6);
-
-    if (ultimas.length === 0) {
-        container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:1rem; color:var(--text-secondary);">' +
-            '<i class="fas fa-box-open" style="font-size:2rem; color:#d9c4e8; display:block; margin-bottom:0.5rem;"></i>' +
-            'No hay productos disponibles. ¡Sé el primero en publicar!' +
-            '<br><button class="btn-primary" id="ir-publicar-marketplace" style="margin-top:0.5rem;"><i class="fas fa-plus" aria-hidden="true"></i> Publicar producto</button>' +
-            '</div>';
         
-        var irBtn = document.getElementById('ir-publicar-marketplace');
-        if (irBtn) {
-            irBtn.addEventListener('click', function() {
-                showPage('publicar-producto');
-            });
+        if (!campaignProduct && products.length > 0) {
+            campaignProduct = products[0];
         }
-        return;
+        
+        if (!campaignProduct) {
+            var feedback = document.getElementById('campaign-feedback');
+            if (feedback) {
+                feedback.textContent = 'No hay productos disponibles en el catálogo.';
+                feedback.style.display = 'block';
+                feedback.style.background = '#fce4ec';
+                feedback.style.color = '#c62828';
+                feedback.style.borderLeftColor = '#e53935';
+                setTimeout(function() { feedback.style.display = 'none'; }, 4000);
+            }
+            return;
+        }
+        
+        var existing = null;
+        for (var j = 0; j < cart.length; j++) {
+            if (cart[j].productId === campaignProduct.id) {
+                existing = cart[j];
+                break;
+            }
+        }
+        
+        if (existing) {
+            existing.quantity += 1;
+        } else {
+            cart.push({ productId: campaignProduct.id, quantity: 1 });
+        }
+        
+        saveCart();
+        updateCartUI();
+        
+        var feedback = document.getElementById('campaign-feedback');
+        if (feedback) {
+            feedback.textContent = '✅ "' + campaignProduct.name + '" agregado al carrito.';
+            feedback.style.display = 'block';
+            feedback.style.background = '#e8f5e9';
+            feedback.style.color = '#2e7d32';
+            feedback.style.borderLeftColor = '#4caf50';
+            setTimeout(function() { feedback.style.display = 'none'; }, 4000);
+        }
+        
+        setTimeout(function() {
+            openCart();
+        }, 300);
     }
 
-    var html = '';
-    for (var i = 0; i < ultimas.length; i++) {
-        var p = ultimas[i];
-        html += '<div class="ultima-publicacion" data-id="' + p.id + '">';
-        html += '<div class="ultima-img"><img src="' + (p.foto || 'https://via.placeholder.com/200x100/8b5cf6/ffffff?text=Producto') + '" alt="' + p.nombre + '" onerror="this.src=\'https://via.placeholder.com/200x100/8b5cf6/ffffff?text=Producto\'"></div>';
-        html += '<div class="ultima-nombre">' + p.nombre + '</div>';
-        html += '<div class="ultima-precio">$' + parseFloat(p.precio).toFixed(2) + '</div>';
-        html += '<div class="ultima-fecha">' + p.fecha + '</div>';
-        html += '<button class="btn-comprar-marketplace comprar-marketplace-btn" data-id="' + p.id + '" data-nombre="' + p.nombre + '" data-precio="' + p.precio + '">';
-        html += '<i class="fas fa-shopping-cart" aria-hidden="true"></i> Comprar';
-        html += '</button>';
-        html += '</div>';
-    }
-    container.innerHTML = html;
-
-    container.querySelectorAll('.comprar-marketplace-btn').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var id = parseInt(this.getAttribute('data-id'));
-            var nombre = this.getAttribute('data-nombre');
-            var precio = parseFloat(this.getAttribute('data-precio'));
-            agregarProductoMarketplaceAlCarrito(id, nombre, precio);
-        });
-    });
+    function goToPromotions() {
+        showPage('promociones');
     }
 
     // ============================================================

@@ -6,6 +6,101 @@
     <title>DeliciasResto</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="estilos.css">
+    <style>
+        /* Estilos adicionales para el formulario de publicar */
+        .campo-opcional {
+            font-size: 0.8rem;
+            color: #6b4f7a;
+            font-weight: normal;
+        }
+        
+        #publicar-form .form-group {
+            margin-bottom: 1.2rem;
+        }
+        
+        #publicar-form .form-control,
+        #publicar-form input,
+        #publicar-form select,
+        #publicar-form textarea {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border: 2px solid #e8e0f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+            box-sizing: border-box;
+        }
+        
+        #publicar-form input:focus,
+        #publicar-form select:focus,
+        #publicar-form textarea:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+            outline: none;
+        }
+        
+        #publicar-form textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+        }
+        
+        .image-preview {
+            width: 100%;
+            height: 180px;
+            background: #f5f0f9;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #d9c4e8;
+            margin-top: 0.5rem;
+        }
+        
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .empty-preview {
+            text-align: center;
+            color: #8b5cf6;
+            padding: 1rem;
+        }
+        
+        .empty-preview i {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        
+        #publicar-btn {
+            width: 100%;
+            justify-content: center;
+            min-height: 48px;
+        }
+        
+        /* Ocultar validación nativa del navegador */
+        input:invalid, textarea:invalid, select:invalid {
+            box-shadow: none !important;
+            border-color: #e8e0f0 !important;
+        }
+        
+        input:invalid:focus, textarea:invalid:focus, select:invalid:focus {
+            border-color: #8b5cf6 !important;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1) !important;
+        }
+        
+        .form-group small {
+            display: block;
+            margin-top: 0.25rem;
+            color: #6b4f7a;
+            font-size: 0.75rem;
+        }
+    </style>
 </head>
 <body>
 
@@ -284,145 +379,194 @@
         <section id="page-marketplace" class="page-section" aria-labelledby="marketplace-title">
             <h2 id="marketplace-title" class="section-title"><i class="fas fa-store-alt" aria-hidden="true"></i> Marketplace</h2>
             
-            <div class="marketplace-dashboard">
-                <div class="marketplace-resumen">
-                    <div class="resumen-card">
-                        <div class="resumen-icon" style="background: #ede6f5; color: var(--primary);">
-                            <i class="fas fa-boxes"></i>
+            <!-- PESTAÑAS DE MARKETPLACE -->
+            <div class="marketplace-tabs">
+                <button class="marketplace-tab active" data-tab="productos">
+                    <i class="fas fa-boxes" aria-hidden="true"></i> Productos
+                </button>
+                <button class="marketplace-tab" data-tab="subasta">
+                    <i class="fas fa-gavel" aria-hidden="true"></i> Subasta
+                </button>
+            </div>
+
+            <!-- CONTENIDO: PRODUCTOS -->
+            <div id="marketplace-productos" class="marketplace-tab-content active">
+                <div class="marketplace-dashboard">
+                    <div class="marketplace-resumen">
+                        <div class="resumen-card">
+                            <div class="resumen-icon" style="background: #ede6f5; color: var(--primary);">
+                                <i class="fas fa-boxes"></i>
+                            </div>
+                            <div>
+                                <div class="resumen-number" id="resumen-publicaciones">0</div>
+                                <div class="resumen-label">Productos publicados</div>
+                            </div>
                         </div>
-                        <div>
-                            <div class="resumen-number" id="resumen-publicaciones">0</div>
-                            <div class="resumen-label">Productos publicados</div>
+                        <div class="resumen-card">
+                            <div class="resumen-icon" style="background: #e8f5e9; color: #4caf50;">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div>
+                                <div class="resumen-number" id="resumen-compras">0</div>
+                                <div class="resumen-label">Compras realizadas</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="resumen-card">
-                        <div class="resumen-icon" style="background: #e8f5e9; color: #4caf50;">
-                            <i class="fas fa-shopping-cart"></i>
-                        </div>
-                        <div>
-                            <div class="resumen-number" id="resumen-compras">0</div>
-                            <div class="resumen-label">Compras realizadas</div>
-                        </div>
+
+                    <div class="marketplace-ultimas">
+                        <h3><i class="fas fa-clock" style="color: var(--primary);"></i> Productos disponibles</h3>
+                        <div id="ultimas-publicaciones-list" class="ultimas-grid"></div>
                     </div>
                 </div>
+            </div>
 
-                <div class="marketplace-ultimas">
-                    <h3><i class="fas fa-clock" style="color: var(--primary);"></i> Productos disponibles</h3>
-                    <div id="ultimas-publicaciones-list" class="ultimas-grid"></div>
+            <!-- CONTENIDO: SUBASTA -->
+            <div id="marketplace-subasta" class="marketplace-tab-content">
+                <div class="subasta-container">
+                    <!-- Producto en subasta -->
+                    <div class="subasta-producto-card">
+                        <div class="subasta-producto-imagen">
+                            <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&h=400&fit=crop&crop=center" alt="Cena para 2 con pizza" loading="lazy">
+                            <div class="subasta-badge">🔥 EN SUBASTA</div>
+                        </div>
+                        <div class="subasta-producto-info">
+                            <h3>Cena para 2 con Pizza</h3>
+                            <p class="subasta-descripcion">Disfruta de una deliciosa cena para dos personas que incluye:</p>
+                            <ul class="subasta-detalles">
+                                <li><i class="fas fa-pizza-slice" aria-hidden="true"></i> 1 Pizza Grande</li>
+                                <li><i class="fas fa-wine-bottle" aria-hidden="true"></i> 2 Bebidas</li>
+                                <li><i class="fas fa-cookie-bite" aria-hidden="true"></i> 2 Postres</li>
+                                <li><i class="fas fa-truck" aria-hidden="true"></i> Envío a domicilio</li>
+                            </ul>
+                            <div class="subasta-precios">
+                                <div class="subasta-precio-base">
+                                    <span>Precio base</span>
+                                    <strong>$6.00</strong>
+                                </div>
+                                <div class="subasta-precio-actual">
+                                    <span>Oferta actual</span>
+                                    <strong id="subasta-oferta-actual-main">$6.00</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Control de subasta -->
+                    <div class="subasta-controls">
+                        <div class="subasta-temporizador-container">
+                            <div class="subasta-temporizador-label">
+                                <i class="fas fa-clock" aria-hidden="true"></i> Tiempo restante
+                            </div>
+                            <div class="subasta-temporizador" id="subasta-temporizador-main">
+                                00:30
+                            </div>
+                            <div class="subasta-temporizador-barra">
+                                <div class="subasta-temporizador-progreso" id="subasta-progreso" style="width: 100%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="subasta-oferta-area">
+                            <div class="subasta-oferta-input-group">
+                                <label for="subasta-oferta-main">
+                                    <i class="fas fa-hand-holding-usd" aria-hidden="true"></i> Tu oferta
+                                </label>
+                                <div class="subasta-input-wrapper">
+                                    <span class="subasta-input-prefix">$</span>
+                                    <input type="number" id="subasta-oferta-main" placeholder="0.00" step="0.50" min="6.00" value="6.50">
+                                </div>
+                                <button class="btn-primary subasta-ofertar-btn" id="subasta-ofertar-main">
+                                    <i class="fas fa-gavel" aria-hidden="true"></i> Ofertar
+                                </button>
+                            </div>
+                            <div id="subasta-feedback-main" class="subasta-feedback" style="display: none;"></div>
+                        </div>
+
+                        <!-- Lista de ofertas -->
+                        <div class="subasta-lista-ofertas-container">
+                            <div class="subasta-lista-header">
+                                <h4><i class="fas fa-list" aria-hidden="true"></i> Ofertas realizadas</h4>
+                                <span class="subasta-ofertas-count" id="subasta-ofertas-count-main">0</span>
+                            </div>
+                            <div class="subasta-lista-ofertas" id="subasta-lista-ofertas-main">
+                                <div class="subasta-sin-ofertas">
+                                    <i class="fas fa-inbox" aria-hidden="true"></i>
+                                    <p>No hay ofertas aún. ¡Sé el primero en ofertar!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- ===== PÁGINA MARKETPLACE ===== -->
-<section id="page-marketplace" class="page-section" aria-labelledby="marketplace-title">
-    <h2 id="marketplace-title" class="section-title"><i class="fas fa-store-alt" aria-hidden="true"></i> Marketplace</h2>
-    
-    <div class="marketplace-dashboard">
-        <div class="marketplace-resumen">
-            <div class="resumen-card">
-                <div class="resumen-icon" style="background: #ede6f5; color: var(--primary);">
-                    <i class="fas fa-boxes"></i>
-                </div>
-                <div>
-                    <div class="resumen-number" id="resumen-publicaciones">0</div>
-                    <div class="resumen-label">Productos publicados</div>
-                </div>
-            </div>
-            <!-- Eliminado el contador de compras realizadas -->
-        </div>
-
-        <!-- ===== SECCIÓN DE SUBASTA ===== -->
-        <div class="subasta-container">
-            <div class="subasta-header">
-                <h3><i class="fas fa-gavel" style="color: var(--primary);"></i> Subasta en vivo</h3>
-                <div class="subasta-timer" id="subasta-timer">
-                    <i class="fas fa-clock" aria-hidden="true"></i>
-                    <span id="timer-display">02:30</span>
-                </div>
-            </div>
-
-            <div class="subasta-producto">
-                <div class="subasta-imagen">
-                    <img src="https://via.placeholder.com/400x300/8b5cf6/ffffff?text=Producto+en+Subasta" alt="Producto en subasta">
-                </div>
-                <div class="subasta-info">
-                    <h4 id="subasta-nombre">Pizza Artesanal Premium</h4>
-                    <p id="subasta-descripcion">Edición limitada con ingredientes seleccionados. ¡Oferta ahora!</p>
-                    <div class="subasta-precios">
-                        <div class="precio-actual">
-                            <span>Precio actual</span>
-                            <strong id="precio-actual">$25.00</strong>
-                        </div>
-                        <div class="precio-oferta">
-                            <span>Tu oferta</span>
-                            <div class="oferta-input-group">
-                                <span class="moneda-simbolo">$</span>
-                                <input type="number" id="oferta-input" placeholder="0.00" step="0.50" min="0">
-                            </div>
-                        </div>
-                    </div>
-                    <button class="btn-primary btn-ofertar" id="btn-ofertar">
-                        <i class="fas fa-gavel" aria-hidden="true"></i> Ofertar
-                    </button>
-                    <div id="oferta-feedback" class="oferta-feedback" style="display:none;"></div>
-                </div>
-            </div>
-
-            <div class="subasta-ofertas">
-                <h4><i class="fas fa-list" style="color: var(--primary);"></i> Ofertas recientes</h4>
-                <div id="lista-ofertas" class="lista-ofertas">
-                    <!-- Las ofertas se cargarán dinámicamente -->
-                </div>
-            </div>
-        </div>
-
-        <div class="marketplace-ultimas">
-            <h3><i class="fas fa-clock" style="color: var(--primary);"></i> Productos disponibles</h3>
-            <div id="ultimas-publicaciones-list" class="ultimas-grid"></div>
-        </div>
-    </div>
-</section>
-
-        <!-- ===== PÁGINA PUBLICAR PRODUCTO ===== -->
+        <!-- ===== PÁGINA PUBLICAR PRODUCTO (MODIFICADA - CAMPOS OPCIONALES) ===== -->
         <section id="page-publicar-producto" class="page-section" aria-labelledby="publicar-title">
             <h2 id="publicar-title" class="section-title"><i class="fas fa-plus-circle" aria-hidden="true"></i> Publica tu producto</h2>
             <div class="auth-container" style="max-width: 600px;">
-                <div id="publicar-message" class="hidden"></div>
+                <div id="publicar-message" class="alert-message hidden"></div>
                 <form id="publicar-form" onsubmit="return false;">
                     <div class="form-group">
-                        <label for="publicar-nombre"><i class="fas fa-tag" aria-hidden="true"></i> Nombre del producto <span style="color: #c62828;">*</span></label>
-                        <input type="text" id="publicar-nombre" placeholder="Ej: Pizza Hawaiana" required>
+                        <label for="publicar-nombre"><i class="fas fa-tag" aria-hidden="true"></i> Nombre del producto <span style="color: #6b4f7a; font-size: 0.8rem; font-weight: normal;">(opcional)</span></label>
+                        <input type="text" id="publicar-nombre" placeholder="Ej: Pizza Hawaiana" style="width:100%; padding:0.7rem 0.9rem; border-radius:14px; border:1px solid var(--border); background:#faf8fc; font-size:0.95rem; min-height:44px;">
+                        <small style="color: #6b4f7a; font-size: 0.75rem; display: block; margin-top: 0.2rem;">Si lo dejas vacío, se usará "Producto sin nombre"</small>
                     </div>
+                    
                     <div class="form-group">
-                        <label for="publicar-precio"><i class="fas fa-dollar-sign" aria-hidden="true"></i> Precio <span style="color: #c62828;">*</span></label>
-                        <input type="number" step="0.01" id="publicar-precio" placeholder="0.00" required>
+                        <label for="publicar-precio"><i class="fas fa-dollar-sign" aria-hidden="true"></i> Precio <span style="color: #6b4f7a; font-size: 0.8rem; font-weight: normal;">(opcional)</span></label>
+                        <input type="number" step="0.01" id="publicar-precio" placeholder="0.00" style="width:100%; padding:0.7rem 0.9rem; border-radius:14px; border:1px solid var(--border); background:#faf8fc; font-size:0.95rem; min-height:44px;">
+                        <small style="color: #6b4f7a; font-size: 0.75rem; display: block; margin-top: 0.2rem;">Si lo dejas vacío, se usará $0.00</small>
                     </div>
+                    
                     <div class="form-group">
-                        <label for="publicar-categoria"><i class="fas fa-utensils" aria-hidden="true"></i> Categoría</label>
-                        <select id="publicar-categoria">
+                        <label for="publicar-categoria"><i class="fas fa-utensils" aria-hidden="true"></i> Categoría <span style="color: #6b4f7a; font-size: 0.8rem; font-weight: normal;">(opcional)</span></label>
+                        <select id="publicar-categoria" style="width:100%; padding:0.7rem 0.9rem; border-radius:14px; border:1px solid var(--border); background:#faf8fc; font-size:0.95rem; min-height:44px;">
+                            <option value="Otros">Otros</option>
                             <option value="Pizzas">Pizzas</option>
                             <option value="Hamburguesas">Hamburguesas</option>
                             <option value="Pescados">Pescados</option>
                             <option value="Bebidas">Bebidas</option>
                             <option value="Ensaladas">Ensaladas</option>
                             <option value="Postres">Postres</option>
-                            <option value="Otros">Otros</option>
+                            <option value="Electrónicos">Electrónicos</option>
+                            <option value="Ropa">Ropa</option>
+                            <option value="Libros">Libros</option>
+                            <option value="Juguetes">Juguetes</option>
+                            <option value="Deportes">Deportes</option>
+                            <option value="Hogar">Hogar</option>
+                            <option value="Tecnología">Tecnología</option>
+                            <option value="Arte">Arte</option>
+                            <option value="Música">Música</option>
+                            <option value="Salud">Salud</option>
+                            <option value="Belleza">Belleza</option>
                         </select>
+                        <small style="color: #6b4f7a; font-size: 0.75rem; display: block; margin-top: 0.2rem;">Selecciona una categoría o deja "Otros"</small>
                     </div>
+                    
                     <div class="form-group">
-                        <label for="publicar-descripcion"><i class="fas fa-align-left" aria-hidden="true"></i> Descripción <span class="campo-opcional">(opcional)</span></label>
-                        <textarea id="publicar-descripcion" placeholder="Describe tu producto..." style="min-height: 100px;"></textarea>
+                        <label for="publicar-descripcion"><i class="fas fa-align-left" aria-hidden="true"></i> Descripción <span style="color: #6b4f7a; font-size: 0.8rem; font-weight: normal;">(opcional)</span></label>
+                        <textarea id="publicar-descripcion" placeholder="Describe tu producto..." style="width:100%; padding:0.7rem 0.9rem; border-radius:14px; border:1px solid var(--border); background:#faf8fc; font-size:0.95rem; min-height:100px; resize:vertical;"></textarea>
                     </div>
+                    
                     <div class="form-group">
-                        <label for="publicar-foto"><i class="fas fa-image" aria-hidden="true"></i> Foto (URL) <span class="campo-opcional">(opcional)</span></label>
-                        <input type="text" id="publicar-foto" placeholder="https://ejemplo.com/foto.jpg">
-                        <div class="image-preview" id="publicar-image-preview" style="margin-top: 0.5rem;">
-                            <div class="empty-preview"><i class="fas fa-image" style="font-size:1.5rem; display:block; margin-bottom:0.3rem;" aria-hidden="true"></i>Vista previa</div>
+                        <label for="publicar-foto"><i class="fas fa-image" aria-hidden="true"></i> Foto (URL) <span style="color: #6b4f7a; font-size: 0.8rem; font-weight: normal;">(opcional)</span></label>
+                        <input type="text" id="publicar-foto" placeholder="https://ejemplo.com/foto.jpg" style="width:100%; padding:0.7rem 0.9rem; border-radius:14px; border:1px solid var(--border); background:#faf8fc; font-size:0.95rem; min-height:44px;">
+                        <small style="color: #6b4f7a; font-size: 0.75rem; display: block; margin-top: 0.2rem;">Si lo dejas vacío, se usará una imagen por defecto</small>
+                        <div class="image-preview" id="publicar-image-preview" style="margin-top: 0.5rem; width:100%; height:180px; background:#f5f0f9; border-radius:12px; overflow:hidden; display:flex; align-items:center; justify-content:center; border:2px dashed #d9c4e8;">
+                            <div class="empty-preview" style="text-align:center; color:#8b5cf6; padding:1rem;">
+                                <i class="fas fa-image" style="font-size:2rem; display:block; margin-bottom:0.5rem;" aria-hidden="true"></i>
+                                <span>Vista previa</span>
+                            </div>
                         </div>
                     </div>
-                    <button type="submit" class="btn-primary" id="publicar-btn" style="width:100%; justify-content:center;">
-                        <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> Publicar producto
-                    </button>
+                    
+                    <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                        <button type="submit" class="btn-primary" id="publicar-btn" style="flex: 1; min-width: 150px; justify-content: center; min-height: 48px;">
+                            <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> Publicar producto
+                        </button>
+                        <button type="button" class="btn-secondary" id="publicar-cancel-btn" style="min-width: 120px; justify-content: center; min-height: 48px;">
+                            <i class="fas fa-times" aria-hidden="true"></i> Cancelar
+                        </button>
+                    </div>
                 </form>
             </div>
         </section>
