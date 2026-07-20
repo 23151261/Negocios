@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // ============================================================
-    // COMENTARIOS DE LA COMUNIDAD
+    // COMENTARIOS DE LA COMUNIDAD (CON COMENTARIOS PRECARGADOS DEL USUARIO)
     // ============================================================
     
     let communityComments = [
@@ -125,36 +125,79 @@ document.addEventListener('DOMContentLoaded', function() {
             id: 1, 
             name: 'María García', 
             text: '¡La pizza Margarita es espectacular! La masa crujiente y los ingredientes frescos hacen una combinación perfecta.', 
-            date: '15/01/2025 14:30' 
+            date: '15/01/2025 14:30',
+            edited: false 
         },
         { 
             id: 2, 
             name: 'Carlos López', 
             text: 'Muy buena atención y la comida llegó caliente. La hamburguesa BBQ estaba deliciosa.', 
-            date: '14/01/2025 18:45' 
+            date: '14/01/2025 18:45',
+            edited: false 
         },
         { 
             id: 3, 
             name: 'Ana Martínez', 
             text: 'El ceviche de camarón es el mejor que he probado. Fresco, bien sazonado y con una presentación impecable.', 
-            date: '13/01/2025 12:20' 
+            date: '13/01/2025 12:20',
+            edited: false 
         },
         { 
             id: 4, 
             name: 'Pedro Ramírez', 
             text: 'Buena comida pero el tiempo de entrega fue un poco largo. La ensalada César estaba rica.', 
-            date: '12/01/2025 20:10' 
+            date: '12/01/2025 20:10',
+            edited: false 
+        },
+        // ===== COMENTARIOS DEL USUARIO ACTUAL (precargados) =====
+        { 
+            id: 5, 
+            name: 'Juan Pérez', 
+            text: 'Excelente servicio, la pizza llegó caliente y muy sabrosa. ¡La recomiendo al 100%!', 
+            date: '16/01/2025 19:30',
+            edited: false 
+        },
+        { 
+            id: 6, 
+            name: 'Juan Pérez', 
+            text: 'El salmón a la plancha estaba en su punto, jugoso y con un sabor increíble. Volveré a pedir.', 
+            date: '17/01/2025 13:15',
+            edited: false 
         }
     ];
 
-    let nextCommentId = 5;
+    let nextCommentId = 7;
 
     // ============================================================
-    // C2C - PUBLICACIONES DE USUARIOS
+    // C2C - PUBLICACIONES DE USUARIOS (CON 2 PRECARGADAS)
     // ============================================================
     
-    let userPublications = [];
-    let nextPublicationId = 1;
+    let userPublications = [
+        { 
+            id: 1, 
+            nombre: 'Pizza Hawaiana Casera', 
+            precio: 8.50, 
+            categoria: 'Pizzas', 
+            descripcion: 'Deliciosa pizza hawaiana hecha en casa con piña natural y jamón de primera calidad.', 
+            foto: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300&h=200&fit=crop',
+            fecha: '18/01/2025',
+            usuario: 'Juan Pérez',
+            compras: 3
+        },
+        { 
+            id: 2, 
+            nombre: 'Hamburguesa Gourmet', 
+            precio: 12.00, 
+            categoria: 'Hamburguesas', 
+            descripcion: 'Hamburguesa con carne Angus, queso cheddar, cebolla caramelizada y salsa especial.', 
+            foto: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=300&h=200&fit=crop',
+            fecha: '17/01/2025',
+            usuario: 'Juan Pérez',
+            compras: 1
+        }
+    ];
+    
+    let nextPublicationId = 3;
     let editingPublicationId = null;
 
     // ============================================================
@@ -169,11 +212,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let editingProductId = null;
     let editingClientId = null;
     let cartOpen = false;
+    let editingCommentId = null;
 
     let cart = [];
     let clients = [];
     let orders = [];
     let promociones = [];
+    let historialCompras = [];
 
     // ============================================================
     // CARGA DE DATOS DESDE LOCALSTORAGE
@@ -182,16 +227,12 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
         const savedProducts = localStorage.getItem('delicias_products');
         products = savedProducts ? JSON.parse(savedProducts) : JSON.parse(JSON.stringify(defaultProducts));
-    } catch (e) {
-        products = JSON.parse(JSON.stringify(defaultProducts));
-    }
+    } catch (e) {}
 
     try {
         const savedCart = localStorage.getItem('delicias_cart');
         cart = savedCart ? JSON.parse(savedCart) : [];
-    } catch (e) {
-        cart = [];
-    }
+    } catch (e) {}
 
     try {
         const savedComments = localStorage.getItem('delicias_comments');
@@ -214,6 +255,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (p.id > maxId) maxId = p.id;
             });
             nextPublicationId = maxId + 1;
+        }
+    } catch (e) {}
+
+    try {
+        const savedHistorial = localStorage.getItem('delicias_historial');
+        if (savedHistorial) {
+            historialCompras = JSON.parse(savedHistorial);
         }
     } catch (e) {}
 
@@ -299,6 +347,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function savePublications() {
         try {
             localStorage.setItem('delicias_publications', JSON.stringify(userPublications));
+        } catch (e) {}
+    }
+
+    function saveHistorial() {
+        try {
+            localStorage.setItem('delicias_historial', JSON.stringify(historialCompras));
         } catch (e) {}
     }
 
@@ -393,7 +447,11 @@ document.addEventListener('DOMContentLoaded', function() {
         exito: document.getElementById('page-exito'),
         marketplace: document.getElementById('page-marketplace'),
         'publicar-producto': document.getElementById('page-publicar-producto'),
-        'mis-publicaciones': document.getElementById('page-mis-publicaciones')
+        'mis-publicaciones': document.getElementById('page-mis-publicaciones'),
+        checkout: document.getElementById('page-checkout'),
+        factura: document.getElementById('page-factura'),
+        'mis-compras': document.getElementById('page-mis-compras'),
+        'mis-comentarios': document.getElementById('page-mis-comentarios')
     };
 
     const adminPages = {
@@ -420,6 +478,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 link.classList.add('active-link');
             }
         });
+
+        var dropdownMenu = document.getElementById('profile-dropdown-menu');
+        var profileBtn = document.getElementById('nav-profile-btn');
+        if (dropdownMenu) dropdownMenu.classList.remove('show');
+        if (profileBtn) profileBtn.classList.remove('active');
 
         var socialFloat = document.getElementById('social-float');
         if (socialFloat) {
@@ -470,6 +533,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        if (pageId === 'mis-compras') {
+            renderHistorialCompras();
+        }
+
+        if (pageId === 'mis-comentarios') {
+            renderMisComentarios();
+        }
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -511,13 +582,28 @@ document.addEventListener('DOMContentLoaded', function() {
         if (statOutOfStock) statOutOfStock.textContent = outOfStock;
     }
 
+    // ============================================================
+    // ACTUALIZAR NAVEGACIÓN CON DROPDOWN
+    // ============================================================
+
     function updateNavVisibility() {
         var userNavItems = document.querySelectorAll('.user-nav');
         var adminNavItems = document.querySelectorAll('.admin-nav');
+        var navLoginLi = document.getElementById('nav-login-li');
+        var profileContainer = document.getElementById('profile-dropdown-container');
+        var profileBtn = document.getElementById('nav-profile-btn');
+        var profileName = document.getElementById('nav-profile-name');
         var navLoginBtn = document.getElementById('nav-login-btn');
 
+        if (profileContainer) profileContainer.style.display = 'none';
+        if (navLoginLi) navLoginLi.style.display = 'list-item';
+
         if (isAdmin) {
-            userNavItems.forEach(function(el) { el.style.display = 'none'; });
+            userNavItems.forEach(function(el) { 
+                if (el.id !== 'profile-dropdown-container' && el.id !== 'nav-login-li') {
+                    el.style.display = 'none'; 
+                }
+            });
             adminNavItems.forEach(function(el) {
                 el.style.display = 'list-item';
                 el.style.background = 'transparent';
@@ -534,23 +620,52 @@ document.addEventListener('DOMContentLoaded', function() {
                 navLoginBtn.style.fontWeight = '600';
                 navLoginBtn.style.borderBottom = 'none';
             }
-        } else {
-            userNavItems.forEach(function(el) { el.style.display = 'list-item'; });
+            if (profileContainer) profileContainer.style.display = 'none';
+            if (navLoginLi) navLoginLi.style.display = 'list-item';
+        } else if (isLoggedIn) {
+            userNavItems.forEach(function(el) { 
+                if (el.id !== 'profile-dropdown-container' && el.id !== 'nav-login-li') {
+                    el.style.display = 'list-item'; 
+                }
+            });
             adminNavItems.forEach(function(el) {
                 el.style.display = 'none';
                 el.style.background = '';
             });
             document.body.classList.remove('admin-mode');
-            if (isLoggedIn && navLoginBtn) {
-                navLoginBtn.innerHTML = '<i class="fas fa-user-circle" aria-hidden="true"></i> Mi Perfil';
-                navLoginBtn.setAttribute('data-page', 'perfil');
-                navLoginBtn.style.background = '#8b5cf6';
-                navLoginBtn.style.color = 'white';
-                navLoginBtn.style.border = 'none';
-                navLoginBtn.style.borderRadius = '40px';
-                navLoginBtn.style.padding = '0.4rem 1rem';
-                navLoginBtn.style.borderBottom = 'none';
-            } else if (navLoginBtn) {
+            
+            if (profileContainer) {
+                profileContainer.style.display = 'list-item';
+                profileContainer.style.background = 'transparent';
+            }
+            if (navLoginLi) navLoginLi.style.display = 'none';
+            
+            if (profileName) {
+                var nameDisplay = currentUser && currentUser.name ? currentUser.name : 'Mi Perfil';
+                var nameShort = nameDisplay.length > 15 ? nameDisplay.substring(0, 15) + '...' : nameDisplay;
+                profileName.textContent = nameShort;
+            }
+            
+            if (profileBtn) {
+                profileBtn.innerHTML = '<i class="fas fa-user-circle" aria-hidden="true"></i> <span id="nav-profile-name">' + 
+                    (currentUser && currentUser.name ? currentUser.name : 'Mi Perfil') + 
+                    '</span> <i class="fas fa-chevron-down dropdown-arrow" aria-hidden="true"></i>';
+            }
+        } else {
+            userNavItems.forEach(function(el) { 
+                if (el.id !== 'profile-dropdown-container') {
+                    el.style.display = 'list-item'; 
+                }
+            });
+            adminNavItems.forEach(function(el) {
+                el.style.display = 'none';
+                el.style.background = '';
+            });
+            document.body.classList.remove('admin-mode');
+            if (profileContainer) profileContainer.style.display = 'none';
+            if (navLoginLi) navLoginLi.style.display = 'list-item';
+            
+            if (navLoginBtn) {
                 navLoginBtn.innerHTML = '<i class="fas fa-user-circle" aria-hidden="true"></i> Iniciar sesión';
                 navLoginBtn.setAttribute('data-page', 'login');
                 navLoginBtn.style.background = '#ede6f5';
@@ -561,6 +676,55 @@ document.addEventListener('DOMContentLoaded', function() {
                 navLoginBtn.style.borderBottom = 'none';
             }
         }
+    }
+
+    // ============================================================
+    // DROPDOWN - TOGGLE Y CIERRE
+    // ============================================================
+
+    var profileBtn = document.getElementById('nav-profile-btn');
+    var dropdownMenu = document.getElementById('profile-dropdown-menu');
+    var profileContainer = document.getElementById('profile-dropdown-container');
+
+    if (profileBtn && dropdownMenu) {
+        profileBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropdownMenu.classList.toggle('show');
+            this.classList.toggle('active');
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (profileContainer && dropdownMenu) {
+            if (!profileContainer.contains(e.target)) {
+                dropdownMenu.classList.remove('show');
+                if (profileBtn) profileBtn.classList.remove('active');
+            }
+        }
+    });
+
+    if (dropdownMenu) {
+        dropdownMenu.querySelectorAll('a[data-page]').forEach(function(link) {
+            link.addEventListener('click', function() {
+                dropdownMenu.classList.remove('show');
+                if (profileBtn) profileBtn.classList.remove('active');
+            });
+        });
+    }
+
+    var dropdownLogout = document.getElementById('dropdown-logout-btn');
+    if (dropdownLogout) {
+        dropdownLogout.addEventListener('click', function(e) {
+            e.preventDefault();
+            dropdownMenu.classList.remove('show');
+            if (profileBtn) profileBtn.classList.remove('active');
+            
+            isLoggedIn = false;
+            isAdmin = false;
+            updateNavVisibility();
+            showPage('inicio');
+        });
     }
 
     // ============================================================
@@ -943,36 +1107,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (profileUserEmail) profileUserEmail.textContent = currentUser.email;
         if (profilePhone) profilePhone.textContent = currentUser.phone || '+52 55 1234 5678';
         if (profileAddress) profileAddress.textContent = currentUser.address || 'Calle Principal 123, Colonia Centro';
-        renderUserComments();
-    }
-
-    function renderUserComments() {
-        var container = document.getElementById('profile-comments-list');
-        if (!container) return;
-
-        var userComments = communityComments.filter(function(c) {
-            return c.name.toLowerCase() === currentUser.name.toLowerCase();
-        });
-
-        if (userComments.length === 0) {
-            container.innerHTML = '<p style="color:#6b4f7a; font-size:0.9rem; text-align:center; padding:0.5rem;">' +
-                '<i class="fas fa-comment-slash" style="color:#d9c4e8; display:block; font-size:1.5rem; margin-bottom:0.5rem;"></i>' +
-                'Aún no has publicado comentarios en la comunidad.' +
-                '</p>';
-            return;
-        }
-
-        var html = '';
-        for (var i = 0; i < userComments.length; i++) {
-            var c = userComments[i];
-            html += '<div class="profile-comment-item" style="background:#faf8fc; border-radius:12px; padding:0.8rem; margin-bottom:0.6rem; border:1px solid #ede6f5;">';
-            html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">';
-            html += '<span style="font-size:0.7rem; color:#6b4f7a;">' + c.date + '</span>';
-            html += '</div>';
-            html += '<p style="color:#2d1b3d; font-size:0.9rem; margin:0;">' + (c.text || '<em style="color:#999;">[Comentario vacío]</em>') + '</p>';
-            html += '</div>';
-        }
-        container.innerHTML = html;
     }
 
     // ============================================================
@@ -1090,13 +1224,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (!p) return;
             if (title) title.textContent = 'Editar Producto';
-            nameInput.value = p.name;
-            if (categoryInput) categoryInput.value = p.category;
-            if (priceInput) priceInput.value = p.price;
-            if (descInput) descInput.value = p.desc;
-            if (stockInput) stockInput.value = p.stock;
-            if (statusInput) statusInput.value = p.status;
-            if (imageInput) imageInput.value = p.image;
+            nameInput.value = p.name || '';
+            if (categoryInput) categoryInput.value = p.category || 'Pizzas';
+            if (priceInput) priceInput.value = p.price || '';
+            if (descInput) descInput.value = p.desc || '';
+            if (stockInput) stockInput.value = p.stock || '';
+            if (statusInput) statusInput.value = p.status || 'disponible';
+            if (imageInput) imageInput.value = p.image || '';
             updateImagePreview(p.image);
             var saveBtn = document.getElementById('form-save-btn');
             if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-save" aria-hidden="true"></i> Actualizar';
@@ -1144,15 +1278,15 @@ document.addEventListener('DOMContentLoaded', function() {
         var html = '';
         for (var i = 0; i < clients.length; i++) {
             var c = clients[i];
-            html += '<tr><td><strong>' + c.name + '</strong></td>';
-            html += '<td>' + c.email + '</td>';
-            html += '<td>' + c.phone + '</td>';
-            html += '<td>' + c.orders + '</td>';
-            html += '<td>$' + c.spent.toFixed(2) + '</td>';
-            html += '<td>' + c.registeredDate + '</td>';
+            html += '<tr><td><strong>' + (c.name || 'Sin nombre') + '</strong></td>';
+            html += '<td>' + (c.email || '') + '</td>';
+            html += '<td>' + (c.phone || '') + '</td>';
+            html += '<td>' + (c.orders || 0) + '</td>';
+            html += '<td>$' + (c.spent || 0).toFixed(2) + '</td>';
+            html += '<td>' + (c.registeredDate || '') + '</td>';
             html += '<td><div class="table-actions">';
-            html += '<button class="btn-edit" data-index="' + i + '" aria-label="Editar ' + c.name + '"><i class="fas fa-edit"></i></button>';
-            html += '<button class="btn-delete" data-index="' + i + '" aria-label="Eliminar ' + c.name + '"><i class="fas fa-trash"></i></button>';
+            html += '<button class="btn-edit" data-index="' + i + '" aria-label="Editar ' + (c.name || 'cliente') + '"><i class="fas fa-edit"></i></button>';
+            html += '<button class="btn-delete" data-index="' + i + '" aria-label="Eliminar ' + (c.name || 'cliente') + '"><i class="fas fa-trash"></i></button>';
             html += '</div></td></tr>';
         }
         tbody.innerHTML = html;
@@ -1200,10 +1334,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (idx !== null && idx >= 0) {
             var c = clients[idx];
             if (title) title.textContent = 'Editar cliente';
-            nameInput.value = c.name;
-            if (emailInput) emailInput.value = c.email;
-            if (phoneInput) phoneInput.value = c.phone;
-            if (addressInput) addressInput.value = c.address;
+            nameInput.value = c.name || '';
+            if (emailInput) emailInput.value = c.email || '';
+            if (phoneInput) phoneInput.value = c.phone || '';
+            if (addressInput) addressInput.value = c.address || '';
         } else {
             if (title) title.textContent = 'Agregar cliente';
             nameInput.value = '';
@@ -1245,13 +1379,13 @@ document.addEventListener('DOMContentLoaded', function() {
         for (var i = 0; i < orders.length; i++) {
             var order = orders[i];
             var statusClass = getOrderStatusClass(order.status);
-            html += '<tr><td>#' + order.id + '</td>';
-            html += '<td>' + order.client + '</td>';
-            html += '<td>' + order.products + '</td>';
-            html += '<td>$' + order.total.toFixed(2) + '</td>';
-            html += '<td><span class="status-badge ' + statusClass + '">' + order.status + '</span></td>';
-            html += '<td>' + order.date + '</td>';
-            html += '<td><button class="btn-secondary order-action-btn" type="button" data-order-id="' + order.id + '">Cambiar estado</button></td></tr>';
+            html += '<tr><td>#' + (order.id || '') + '</td>';
+            html += '<td>' + (order.client || '') + '</td>';
+            html += '<td>' + (order.products || '') + '</td>';
+            html += '<td>$' + (order.total || 0).toFixed(2) + '</td>';
+            html += '<td><span class="status-badge ' + statusClass + '">' + (order.status || '') + '</span></td>';
+            html += '<td>' + (order.date || '') + '</td>';
+            html += '<td><button class="btn-secondary order-action-btn" type="button" data-order-id="' + (order.id || '') + '">Cambiar estado</button></td></tr>';
         }
         tbody.innerHTML = html;
 
@@ -1288,11 +1422,11 @@ document.addEventListener('DOMContentLoaded', function() {
             var promo = promociones[i];
             var estadoClass = promo.estado === 'Activa' ? 'status-available' : (promo.estado === 'Vencida' ? 'status-out-of-stock' : 'status-warning');
             html += '<tr>';
-            html += '<td><strong>' + promo.nombre + '</strong></td>';
-            html += '<td>' + promo.descuento + '</td>';
-            html += '<td>' + promo.productos + '</td>';
-            html += '<td>' + promo.vigencia + '</td>';
-            html += '<td><span class="status-badge ' + estadoClass + '">' + promo.estado + '</span></td>';
+            html += '<td><strong>' + (promo.nombre || '') + '</strong></td>';
+            html += '<td>' + (promo.descuento || '') + '</td>';
+            html += '<td>' + (promo.productos || '') + '</td>';
+            html += '<td>' + (promo.vigencia || '') + '</td>';
+            html += '<td><span class="status-badge ' + estadoClass + '">' + (promo.estado || '') + '</span></td>';
             html += '<td><div class="table-actions">';
             html += '<button class="btn-edit edit-promo-btn" data-index="' + i + '" aria-label="Editar promoción"><i class="fas fa-edit"></i></button>';
             html += '<button class="btn-delete delete-promo-btn" data-index="' + i + '" aria-label="Eliminar promoción"><i class="fas fa-trash"></i></button>';
@@ -1310,7 +1444,7 @@ document.addEventListener('DOMContentLoaded', function() {
         tbody.querySelectorAll('.delete-promo-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 var index = parseInt(this.getAttribute('data-index'));
-                var promoName = promociones[index] ? promociones[index].nombre : 'esta promoción';
+                var promoName = promociones[index] ? (promociones[index].nombre || 'esta promoción') : 'esta promoción';
                 if (promoName === 'Sin nombre' || promoName === '') {
                     promoName = 'esta promoción';
                 }
@@ -1350,11 +1484,11 @@ document.addEventListener('DOMContentLoaded', function() {
             title.textContent = 'Editar Promoción';
             var promo = promociones[index];
             document.getElementById('promo-form-index').value = index;
-            document.getElementById('promo-form-name').value = promo.nombre;
-            document.getElementById('promo-form-discount').value = promo.descuento;
-            document.getElementById('promo-form-products').value = promo.productos;
-            document.getElementById('promo-form-validity').value = promo.vigencia;
-            document.getElementById('promo-form-status').value = promo.estado;
+            document.getElementById('promo-form-name').value = promo.nombre || '';
+            document.getElementById('promo-form-discount').value = promo.descuento || '';
+            document.getElementById('promo-form-products').value = promo.productos || '';
+            document.getElementById('promo-form-validity').value = promo.vigencia || '';
+            document.getElementById('promo-form-status').value = promo.estado || 'Activa';
         }
 
         showAdminPage('promo-form');
@@ -1362,11 +1496,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function savePromoForm() {
-        var name = document.getElementById('promo-form-name')?.value;
-        var discount = document.getElementById('promo-form-discount')?.value;
-        var products = document.getElementById('promo-form-products')?.value;
-        var validity = document.getElementById('promo-form-validity')?.value;
-        var status = document.getElementById('promo-form-status')?.value;
+        var name = document.getElementById('promo-form-name')?.value || '';
+        var discount = document.getElementById('promo-form-discount')?.value || '';
+        var products = document.getElementById('promo-form-products')?.value || '';
+        var validity = document.getElementById('promo-form-validity')?.value || '';
+        var status = document.getElementById('promo-form-status')?.value || 'Activa';
         var index = document.getElementById('promo-form-index')?.value;
         var msg = document.getElementById('promo-form-message');
 
@@ -1412,11 +1546,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 var desc = card.querySelector('p');
                 var meta = card.querySelector('.promo-meta');
 
-                if (badge) badge.textContent = promo.descuento;
-                if (title) title.textContent = promo.nombre;
-                if (desc) desc.textContent = 'Promoción especial: ' + promo.productos;
+                if (badge) badge.textContent = promo.descuento || '0%';
+                if (title) title.textContent = promo.nombre || 'Promoción';
+                if (desc) desc.textContent = 'Promoción especial: ' + (promo.productos || '');
                 if (meta) {
-                    meta.innerHTML = '<span><i class="fas fa-clock" aria-hidden="true"></i> ' + promo.vigencia + '</span><span><i class="fas fa-tag" aria-hidden="true"></i> ' + promo.estado + '</span>';
+                    meta.innerHTML = '<span><i class="fas fa-clock" aria-hidden="true"></i> ' + (promo.vigencia || '') + '</span><span><i class="fas fa-tag" aria-hidden="true"></i> ' + (promo.estado || '') + '</span>';
                 }
             }
         });
@@ -1445,13 +1579,14 @@ document.addEventListener('DOMContentLoaded', function() {
             var html = '';
             for (var i = 0; i < sortedComments.length; i++) {
                 var c = sortedComments[i];
+                var editadoTexto = c.edited ? ' <span style="font-size:0.65rem; color:#6b4f7a; font-style:italic;">(Editado)</span>' : '';
                 html += '<div class="comment-item">';
                 html += '<div class="comment-header">';
-                html += '<div class="comment-author"><strong>' + c.name + '</strong></div>';
+                html += '<div class="comment-author"><strong>' + (c.name || 'Anónimo') + '</strong></div>';
                 html += '</div>';
                 html += '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">';
-                html += '<p style="margin:0.4rem 0 0 0; flex:1;">' + (c.text || '<em style="color:#999;">[Comentario vacío]</em>') + '</p>';
-                html += '<span class="comment-date" style="white-space:nowrap;">' + c.date + '</span>';
+                html += '<p style="margin:0.4rem 0 0 0; flex:1;">' + (c.text || '<em style="color:#999;">[Comentario vacío]</em>') + editadoTexto + '</p>';
+                html += '<span class="comment-date" style="white-space:nowrap;">' + (c.date || '') + '</span>';
                 html += '</div>';
                 html += '</div>';
             }
@@ -1473,7 +1608,8 @@ document.addEventListener('DOMContentLoaded', function() {
             id: nextCommentId++,
             name: name || 'Anónimo',
             text: text || '',
-            date: dateStr
+            date: dateStr,
+            edited: false
         };
         
         communityComments.unshift(newComment);
@@ -1490,7 +1626,179 @@ document.addEventListener('DOMContentLoaded', function() {
         return true;
     }
 
-    function publishCommentFromProfile(name, text) {
+    // ============================================================
+    // FUNCIONES DE MIS COMENTARIOS (EDITAR Y ELIMINAR) - VERSIÓN CON MODAL
+    // ============================================================
+
+    function renderMisComentarios() {
+        var container = document.getElementById('mis-comentarios-list');
+        var count = document.getElementById('mis-comentarios-count');
+        
+        if (!container) return;
+
+        var userComments = communityComments.filter(function(c) {
+            return c.name.toLowerCase() === currentUser.name.toLowerCase();
+        });
+
+        if (userComments.length === 0) {
+            container.innerHTML = '<div class="empty-state" style="text-align:center; padding:2rem; color:#6b4f7a;">' +
+                '<i class="fas fa-comment-slash" style="font-size:2rem; color:#d9c4e8; display:block; margin-bottom:0.8rem;"></i>' +
+                '<p>Aún no has publicado comentarios en la comunidad.</p>' +
+                '</div>';
+            if (count) count.textContent = '0';
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < userComments.length; i++) {
+            var c = userComments[i];
+            var editadoTexto = c.edited ? ' <span style="font-size:0.65rem; color:#6b4f7a; font-style:italic;">(Editado)</span>' : '';
+            
+            html += '<div class="comment-item" data-id="' + c.id + '">';
+            html += '<div class="comment-header">';
+            html += '<div class="comment-author"><strong>' + (c.name || 'Anónimo') + '</strong></div>';
+            html += '</div>';
+            html += '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">';
+            html += '<p style="margin:0.4rem 0 0 0; flex:1;" class="comment-text">' + (c.text || '<em style="color:#999;">[Comentario vacío]</em>') + editadoTexto + '</p>';
+            html += '<span class="comment-date" style="white-space:nowrap;">' + (c.date || '') + '</span>';
+            html += '</div>';
+            html += '<div style="display:flex; gap:0.5rem; margin-top:0.5rem;">';
+            html += '<button class="btn-edit-comment" data-id="' + c.id + '" style="padding:0.2rem 0.8rem; font-size:0.75rem; min-height:28px;">';
+            html += '<i class="fas fa-edit"></i> Editar';
+            html += '</button>';
+            html += '<button class="btn-delete-comment" data-id="' + c.id + '" style="padding:0.2rem 0.8rem; font-size:0.75rem; min-height:28px;">';
+            html += '<i class="fas fa-trash"></i> Eliminar';
+            html += '</button>';
+            html += '</div>';
+            html += '</div>';
+        }
+        container.innerHTML = html;
+
+        if (count) count.textContent = userComments.length;
+
+        container.querySelectorAll('.btn-edit-comment').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var id = parseInt(this.getAttribute('data-id'));
+                abrirModalEditarComentario(id);
+            });
+        });
+
+        container.querySelectorAll('.btn-delete-comment').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var id = parseInt(this.getAttribute('data-id'));
+                eliminarComentario(id);
+            });
+        });
+    }
+
+    function abrirModalEditarComentario(id) {
+        var comment = null;
+        for (var i = 0; i < communityComments.length; i++) {
+            if (communityComments[i].id === id) {
+                comment = communityComments[i];
+                break;
+            }
+        }
+        if (!comment) return;
+
+        editingCommentId = id;
+        
+        var modal = document.getElementById('edit-comment-modal');
+        var textarea = document.getElementById('edit-comment-text');
+        var feedback = document.getElementById('edit-comment-feedback');
+        
+        if (feedback) {
+            feedback.classList.add('hidden');
+            feedback.textContent = '';
+            feedback.className = '';
+        }
+        
+        if (textarea) textarea.value = comment.text || '';
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function cerrarModalEditarComentario() {
+        var modal = document.getElementById('edit-comment-modal');
+        if (modal) modal.style.display = 'none';
+        editingCommentId = null;
+        
+        var feedback = document.getElementById('edit-comment-feedback');
+        if (feedback) {
+            feedback.classList.add('hidden');
+            feedback.textContent = '';
+            feedback.className = '';
+        }
+    }
+
+    function guardarEdicionComentario() {
+        if (editingCommentId === null) return;
+        
+        var comment = null;
+        for (var i = 0; i < communityComments.length; i++) {
+            if (communityComments[i].id === editingCommentId) {
+                comment = communityComments[i];
+                break;
+            }
+        }
+        if (!comment) return;
+
+        var textarea = document.getElementById('edit-comment-text');
+        var nuevoTexto = textarea ? textarea.value || '' : '';
+        var feedback = document.getElementById('edit-comment-feedback');
+
+        comment.text = nuevoTexto.trim() || '';
+        comment.edited = true;
+        
+        var now = new Date();
+        comment.date = now.getDate().toString().padStart(2, '0') + '/' + 
+                      (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                      now.getFullYear() + ' ' + 
+                      now.getHours().toString().padStart(2, '0') + ':' + 
+                      now.getMinutes().toString().padStart(2, '0') + ' (editado)';
+        
+        saveComments();
+        renderMisComentarios();
+        renderCommunityComments();
+        
+        if (feedback) {
+            showFormMessage(feedback, '✅ Comentario editado exitosamente.', 'success');
+            setTimeout(function() {
+                cerrarModalEditarComentario();
+            }, 1500);
+        } else {
+            cerrarModalEditarComentario();
+        }
+    }
+
+    function eliminarComentario(id) {
+        showConfirmModal('¿Eliminar este comentario?', function(confirmed) {
+            if (confirmed) {
+                var idx = -1;
+                for (var i = 0; i < communityComments.length; i++) {
+                    if (communityComments[i].id === id) {
+                        idx = i;
+                        break;
+                    }
+                }
+                if (idx !== -1) {
+                    communityComments.splice(idx, 1);
+                    saveComments();
+                    renderMisComentarios();
+                    renderCommunityComments();
+                    
+                    var feedback = document.getElementById('mis-comentarios-feedback');
+                    if (feedback) {
+                        showFormMessage(feedback, '🗑️ Comentario eliminado.', 'success');
+                        setTimeout(function() {
+                            feedback.classList.add('hidden');
+                        }, 3000);
+                    }
+                }
+            }
+        });
+    }
+
+    function publicarComentarioDesdeMisComentarios(text) {
         var now = new Date();
         var dateStr = now.getDate().toString().padStart(2, '0') + '/' + 
                       (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
@@ -1500,19 +1808,20 @@ document.addEventListener('DOMContentLoaded', function() {
         
         var newComment = {
             id: nextCommentId++,
-            name: name || 'Anónimo',
+            name: currentUser.name || 'Anónimo',
             text: text || '',
-            date: dateStr
+            date: dateStr,
+            edited: false
         };
         
         communityComments.unshift(newComment);
         saveComments();
+        renderMisComentarios();
         renderCommunityComments();
-        renderUserComments();
         
-        var feedback = document.getElementById('profile-comment-feedback');
+        var feedback = document.getElementById('mis-comentarios-feedback');
         if (feedback) {
-            showFormMessage(feedback, '¡Comentario publicado en la comunidad!', 'success');
+            showFormMessage(feedback, '¡Comentario publicado exitosamente!', 'success');
             setTimeout(function() {
                 feedback.classList.add('hidden');
             }, 4000);
@@ -1535,10 +1844,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         var resumenPublicaciones = document.getElementById('resumen-publicaciones');
-        var resumenCompras = document.getElementById('resumen-compras');
         
+        // La caja de "Compras realizadas" ha sido eliminada del HTML
         if (resumenPublicaciones) resumenPublicaciones.textContent = totalPublicaciones;
-        if (resumenCompras) resumenCompras.textContent = totalCompras;
 
         var container = document.getElementById('ultimas-publicaciones-list');
         if (!container) return;
@@ -1554,11 +1862,11 @@ document.addEventListener('DOMContentLoaded', function() {
         for (var i = 0; i < ultimas.length; i++) {
             var p = ultimas[i];
             html += '<div class="ultima-publicacion" data-id="' + p.id + '">';
-            html += '<div class="ultima-img"><img src="' + (p.foto || 'https://via.placeholder.com/200x100/8b5cf6/ffffff?text=Producto') + '" alt="' + p.nombre + '" onerror="this.src=\'https://via.placeholder.com/200x100/8b5cf6/ffffff?text=Producto\'"></div>';
-            html += '<div class="ultima-nombre">' + p.nombre + '</div>';
-            html += '<div class="ultima-precio">$' + parseFloat(p.precio).toFixed(2) + '</div>';
-            html += '<div class="ultima-fecha">' + p.fecha + '</div>';
-            html += '<button class="btn-comprar-marketplace comprar-marketplace-btn" data-id="' + p.id + '" data-nombre="' + p.nombre + '" data-precio="' + p.precio + '">';
+            html += '<div class="ultima-img"><img src="' + (p.foto || 'https://via.placeholder.com/200x100/8b5cf6/ffffff?text=Producto') + '" alt="' + (p.nombre || 'Producto') + '" onerror="this.src=\'https://via.placeholder.com/200x100/8b5cf6/ffffff?text=Producto\'"></div>';
+            html += '<div class="ultima-nombre">' + (p.nombre || 'Producto sin nombre') + '</div>';
+            html += '<div class="ultima-precio">$' + parseFloat(p.precio || 0).toFixed(2) + '</div>';
+            html += '<div class="ultima-fecha">' + (p.fecha || '') + '</div>';
+            html += '<button class="btn-comprar-marketplace comprar-marketplace-btn" data-id="' + p.id + '" data-nombre="' + (p.nombre || 'Producto') + '" data-precio="' + (p.precio || 0) + '">';
             html += '<i class="fas fa-shopping-cart" aria-hidden="true"></i> Comprar';
             html += '</button>';
             html += '</div>';
@@ -1569,8 +1877,8 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 var id = parseInt(this.getAttribute('data-id'));
-                var nombre = this.getAttribute('data-nombre');
-                var precio = parseFloat(this.getAttribute('data-precio'));
+                var nombre = this.getAttribute('data-nombre') || 'Producto';
+                var precio = parseFloat(this.getAttribute('data-precio')) || 0;
                 agregarProductoMarketplaceAlCarrito(id, nombre, precio);
             });
         });
@@ -1591,8 +1899,8 @@ document.addEventListener('DOMContentLoaded', function() {
             cart.push({ 
                 productId: id, 
                 quantity: 1,
-                nombre: nombre,
-                precio: precio,
+                nombre: nombre || 'Producto',
+                precio: precio || 0,
                 esMarketplace: true
             });
         }
@@ -1602,7 +1910,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         var feedback = document.createElement('div');
         feedback.style.cssText = 'position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:#4caf50; color:white; padding:12px 24px; border-radius:40px; font-weight:600; z-index:9999; box-shadow:0 4px 20px rgba(0,0,0,0.2); animation:fadeIn 0.3s ease;';
-        feedback.textContent = '✅ "' + nombre + '" agregado al carrito';
+        feedback.textContent = '✅ "' + (nombre || 'Producto') + '" agregado al carrito';
         document.body.appendChild(feedback);
         
         setTimeout(function() {
@@ -1619,7 +1927,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // C2C - PUBLICAR PRODUCTO (MODIFICADO PARA PERMITIR CAMPOS VACÍOS)
+    // C2C - PUBLICAR PRODUCTO
     // ============================================================
 
     function renderMisPublicaciones() {
@@ -1649,13 +1957,13 @@ document.addEventListener('DOMContentLoaded', function() {
         for (var i = 0; i < userPublications.length; i++) {
             var p = userPublications[i];
             html += '<div class="publicacion-item" data-id="' + p.id + '">';
-            html += '<div class="publicacion-img"><img src="' + (p.foto || 'https://via.placeholder.com/80x80/8b5cf6/ffffff?text=Producto') + '" alt="' + p.nombre + '" onerror="this.src=\'https://via.placeholder.com/80x80/8b5cf6/ffffff?text=Producto\'"></div>';
+            html += '<div class="publicacion-img"><img src="' + (p.foto || 'https://via.placeholder.com/80x80/8b5cf6/ffffff?text=Producto') + '" alt="' + (p.nombre || 'Producto') + '" onerror="this.src=\'https://via.placeholder.com/80x80/8b5cf6/ffffff?text=Producto\'"></div>';
             html += '<div class="publicacion-info">';
-            html += '<h4>' + p.nombre + '</h4>';
-            html += '<span class="publicacion-precio">$' + parseFloat(p.precio).toFixed(2) + '</span>';
-            html += ' <span class="publicacion-categoria">' + p.categoria + '</span>';
+            html += '<h4>' + (p.nombre || 'Producto sin nombre') + '</h4>';
+            html += '<span class="publicacion-precio">$' + parseFloat(p.precio || 0).toFixed(2) + '</span>';
+            html += ' <span class="publicacion-categoria">' + (p.categoria || 'Otros') + '</span>';
             html += '<p style="font-size:0.85rem; color:var(--text-secondary); margin-top:0.2rem;">' + (p.descripcion || '') + '</p>';
-            html += '<span style="font-size:0.7rem; color:var(--text-secondary);">Publicado: ' + p.fecha + '</span>';
+            html += '<span style="font-size:0.7rem; color:var(--text-secondary);">Publicado: ' + (p.fecha || '') + '</span>';
             html += '</div>';
             html += '<div class="publicacion-actions">';
             html += '<button class="btn-edit-pub" data-id="' + p.id + '" aria-label="Editar"><i class="fas fa-edit"></i> Editar</button>';
@@ -1682,16 +1990,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // FUNCIÓN MODIFICADA: Permite campos vacíos
     function publicarProducto() {
-        var nombre = document.getElementById('publicar-nombre')?.value;
-        var precio = document.getElementById('publicar-precio')?.value;
+        var nombre = document.getElementById('publicar-nombre')?.value || '';
+        var precio = document.getElementById('publicar-precio')?.value || '';
         var categoria = document.getElementById('publicar-categoria')?.value || 'Otros';
         var descripcion = document.getElementById('publicar-descripcion')?.value || '';
-        var foto = document.getElementById('publicar-foto')?.value || 'https://via.placeholder.com/400x250/8b5cf6/ffffff?text=Producto';
+        var foto = document.getElementById('publicar-foto')?.value || '';
         var msg = document.getElementById('publicar-message');
 
-        // Asignar valores por defecto si están vacíos
         if (!nombre || nombre.trim() === '') {
             nombre = 'Producto sin nombre';
         }
@@ -1705,10 +2011,6 @@ document.addEventListener('DOMContentLoaded', function() {
             foto = 'https://via.placeholder.com/400x250/8b5cf6/ffffff?text=Producto';
         }
 
-        if (!descripcion) {
-            descripcion = '';
-        }
-
         var now = new Date();
         var dateStr = now.getDate().toString().padStart(2, '0') + '/' + 
                       (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
@@ -1718,8 +2020,8 @@ document.addEventListener('DOMContentLoaded', function() {
             id: nextPublicationId++,
             nombre: nombre,
             precio: precioNum,
-            categoria: categoria,
-            descripcion: descripcion,
+            categoria: categoria || 'Otros',
+            descripcion: descripcion || '',
             foto: foto,
             fecha: dateStr,
             usuario: currentUser.name || 'Usuario',
@@ -1732,7 +2034,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         showFormMessage(msg, '¡Producto publicado exitosamente!', 'success');
 
-        // Limpiar campos
         document.getElementById('publicar-nombre').value = '';
         document.getElementById('publicar-precio').value = '';
         document.getElementById('publicar-descripcion').value = '';
@@ -1744,7 +2045,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1500);
     }
 
-    // FUNCIÓN MODIFICADA: Maneja valores vacíos en edición
     function editarPublicacion(id) {
         var pub = null;
         for (var i = 0; i < userPublications.length; i++) {
@@ -1786,7 +2086,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (!pub) return;
 
-        showConfirmModal('¿Eliminar la publicación "' + pub.nombre + '"?', function(confirmed) {
+        showConfirmModal('¿Eliminar la publicación "' + (pub.nombre || 'Producto') + '"?', function(confirmed) {
             if (confirmed) {
                 var idx = -1;
                 for (var i = 0; i < userPublications.length; i++) {
@@ -1974,7 +2274,7 @@ document.addEventListener('DOMContentLoaded', function() {
                           ahora.getSeconds().toString().padStart(2, '0');
         
         const nuevaOferta = {
-            usuario: usuario,
+            usuario: usuario || 'Invitado',
             monto: ofertaValor,
             timestamp: timestamp
         };
@@ -2034,9 +2334,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const icono = esMayor ? '<i class="fas fa-crown" aria-hidden="true"></i> ' : '';
             
             html += '<div class="' + claseItem + '">';
-            html += '<span class="oferta-usuario">' + icono + oferta.usuario + '</span>';
-            html += '<span class="oferta-monto">$' + oferta.monto.toFixed(2) + '</span>';
-            html += '<span class="oferta-timestamp">' + oferta.timestamp + '</span>';
+            html += '<span class="oferta-usuario">' + icono + (oferta.usuario || 'Invitado') + '</span>';
+            html += '<span class="oferta-monto">$' + (oferta.monto || 0).toFixed(2) + '</span>';
+            html += '<span class="oferta-timestamp">' + (oferta.timestamp || '') + '</span>';
             html += '</div>';
         }
         
@@ -2280,13 +2580,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (productForm) {
         productForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            var name = document.getElementById('form-product-name')?.value || 'Sin nombre';
+            var name = document.getElementById('form-product-name')?.value || '';
             var category = document.getElementById('form-product-category')?.value || 'Pizzas';
             var price = parseFloat(document.getElementById('form-product-price')?.value) || 0;
-            var desc = document.getElementById('form-product-desc')?.value || 'Sin descripción';
+            var desc = document.getElementById('form-product-desc')?.value || '';
             var stock = parseInt(document.getElementById('form-product-stock')?.value) || 0;
             var status = document.getElementById('form-product-status')?.value || 'disponible';
-            var image = document.getElementById('form-product-image')?.value || 'https://via.placeholder.com/200x200/8b5cf6/ffffff?text=Producto';
+            var image = document.getElementById('form-product-image')?.value || '';
             var msg = document.getElementById('form-message');
 
             if (editingProductId) {
@@ -2295,7 +2595,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (products[i].id === editingProductId) { idx = i; break; }
                 }
                 if (idx !== -1) {
-                    products[idx] = { ...products[idx], name: name, category: category, price: price, desc: desc, stock: stock, status: status, image: image };
+                    products[idx] = { ...products[idx], name: name || 'Sin nombre', category: category || 'Pizzas', price: price || 0, desc: desc || '', stock: stock || 0, status: status || 'disponible', image: image || '' };
                 }
                 showFormMessage(msg, 'Producto actualizado correctamente.', 'success');
             } else {
@@ -2304,7 +2604,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (products[j].id > newId) newId = products[j].id;
                 }
                 newId++;
-                products.push({ id: newId, name: name, category: category, price: price, desc: desc, image: image, badge: null, badgeText: null, stock: stock, status: status });
+                products.push({ id: newId, name: name || 'Sin nombre', category: category || 'Pizzas', price: price || 0, desc: desc || '', image: image || '', badge: null, badgeText: null, stock: stock || 0, status: status || 'disponible' });
                 showFormMessage(msg, 'Producto agregado correctamente.', 'success');
             }
 
@@ -2392,17 +2692,17 @@ document.addEventListener('DOMContentLoaded', function() {
     if (clientFormSaveBtn) {
         clientFormSaveBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            var name = document.getElementById('form-client-name')?.value || 'Sin nombre';
-            var email = document.getElementById('form-client-email')?.value || 'Sin email';
-            var phone = document.getElementById('form-client-phone')?.value || 'Sin teléfono';
-            var address = document.getElementById('form-client-address')?.value || 'Sin dirección';
+            var name = document.getElementById('form-client-name')?.value || '';
+            var email = document.getElementById('form-client-email')?.value || '';
+            var phone = document.getElementById('form-client-phone')?.value || '';
+            var address = document.getElementById('form-client-address')?.value || '';
             var msg = document.getElementById('client-form-message');
 
             if (editingClientId !== null && editingClientId >= 0) {
-                clients[editingClientId].name = name;
-                clients[editingClientId].email = email;
-                clients[editingClientId].phone = phone;
-                clients[editingClientId].address = address;
+                clients[editingClientId].name = name || 'Sin nombre';
+                clients[editingClientId].email = email || '';
+                clients[editingClientId].phone = phone || '';
+                clients[editingClientId].address = address || '';
                 showFormMessage(msg, 'Cliente actualizado correctamente.', 'success');
             } else {
                 var newId = 0;
@@ -2412,10 +2712,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 newId++;
                 var newClient = {
                     id: newId,
-                    name: name,
-                    email: email,
-                    phone: phone,
-                    address: address,
+                    name: name || 'Sin nombre',
+                    email: email || '',
+                    phone: phone || '',
+                    address: address || '',
                     orders: 0,
                     spent: 0,
                     registeredDate: new Date().toLocaleDateString('es-ES')
@@ -2579,7 +2879,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var nameInput = document.getElementById('community-name');
             var commentInput = document.getElementById('community-comment');
             var name = nameInput ? (nameInput.value.trim() || 'Anónimo') : 'Anónimo';
-            var text = commentInput ? commentInput.value : '';
+            var text = commentInput ? commentInput.value || '' : '';
             addCommunityComment(name, text);
             if (nameInput) nameInput.value = '';
             if (commentInput) commentInput.value = '';
@@ -2587,117 +2887,70 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // EVENT LISTENERS - PERFIL (PUBLICAR COMENTARIO)
+    // EVENT LISTENERS - PERFIL (IR A COMUNIDAD)
     // ============================================================
 
-    var profileCommentForm = document.getElementById('profile-comment-form');
-    if (profileCommentForm) {
-        profileCommentForm.addEventListener('submit', function(e) {
+    var goToCommunityBtn = document.getElementById('go-to-community-btn');
+    if (goToCommunityBtn) {
+        goToCommunityBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            var textInput = document.getElementById('profile-comment-text');
-            var text = textInput ? textInput.value : '';
-            var userName = currentUser && currentUser.name ? currentUser.name : 'Anónimo';
-            publishCommentFromProfile(userName, text);
+            showPage('comunidad');
+        });
+    }
+
+    // ============================================================
+    // EVENT LISTENERS - MIS COMENTARIOS
+    // ============================================================
+
+    var misComentariosForm = document.getElementById('mis-comentarios-form');
+    if (misComentariosForm) {
+        misComentariosForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var textInput = document.getElementById('mis-comentarios-text');
+            var text = textInput ? textInput.value || '' : '';
+            publicarComentarioDesdeMisComentarios(text);
             if (textInput) textInput.value = '';
         });
     }
 
     // ============================================================
-    // EVENT LISTENERS - PERFIL (BOTONES MARKETPLACE)
+    // EVENT LISTENERS - MODAL EDITAR COMENTARIO
     // ============================================================
 
-    var profilePublicarBtn = document.getElementById('profile-publicar-btn');
-    if (profilePublicarBtn) {
-        profilePublicarBtn.addEventListener('click', function(e) {
+    var editCommentModal = document.getElementById('edit-comment-modal');
+    var editCommentSaveBtn = document.getElementById('edit-comment-save-btn');
+    var editCommentCancelBtn = document.getElementById('edit-comment-cancel-btn');
+
+    if (editCommentSaveBtn) {
+        editCommentSaveBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            editingPublicationId = null;
-            document.getElementById('publicar-nombre').value = '';
-            document.getElementById('publicar-precio').value = '';
-            document.getElementById('publicar-descripcion').value = '';
-            document.getElementById('publicar-foto').value = '';
-            document.getElementById('publicar-image-preview').innerHTML = '<div class="empty-preview"><i class="fas fa-image" style="font-size:1.5rem; display:block; margin-bottom:0.3rem;" aria-hidden="true"></i>Vista previa</div>';
-            document.getElementById('publicar-btn').innerHTML = '<i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> Publicar producto';
-            document.getElementById('publicar-title').textContent = 'Publica tu producto';
-            showPage('publicar-producto');
+            guardarEdicionComentario();
         });
     }
 
-    var profileMisPublicacionesBtn = document.getElementById('profile-mis-publicaciones-btn');
-    if (profileMisPublicacionesBtn) {
-        profileMisPublicacionesBtn.addEventListener('click', function(e) {
+    if (editCommentCancelBtn) {
+        editCommentCancelBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            renderMisPublicaciones();
-            showPage('mis-publicaciones');
+            cerrarModalEditarComentario();
         });
     }
 
-    // ============================================================
-    // EVENT LISTENERS - C2C PUBLICAR PRODUCTO (MODIFICADO)
-    // ============================================================
-
-    var publicarForm = document.getElementById('publicar-form');
-    if (publicarForm) {
-        publicarForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            if (editingPublicationId !== null) {
-                var pub = null;
-                for (var i = 0; i < userPublications.length; i++) {
-                    if (userPublications[i].id === editingPublicationId) {
-                        pub = userPublications[i];
-                        break;
-                    }
-                }
-                if (pub) {
-                    var nombre = document.getElementById('publicar-nombre').value;
-                    var precio = document.getElementById('publicar-precio').value;
-                    var categoria = document.getElementById('publicar-categoria').value;
-                    var descripcion = document.getElementById('publicar-descripcion').value;
-                    var foto = document.getElementById('publicar-foto').value;
-                    
-                    // Asignar valores por defecto si están vacíos
-                    pub.nombre = (nombre && nombre.trim() !== '') ? nombre : 'Producto sin nombre';
-                    var precioNum = parseFloat(precio);
-                    pub.precio = !isNaN(precioNum) && precioNum >= 0 ? precioNum : 0;
-                    pub.categoria = categoria || 'Otros';
-                    pub.descripcion = descripcion || '';
-                    pub.foto = foto || 'https://via.placeholder.com/400x250/8b5cf6/ffffff?text=Producto';
-                    
-                    savePublications();
-                    renderMisPublicaciones();
-                    
-                    var msg = document.getElementById('publicar-message');
-                    showFormMessage(msg, '¡Producto actualizado exitosamente!', 'success');
-                    
-                    editingPublicationId = null;
-                    document.getElementById('publicar-btn').innerHTML = '<i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> Publicar producto';
-                    document.getElementById('publicar-title').textContent = 'Publica tu producto';
-                    
-                    setTimeout(function() {
-                        showPage('mis-publicaciones');
-                    }, 1500);
-                }
-            } else {
-                publicarProducto();
+    if (editCommentModal) {
+        editCommentModal.addEventListener('click', function(e) {
+            if (e.target === editCommentModal) {
+                cerrarModalEditarComentario();
             }
         });
     }
 
-    // ============================================================
-    // EVENT LISTENERS - C2C VISTA PREVIA DE IMAGEN
-    // ============================================================
-
-    var publicarFotoInput = document.getElementById('publicar-foto');
-    if (publicarFotoInput) {
-        publicarFotoInput.addEventListener('input', function() {
-            var preview = document.getElementById('publicar-image-preview');
-            if (preview && this.value) {
-                preview.innerHTML = '<img src="' + this.value + '" alt="Vista previa" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.innerHTML=\'<div class=\\"empty-preview\\"><i class=\\"fas fa-image\\" style=\\"font-size:1.5rem; display:block; margin-bottom:0.3rem;\\" aria-hidden=\\"true\\"></i>Imagen no encontrada</div>\'">';
-            } else if (preview) {
-                preview.innerHTML = '<div class="empty-preview"><i class="fas fa-image" style="font-size:1.5rem; display:block; margin-bottom:0.3rem;" aria-hidden="true"></i>Vista previa</div>';
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            var modal = document.getElementById('edit-comment-modal');
+            if (modal && modal.style.display === 'flex') {
+                cerrarModalEditarComentario();
             }
-        });
-    }
+        }
+    });
 
     // ============================================================
     // EVENT LISTENERS - CAMPAÑA
@@ -2720,18 +2973,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // EVENT LISTENERS - PERFIL (IR A COMUNIDAD)
-    // ============================================================
-
-    var goToCommunityBtn = document.getElementById('go-to-community-btn');
-    if (goToCommunityBtn) {
-        goToCommunityBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            showPage('comunidad');
-        });
-    }
-
-    // ============================================================
     // FUNCIONES DE CAMPAÑA
     // ============================================================
 
@@ -2746,7 +2987,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!campaignProduct) {
             for (var i = 0; i < products.length; i++) {
-                if (products[i].name.toLowerCase().includes('pepperoni')) {
+                if (products[i].name && products[i].name.toLowerCase().includes('pepperoni')) {
                     campaignProduct = products[i];
                     break;
                 }
@@ -2807,460 +3048,372 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-// CHECKOUT - FUNCIONALIDAD
-// ============================================================
+    // CHECKOUT - FUNCIONALIDAD
+    // ============================================================
 
-let checkoutCurrentStep = 1;
-let checkoutData = {
-    direccion: {},
-    metodoPago: 'tarjeta',
-    total: 0,
-    items: []
-};
+    let checkoutCurrentStep = 1;
+    let checkoutData = {
+        direccion: {},
+        metodoPago: 'tarjeta',
+        total: 0,
+        items: []
+    };
 
-function actualizarCheckoutProgress(step) {
-    document.querySelectorAll('.step-indicator').forEach(function(el) {
-        const s = parseInt(el.getAttribute('data-step'));
-        el.classList.remove('active', 'done');
-        if (s === step) el.classList.add('active');
-        else if (s < step) el.classList.add('done');
-    });
-    
-    document.querySelectorAll('.checkout-step').forEach(function(el) {
-        el.classList.remove('active');
-    });
-    const target = document.getElementById('checkout-step-' + step);
-    if (target) target.classList.add('active');
-}
-
-function irAlPaso(step) {
-    checkoutCurrentStep = step;
-    actualizarCheckoutProgress(step);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// Navegación del checkout
-document.querySelectorAll('.checkout-next-btn').forEach(function(btn) {
-    btn.addEventListener('click', function(e) {
-        e.preventDefault();
+    function actualizarCheckoutProgress(step) {
+        document.querySelectorAll('.step-indicator').forEach(function(el) {
+            const s = parseInt(el.getAttribute('data-step'));
+            el.classList.remove('active', 'done');
+            if (s === step) el.classList.add('active');
+            else if (s < step) el.classList.add('done');
+        });
         
-        // Validar paso 1
-        if (checkoutCurrentStep === 1) {
-            const nombre = document.getElementById('checkout-nombre')?.value || '';
-            const email = document.getElementById('checkout-email')?.value || '';
-            const direccion = document.getElementById('checkout-direccion')?.value || '';
+        document.querySelectorAll('.checkout-step').forEach(function(el) {
+            el.classList.remove('active');
+        });
+        const target = document.getElementById('checkout-step-' + step);
+        if (target) target.classList.add('active');
+    }
+
+    function irAlPaso(step) {
+        checkoutCurrentStep = step;
+        actualizarCheckoutProgress(step);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    document.querySelectorAll('.checkout-next-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
             
-            if (!nombre || !email || !direccion) {
-                const msg = document.getElementById('checkout-message') || document.createElement('div');
-                msg.id = 'checkout-message';
-                msg.className = 'auth-error alert-message';
-                msg.textContent = '⚠️ Por favor completa todos los campos obligatorios.';
-                const form = document.getElementById('checkout-direccion-form');
-                if (!document.getElementById('checkout-message')) {
-                    form.appendChild(msg);
+            if (checkoutCurrentStep === 1) {
+                const nombre = document.getElementById('checkout-nombre')?.value || '';
+                const email = document.getElementById('checkout-email')?.value || '';
+                const direccion = document.getElementById('checkout-direccion')?.value || '';
+                
+                checkoutData.direccion = {
+                    nombre: nombre || '',
+                    email: email || '',
+                    telefono: document.getElementById('checkout-telefono')?.value || '',
+                    direccion: direccion || '',
+                    ciudad: document.getElementById('checkout-ciudad')?.value || '',
+                    cp: document.getElementById('checkout-cp')?.value || ''
+                };
+                
+                irAlPaso(2);
+            } else if (checkoutCurrentStep === 2) {
+                const metodoSeleccionado = document.querySelector('input[name="payment-method"]:checked');
+                if (metodoSeleccionado) {
+                    checkoutData.metodoPago = metodoSeleccionado.value;
                 }
-                return;
-            }
-            
-            checkoutData.direccion = {
-                nombre: nombre,
-                email: email,
-                telefono: document.getElementById('checkout-telefono')?.value || '',
-                direccion: direccion,
-                ciudad: document.getElementById('checkout-ciudad')?.value || '',
-                cp: document.getElementById('checkout-cp')?.value || ''
-            };
-            
-            irAlPaso(2);
-        } else if (checkoutCurrentStep === 2) {
-            // Procesar pago
-            const metodoSeleccionado = document.querySelector('input[name="payment-method"]:checked');
-            if (metodoSeleccionado) {
-                checkoutData.metodoPago = metodoSeleccionado.value;
-            }
-            
-            // Obtener total del carrito
-            let total = 0;
-            const items = [];
-            for (let i = 0; i < cart.length; i++) {
-                const p = products.find(function(pr) { return pr.id === cart[i].productId; });
-                if (p) {
-                    const subtotal = p.price * cart[i].quantity;
-                    total += subtotal;
-                    items.push({
-                        name: p.name,
-                        quantity: cart[i].quantity,
-                        price: p.price,
-                        subtotal: subtotal
-                    });
+                
+                let total = 0;
+                const items = [];
+                for (let i = 0; i < cart.length; i++) {
+                    const p = products.find(function(pr) { return pr.id === cart[i].productId; });
+                    if (p) {
+                        const subtotal = p.price * cart[i].quantity;
+                        total += subtotal;
+                        items.push({
+                            name: p.name,
+                            quantity: cart[i].quantity,
+                            price: p.price,
+                            subtotal: subtotal
+                        });
+                    }
                 }
-            }
-            
-            // Si hay productos del marketplace
-            for (let i = 0; i < cart.length; i++) {
-                if (cart[i].esMarketplace) {
-                    items.push({
-                        name: cart[i].nombre || 'Producto marketplace',
-                        quantity: cart[i].quantity,
-                        price: cart[i].precio || 0,
-                        subtotal: (cart[i].precio || 0) * cart[i].quantity
-                    });
+                
+                for (let i = 0; i < cart.length; i++) {
+                    if (cart[i].esMarketplace) {
+                        items.push({
+                            name: cart[i].nombre || 'Producto marketplace',
+                            quantity: cart[i].quantity,
+                            price: cart[i].precio || 0,
+                            subtotal: (cart[i].precio || 0) * cart[i].quantity
+                        });
+                    }
                 }
+                
+                checkoutData.total = total;
+                checkoutData.items = items;
+                
+                document.getElementById('checkout-total').textContent = '$' + total.toFixed(2);
+                document.getElementById('checkout-payment-method').textContent = 
+                    metodoSeleccionado ? metodoSeleccionado.value.charAt(0).toUpperCase() + metodoSeleccionado.value.slice(1) : 'Tarjeta';
+                
+                const numeroPedido = 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000);
+                document.getElementById('checkout-order-number').textContent = '#' + numeroPedido;
+                document.getElementById('checkout-order-date').textContent = new Date().toLocaleString('es-ES');
+                
+                const resumenContainer = document.getElementById('checkout-resumen-items');
+                let htmlResumen = '';
+                for (let i = 0; i < items.length; i++) {
+                    htmlResumen += '<div style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid #ede6f5; font-size:0.9rem;">';
+                    htmlResumen += '<span>' + items[i].quantity + ' x ' + items[i].name + '</span>';
+                    htmlResumen += '<span>$' + items[i].subtotal.toFixed(2) + '</span>';
+                    htmlResumen += '</div>';
+                }
+                resumenContainer.innerHTML = htmlResumen;
+                
+                irAlPaso(3);
+                
+                guardarCompra({
+                    id: numeroPedido,
+                    fecha: new Date().toLocaleString('es-ES'),
+                    items: items,
+                    total: total,
+                    metodo: checkoutData.metodoPago,
+                    estado: 'entregado'
+                });
+                
+                cart = [];
+                saveCart();
+                updateCartUI();
             }
-            
-            checkoutData.total = total;
-            checkoutData.items = items;
-            
-            // Mostrar confirmación
-            document.getElementById('checkout-total').textContent = '$' + total.toFixed(2);
-            document.getElementById('checkout-payment-method').textContent = 
-                metodoSeleccionado ? metodoSeleccionado.value.charAt(0).toUpperCase() + metodoSeleccionado.value.slice(1) : 'Tarjeta';
-            
-            // Número de pedido aleatorio
-            const numeroPedido = 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000);
-            document.getElementById('checkout-order-number').textContent = '#' + numeroPedido;
-            document.getElementById('checkout-order-date').textContent = new Date().toLocaleString('es-ES');
-            
-            // Resumen de productos
-            const resumenContainer = document.getElementById('checkout-resumen-items');
-            let htmlResumen = '';
-            for (let i = 0; i < items.length; i++) {
-                htmlResumen += '<div style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid #ede6f5; font-size:0.9rem;">';
-                htmlResumen += '<span>' + items[i].quantity + ' x ' + items[i].name + '</span>';
-                htmlResumen += '<span>$' + items[i].subtotal.toFixed(2) + '</span>';
-                htmlResumen += '</div>';
+        });
+    });
+
+    document.querySelectorAll('.checkout-prev-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (checkoutCurrentStep > 1) {
+                irAlPaso(checkoutCurrentStep - 1);
             }
-            resumenContainer.innerHTML = htmlResumen;
+        });
+    });
+
+    document.querySelectorAll('.payment-method').forEach(function(method) {
+        method.addEventListener('click', function() {
+            const radio = this.querySelector('input[type="radio"]');
+            if (radio) radio.checked = true;
             
-            irAlPaso(3);
-            
-            // Guardar en historial de compras
-            guardarCompra({
-                id: numeroPedido,
-                fecha: new Date().toLocaleString('es-ES'),
-                items: items,
-                total: total,
-                metodo: checkoutData.metodoPago,
-                estado: 'entregado'
+            document.querySelectorAll('.payment-form').forEach(function(form) {
+                form.style.display = 'none';
             });
             
-            // Vaciar carrito
-            cart = [];
-            saveCart();
-            updateCartUI();
-        }
-    });
-});
-
-document.querySelectorAll('.checkout-prev-btn').forEach(function(btn) {
-    btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        if (checkoutCurrentStep > 1) {
-            irAlPaso(checkoutCurrentStep - 1);
-        }
-    });
-});
-
-// Mostrar/ocultar formularios de pago
-document.querySelectorAll('.payment-method').forEach(function(method) {
-    method.addEventListener('click', function() {
-        const radio = this.querySelector('input[type="radio"]');
-        if (radio) radio.checked = true;
-        
-        document.querySelectorAll('.payment-form').forEach(function(form) {
-            form.style.display = 'none';
+            const target = this.querySelector('.payment-form');
+            if (target) target.style.display = 'block';
         });
-        
-        const target = this.querySelector('.payment-form');
-        if (target) target.style.display = 'block';
     });
-});
 
-// Inicializar método de pago por defecto
-document.querySelector('input[name="payment-method"][value="tarjeta"]').checked = true;
+    document.querySelector('input[name="payment-method"][value="tarjeta"]').checked = true;
 
-// Botón continuar después de factura
-document.getElementById('checkout-continuar-btn')?.addEventListener('click', function() {
-    showPage('perfil');
-});
+    document.getElementById('checkout-continuar-btn')?.addEventListener('click', function() {
+        showPage('perfil');
+    });
 
-// ============================================================
-// FACTURA - FUNCIONALIDAD
-// ============================================================
+    // ============================================================
+    // FACTURA - FUNCIONALIDAD
+    // ============================================================
 
-let facturaData = null;
+    let facturaData = null;
 
-function generarFactura(compra) {
-    facturaData = compra || {
-        folio: 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000),
-        fecha: new Date().toLocaleDateString('es-ES'),
-        hora: new Date().toLocaleTimeString('es-ES'),
-        cliente: {
-            nombre: currentUser.name || 'Juan Pérez',
-            email: currentUser.email || 'juan@email.com',
-            direccion: currentUser.address || 'Calle Principal 123, Colonia Centro'
-        },
-        items: checkoutData.items || [],
-        total: checkoutData.total || 0
-    };
-    
-    // Actualizar UI de factura
-    document.getElementById('factura-folio').textContent = facturaData.folio;
-    document.getElementById('factura-fecha').textContent = facturaData.fecha;
-    document.getElementById('factura-hora').textContent = facturaData.hora;
-    document.getElementById('factura-cliente-nombre').textContent = facturaData.cliente.nombre;
-    document.getElementById('factura-cliente-email').textContent = facturaData.cliente.email;
-    document.getElementById('factura-cliente-direccion').textContent = facturaData.cliente.direccion;
-    
-    const tbody = document.getElementById('factura-productos-body');
-    let htmlItems = '';
-    for (let i = 0; i < facturaData.items.length; i++) {
-        const item = facturaData.items[i];
-        htmlItems += '<tr>';
-        htmlItems += '<td style="padding:0.3rem 0.5rem;">' + item.quantity + '</td>';
-        htmlItems += '<td style="padding:0.3rem 0.5rem;">' + item.name + '</td>';
-        htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + item.price.toFixed(2) + '</td>';
-        htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + item.subtotal.toFixed(2) + '</td>';
-        htmlItems += '</tr>';
+    function generarFactura(compra) {
+        facturaData = compra || {
+            folio: 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000),
+            fecha: new Date().toLocaleDateString('es-ES'),
+            hora: new Date().toLocaleTimeString('es-ES'),
+            cliente: {
+                nombre: currentUser.name || 'Juan Pérez',
+                email: currentUser.email || 'juan@email.com',
+                direccion: currentUser.address || 'Calle Principal 123, Colonia Centro'
+            },
+            items: checkoutData.items || [],
+            total: checkoutData.total || 0
+        };
+        
+        document.getElementById('factura-folio').textContent = facturaData.folio;
+        document.getElementById('factura-fecha').textContent = facturaData.fecha;
+        document.getElementById('factura-hora').textContent = facturaData.hora;
+        document.getElementById('factura-cliente-nombre').textContent = facturaData.cliente.nombre;
+        document.getElementById('factura-cliente-email').textContent = facturaData.cliente.email;
+        document.getElementById('factura-cliente-direccion').textContent = facturaData.cliente.direccion;
+        
+        const tbody = document.getElementById('factura-productos-body');
+        let htmlItems = '';
+        for (let i = 0; i < facturaData.items.length; i++) {
+            const item = facturaData.items[i];
+            htmlItems += '<tr>';
+            htmlItems += '<td style="padding:0.3rem 0.5rem;">' + item.quantity + '</td>';
+            htmlItems += '<td style="padding:0.3rem 0.5rem;">' + (item.name || 'Producto') + '</td>';
+            htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + (item.price || 0).toFixed(2) + '</td>';
+            htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + (item.subtotal || 0).toFixed(2) + '</td>';
+            htmlItems += '</tr>';
+        }
+        tbody.innerHTML = htmlItems;
+        document.getElementById('factura-total').textContent = '$' + (facturaData.total || 0).toFixed(2);
+        
+        showPage('factura');
     }
-    tbody.innerHTML = htmlItems;
-    document.getElementById('factura-total').textContent = '$' + facturaData.total.toFixed(2);
-    
-    showPage('factura');
-}
 
-document.getElementById('checkout-generar-factura')?.addEventListener('click', function() {
-    generarFactura();
-});
+    document.getElementById('checkout-generar-factura')?.addEventListener('click', function() {
+        generarFactura();
+    });
 
-document.getElementById('factura-descargar-pdf')?.addEventListener('click', function() {
-    const feedback = document.getElementById('factura-feedback');
-    feedback.className = 'auth-success alert-message';
-    feedback.textContent = '📄 Descargando PDF (simulado)...';
-    feedback.classList.remove('hidden');
-    
-    setTimeout(function() {
-        feedback.textContent = '✅ PDF descargado correctamente (simulación)';
+    document.getElementById('factura-descargar-pdf')?.addEventListener('click', function() {
+        const feedback = document.getElementById('factura-feedback');
+        feedback.className = 'auth-success alert-message';
+        feedback.textContent = '📄 Descargando PDF (simulado)...';
+        feedback.classList.remove('hidden');
+        
         setTimeout(function() {
-            feedback.classList.add('hidden');
-        }, 2500);
-    }, 1500);
-});
-
-document.getElementById('factura-imprimir-btn')?.addEventListener('click', function() {
-    window.print();
-});
-
-document.getElementById('factura-volver-btn')?.addEventListener('click', function() {
-    showPage('perfil');
-});
-
-// ============================================================
-// HISTORIAL DE COMPRAS
-// ============================================================
-
-let historialCompras = [];
-
-// Cargar historial desde localStorage
-try {
-    const saved = localStorage.getItem('delicias_historial');
-    if (saved) {
-        historialCompras = JSON.parse(saved);
-    }
-} catch (e) {}
-
-function guardarCompra(compra) {
-    historialCompras.unshift(compra);
-    try {
-        localStorage.setItem('delicias_historial', JSON.stringify(historialCompras));
-    } catch (e) {}
-    renderHistorialCompras();
-}
-
-function renderHistorialCompras() {
-    const container = document.getElementById('compras-lista-container');
-    const vacio = document.getElementById('compras-vacio');
-    const filtroEstado = document.getElementById('compras-filtro-estado')?.value || 'todos';
-    const busqueda = document.getElementById('compras-buscar')?.value?.toLowerCase() || '';
-    
-    let filtrados = historialCompras;
-    
-    if (filtroEstado !== 'todos') {
-        filtrados = filtrados.filter(function(c) { return c.estado === filtroEstado; });
-    }
-    
-    if (busqueda) {
-        filtrados = filtrados.filter(function(c) {
-            return c.id.toLowerCase().includes(busqueda) ||
-                   c.items.some(function(i) { return i.name.toLowerCase().includes(busqueda); });
-        });
-    }
-    
-    if (filtrados.length === 0) {
-        container.innerHTML = '';
-        vacio.classList.remove('hidden');
-        return;
-    }
-    vacio.classList.add('hidden');
-    
-    let html = '';
-    for (let i = 0; i < filtrados.length; i++) {
-        const c = filtrados[i];
-        const estadoClass = c.estado === 'entregado' ? 'status-available' : 
-                           (c.estado === 'en preparacion' ? 'status-warning' : 
-                           (c.estado === 'pendiente' ? 'status-out-of-stock' : 'status-inactive'));
-        
-        html += '<div class="compra-item" style="background:#faf8fc; border-radius:16px; padding:1rem; border:1px solid var(--border); transition:0.2s;">';
-        html += '<div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.5rem;">';
-        html += '<div>';
-        html += '<div style="font-weight:700; color:var(--text-primary);">' + c.id + '</div>';
-        html += '<div style="font-size:0.8rem; color:var(--text-secondary);"><i class="far fa-calendar-alt"></i> ' + c.fecha + '</div>';
-        html += '<div style="font-size:0.8rem; color:var(--text-secondary);">' + c.items.length + ' productos</div>';
-        html += '</div>';
-        html += '<div style="text-align:right;">';
-        html += '<span class="status-badge ' + estadoClass + '" style="font-size:0.75rem;">' + c.estado.charAt(0).toUpperCase() + c.estado.slice(1) + '</span>';
-        html += '<div style="font-weight:700; color:var(--primary); font-size:1.1rem; margin-top:0.3rem;">$' + c.total.toFixed(2) + '</div>';
-        html += '</div>';
-        html += '</div>';
-        html += '<div style="display:flex; gap:0.5rem; margin-top:0.8rem; flex-wrap:wrap;">';
-        html += '<button class="btn-secondary compra-ver-detalle" data-index="' + i + '" style="padding:0.3rem 1rem; font-size:0.8rem; min-height:32px;">';
-        html += '<i class="fas fa-eye"></i> Ver detalle';
-        html += '</button>';
-        html += '<button class="btn-secondary compra-ver-factura" data-index="' + i + '" style="padding:0.3rem 1rem; font-size:0.8rem; min-height:32px;">';
-        html += '<i class="fas fa-file-invoice"></i> Factura';
-        html += '</button>';
-        html += '</div>';
-        html += '</div>';
-    }
-    container.innerHTML = html;
-    
-    // Eventos de ver detalle
-    container.querySelectorAll('.compra-ver-detalle').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const idx = parseInt(this.getAttribute('data-index'));
-            mostrarDetalleCompra(idx);
-        });
+            feedback.textContent = '✅ PDF descargado correctamente (simulación)';
+            setTimeout(function() {
+                feedback.classList.add('hidden');
+            }, 2500);
+        }, 1500);
     });
-    
-    container.querySelectorAll('.compra-ver-factura').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const idx = parseInt(this.getAttribute('data-index'));
-            const compra = historialCompras[idx];
-            if (compra) {
-                generarFactura(compra);
-            }
-        });
+
+    document.getElementById('factura-imprimir-btn')?.addEventListener('click', function() {
+        window.print();
     });
-}
 
-function mostrarDetalleCompra(index) {
-    const compra = historialCompras[index];
-    if (!compra) return;
-    
-    let html = '';
-    html += '<div style="background:var(--card-bg); border-radius:20px; padding:1.5rem; border:1px solid var(--border); max-width:500px; margin:0 auto;">';
-    html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">';
-    html += '<h3 style="font-size:1.1rem;">' + compra.id + '</h3>';
-    html += '<span class="status-badge ' + (compra.estado === 'entregado' ? 'status-available' : 'status-warning') + '">' + compra.estado + '</span>';
-    html += '</div>';
-    html += '<div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.8rem;">Fecha: ' + compra.fecha + '</div>';
-    html += '<div style="border-top:1px solid var(--border); padding-top:0.8rem; margin-bottom:0.8rem;">';
-    html += '<div style="font-weight:600; margin-bottom:0.3rem;">Productos:</div>';
-    for (let i = 0; i < compra.items.length; i++) {
-        const item = compra.items[i];
-        html += '<div style="display:flex; justify-content:space-between; padding:0.2rem 0; font-size:0.9rem;">';
-        html += '<span>' + item.quantity + ' x ' + item.name + '</span>';
-        html += '<span>$' + item.subtotal.toFixed(2) + '</span>';
-        html += '</div>';
-    }
-    html += '</div>';
-    html += '<div style="display:flex; justify-content:space-between; border-top:2px solid var(--border); padding-top:0.8rem; font-weight:700; font-size:1.1rem;">';
-    html += '<span>Total</span>';
-    html += '<span style="color:var(--primary);">$' + compra.total.toFixed(2) + '</span>';
-    html += '</div>';
-    html += '<div style="display:flex; gap:0.8rem; margin-top:1rem;">';
-    html += '<button class="btn-secondary" id="detalle-cerrar" style="flex:1; justify-content:center;">Cerrar</button>';
-    html += '<button class="btn-primary" id="detalle-factura" style="flex:1; justify-content:center;"><i class="fas fa-file-invoice"></i> Factura</button>';
-    html += '</div>';
-    html += '</div>';
-    
-    // Mostrar en modal
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay show';
-    modal.style.display = 'flex';
-    modal.innerHTML = '<div class="modal-box" style="max-width:550px; width:95%; padding:1.5rem; text-align:left;">' + html + '</div>';
-    document.body.appendChild(modal);
-    
-    modal.querySelector('#detalle-cerrar').addEventListener('click', function() {
-        modal.remove();
+    document.getElementById('factura-volver-btn')?.addEventListener('click', function() {
+        showPage('perfil');
     });
-    
-    modal.querySelector('#detalle-factura').addEventListener('click', function() {
-        modal.remove();
-        generarFactura(compra);
-    });
-    
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) modal.remove();
-    });
-}
 
-// Filtros de historial
-document.getElementById('compras-filtro-estado')?.addEventListener('change', renderHistorialCompras);
-document.getElementById('compras-buscar')?.addEventListener('input', renderHistorialCompras);
+    // ============================================================
+    // HISTORIAL DE COMPRAS
+    // ============================================================
 
-// Ir a catálogo desde compras vacías
-document.getElementById('compras-ir-catalogo')?.addEventListener('click', function() {
-    showPage('catalogo');
-});
-
-// ============================================================
-// INTEGRACIÓN CON EL MENÚ DE NAVEGACIÓN
-// ============================================================
-
-// Agregar enlaces al navbar (se debe agregar manualmente en el HTML)
-// <li class="user-nav"><a href="#" data-page="checkout">Checkout</a></li>
-// <li class="user-nav"><a href="#" data-page="mis-compras">Mis compras</a></li>
-
-// Event listeners para las nuevas páginas
-document.querySelectorAll('.nav-links a[data-page="checkout"]').forEach(function(link) {
-    link.addEventListener('click', function(e) {
-        e.preventDefault();
-        irAlPaso(1);
-        showPage('checkout');
-    });
-});
-
-document.querySelectorAll('.nav-links a[data-page="mis-compras"]').forEach(function(link) {
-    link.addEventListener('click', function(e) {
-        e.preventDefault();
+    function guardarCompra(compra) {
+        historialCompras.unshift(compra);
+        saveHistorial();
         renderHistorialCompras();
-        showPage('mis-compras');
+    }
+
+    function renderHistorialCompras() {
+        const container = document.getElementById('compras-lista-container');
+        const vacio = document.getElementById('compras-vacio');
+        const filtroEstado = document.getElementById('compras-filtro-estado')?.value || 'todos';
+        const busqueda = document.getElementById('compras-buscar')?.value?.toLowerCase() || '';
+        
+        let filtrados = historialCompras;
+        
+        if (filtroEstado !== 'todos') {
+            filtrados = filtrados.filter(function(c) { return c.estado === filtroEstado; });
+        }
+        
+        if (busqueda) {
+            filtrados = filtrados.filter(function(c) {
+                return (c.id || '').toLowerCase().includes(busqueda) ||
+                       c.items.some(function(i) { return (i.name || '').toLowerCase().includes(busqueda); });
+            });
+        }
+        
+        if (filtrados.length === 0) {
+            container.innerHTML = '';
+            vacio.classList.remove('hidden');
+            return;
+        }
+        vacio.classList.add('hidden');
+        
+        let html = '';
+        for (let i = 0; i < filtrados.length; i++) {
+            const c = filtrados[i];
+            const estadoClass = c.estado === 'entregado' ? 'status-available' : 
+                               (c.estado === 'en preparacion' ? 'status-warning' : 
+                               (c.estado === 'pendiente' ? 'status-out-of-stock' : 'status-inactive'));
+            
+            html += '<div class="compra-item" style="background:#faf8fc; border-radius:16px; padding:1rem; border:1px solid var(--border); transition:0.2s;">';
+            html += '<div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.5rem;">';
+            html += '<div>';
+            html += '<div style="font-weight:700; color:var(--text-primary);">' + (c.id || '') + '</div>';
+            html += '<div style="font-size:0.8rem; color:var(--text-secondary);"><i class="far fa-calendar-alt"></i> ' + (c.fecha || '') + '</div>';
+            html += '<div style="font-size:0.8rem; color:var(--text-secondary);">' + (c.items ? c.items.length : 0) + ' productos</div>';
+            html += '</div>';
+            html += '<div style="text-align:right;">';
+            html += '<span class="status-badge ' + estadoClass + '" style="font-size:0.75rem;">' + (c.estado ? c.estado.charAt(0).toUpperCase() + c.estado.slice(1) : '') + '</span>';
+            html += '<div style="font-weight:700; color:var(--primary); font-size:1.1rem; margin-top:0.3rem;">$' + (c.total || 0).toFixed(2) + '</div>';
+            html += '</div>';
+            html += '</div>';
+            html += '<div style="display:flex; gap:0.5rem; margin-top:0.8rem; flex-wrap:wrap;">';
+            html += '<button class="btn-secondary compra-ver-detalle" data-index="' + i + '" style="padding:0.3rem 1rem; font-size:0.8rem; min-height:32px;">';
+            html += '<i class="fas fa-eye"></i> Ver detalle';
+            html += '</button>';
+            html += '<button class="btn-secondary compra-ver-factura" data-index="' + i + '" style="padding:0.3rem 1rem; font-size:0.8rem; min-height:32px;">';
+            html += '<i class="fas fa-file-invoice"></i> Factura';
+            html += '</button>';
+            html += '</div>';
+            html += '</div>';
+        }
+        container.innerHTML = html;
+        
+        container.querySelectorAll('.compra-ver-detalle').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const idx = parseInt(this.getAttribute('data-index'));
+                mostrarDetalleCompra(idx);
+            });
+        });
+        
+        container.querySelectorAll('.compra-ver-factura').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const idx = parseInt(this.getAttribute('data-index'));
+                const compra = historialCompras[idx];
+                if (compra) {
+                    generarFactura(compra);
+                }
+            });
+        });
+    }
+
+    function mostrarDetalleCompra(index) {
+        const compra = historialCompras[index];
+        if (!compra) return;
+        
+        let html = '';
+        html += '<div style="background:var(--card-bg); border-radius:20px; padding:1.5rem; border:1px solid var(--border); max-width:500px; margin:0 auto;">';
+        html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">';
+        html += '<h3 style="font-size:1.1rem;">' + (compra.id || '') + '</h3>';
+        html += '<span class="status-badge ' + (compra.estado === 'entregado' ? 'status-available' : 'status-warning') + '">' + (compra.estado || '') + '</span>';
+        html += '</div>';
+        html += '<div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.8rem;">Fecha: ' + (compra.fecha || '') + '</div>';
+        html += '<div style="border-top:1px solid var(--border); padding-top:0.8rem; margin-bottom:0.8rem;">';
+        html += '<div style="font-weight:600; margin-bottom:0.3rem;">Productos:</div>';
+        if (compra.items) {
+            for (let i = 0; i < compra.items.length; i++) {
+                const item = compra.items[i];
+                html += '<div style="display:flex; justify-content:space-between; padding:0.2rem 0; font-size:0.9rem;">';
+                html += '<span>' + (item.quantity || 0) + ' x ' + (item.name || 'Producto') + '</span>';
+                html += '<span>$' + (item.subtotal || 0).toFixed(2) + '</span>';
+                html += '</div>';
+            }
+        }
+        html += '</div>';
+        html += '<div style="display:flex; justify-content:space-between; border-top:2px solid var(--border); padding-top:0.8rem; font-weight:700; font-size:1.1rem;">';
+        html += '<span>Total</span>';
+        html += '<span style="color:var(--primary);">$' + (compra.total || 0).toFixed(2) + '</span>';
+        html += '</div>';
+        html += '<div style="display:flex; gap:0.8rem; margin-top:1rem;">';
+        html += '<button class="btn-secondary" id="detalle-cerrar" style="flex:1; justify-content:center;">Cerrar</button>';
+        html += '<button class="btn-primary" id="detalle-factura" style="flex:1; justify-content:center;"><i class="fas fa-file-invoice"></i> Factura</button>';
+        html += '</div>';
+        html += '</div>';
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay show';
+        modal.style.display = 'flex';
+        modal.innerHTML = '<div class="modal-box" style="max-width:550px; width:95%; padding:1.5rem; text-align:left;">' + html + '</div>';
+        document.body.appendChild(modal);
+        
+        modal.querySelector('#detalle-cerrar').addEventListener('click', function() {
+            modal.remove();
+        });
+        
+        modal.querySelector('#detalle-factura').addEventListener('click', function() {
+            modal.remove();
+            generarFactura(compra);
+        });
+        
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) modal.remove();
+        });
+    }
+
+    document.getElementById('compras-filtro-estado')?.addEventListener('change', renderHistorialCompras);
+    document.getElementById('compras-buscar')?.addEventListener('input', renderHistorialCompras);
+
+    document.getElementById('compras-ir-catalogo')?.addEventListener('click', function() {
+        showPage('catalogo');
     });
-});
-
-// Agregar página factura al sistema de navegación
-const pageFactura = document.getElementById('page-factura');
-if (pageFactura) {
-    pages.factura = pageFactura;
-}
-
-// Agregar página mis-compras
-const pageMisCompras = document.getElementById('page-mis-compras');
-if (pageMisCompras) {
-    pages['mis-compras'] = pageMisCompras;
-}
-
-// Agregar página checkout
-const pageCheckout = document.getElementById('page-checkout');
-if (pageCheckout) {
-    pages.checkout = pageCheckout;
-}
-
-// Actualizar showPage para incluir nuevas páginas
-// (si no se actualiza, se puede llamar directamente a las funciones)
-
-console.log('✅ Checkout, Factura e Historial de compras integrados correctamente.');
 
     // ============================================================
     // INICIALIZACIÓN

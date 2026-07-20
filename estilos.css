@@ -200,6 +200,149 @@ body.admin-mode .user-nav {
     font-weight: 600;
 }
 
+/* ===== DROPDOWN DE PERFIL ===== */
+.profile-dropdown-container {
+    position: relative;
+    list-style: none;
+}
+
+.profile-dropdown-container .profile-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--primary);
+    color: white !important;
+    border: none;
+    border-radius: 40px;
+    padding: 0.4rem 1rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: 0.2s;
+    border-bottom: none !important;
+    text-decoration: none;
+}
+
+.profile-dropdown-container .profile-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.profile-dropdown-container .profile-btn .dropdown-arrow {
+    font-size: 0.7rem;
+    transition: transform 0.3s ease;
+    margin-left: 0.2rem;
+}
+
+.profile-dropdown-container .profile-btn.active .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.profile-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 220px;
+    background: var(--card-bg);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    padding: 0.5rem 0;
+    z-index: 1000;
+    animation: dropdownFadeIn 0.25s ease;
+}
+
+.profile-dropdown-menu.show {
+    display: block;
+}
+
+@keyframes dropdownFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.98);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.profile-dropdown-menu li {
+    list-style: none;
+}
+
+.profile-dropdown-menu li a {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.6rem 1.2rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: 0.15s;
+    border-bottom: none !important;
+    cursor: pointer;
+}
+
+.profile-dropdown-menu li a:hover {
+    background: #f7f3fc;
+    color: var(--primary);
+}
+
+.profile-dropdown-menu li a i {
+    width: 20px;
+    text-align: center;
+    color: var(--primary);
+    font-size: 1rem;
+}
+
+.profile-dropdown-menu .dropdown-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0.3rem 1rem;
+}
+
+.profile-dropdown-menu li a#dropdown-logout-btn {
+    color: #c62828;
+}
+
+.profile-dropdown-menu li a#dropdown-logout-btn i {
+    color: #c62828;
+}
+
+.profile-dropdown-menu li a#dropdown-logout-btn:hover {
+    background: #fce4ec;
+}
+
+/* ===== RESPONSIVE PARA DROPDOWN ===== */
+@media (max-width: 768px) {
+    .profile-dropdown-container {
+        width: 100%;
+    }
+    
+    .profile-dropdown-container .profile-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .profile-dropdown-menu {
+        position: static;
+        width: 100%;
+        box-shadow: none;
+        border: 1px solid var(--border);
+        margin-top: 0.3rem;
+        border-radius: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-dropdown-menu {
+        min-width: unset;
+    }
+}
+
 /* ===== CART OVERLAY ===== */
 .cart-overlay {
     position: fixed;
@@ -1035,12 +1178,6 @@ body.admin-mode .user-nav {
     border-top: 2px solid var(--border);
 }
 
-.subasta-precio-base,
-.subasta-precio-actual {
-    display: flex;
-    flex-direction: column;
-}
-
 .subasta-precio-base span,
 .subasta-precio-actual span {
     font-size: 0.75rem;
@@ -1061,7 +1198,6 @@ body.admin-mode .user-nav {
     font-weight: 700;
 }
 
-/* Controls de subasta */
 .subasta-controls {
     background: var(--card-bg);
     border-radius: 24px;
@@ -1077,7 +1213,6 @@ body.admin-mode .user-nav {
     }
 }
 
-/* Temporizador */
 .subasta-temporizador-container {
     background: #faf8fc;
     border-radius: 16px;
@@ -1149,7 +1284,6 @@ body.admin-mode .user-nav {
     background: #c62828;
 }
 
-/* Área de oferta */
 .subasta-oferta-area {
     display: flex;
     flex-direction: column;
@@ -1240,7 +1374,6 @@ body.admin-mode .user-nav {
     border-left: 4px solid #e53935;
 }
 
-/* Lista de ofertas */
 .subasta-lista-ofertas-container {
     background: #faf8fc;
     border-radius: 16px;
@@ -1361,26 +1494,6 @@ body.admin-mode .user-nav {
 .subasta-oferta-item .oferta-timestamp {
     font-size: 0.7rem;
     color: var(--text-secondary);
-}
-
-/* Responsive */
-@media (max-width: 480px) {
-    .subasta-precios {
-        grid-template-columns: 1fr;
-        gap: 0.5rem;
-    }
-    
-    .subasta-temporizador {
-        font-size: 2.2rem;
-    }
-    
-    .subasta-producto-imagen {
-        min-height: 180px;
-    }
-    
-    .subasta-producto-imagen img {
-        min-height: 180px;
-    }
 }
 
 /* ===== PUBLICACIONES ===== */
@@ -1991,14 +2104,6 @@ body.admin-mode .user-nav {
 @media (min-width: 480px) {
     .profile-actions .btn-secondary,
     .profile-actions .btn-danger { width: auto; }
-}
-
-.coming-soon {
-    color: var(--primary);
-    font-size: 0.75rem;
-    background: #ede6f5;
-    padding: 0.1rem 0.6rem;
-    border-radius: 20px;
 }
 
 /* ===== CONTACTO ===== */
@@ -3207,7 +3312,6 @@ body.admin-mode .user-nav {
 
 .checkout-step.active { display: block; }
 
-/* Métodos de pago */
 .payment-methods {
     display: flex;
     flex-direction: column;
@@ -3560,4 +3664,156 @@ body.admin-mode .user-nav {
 .compras-lista {
     display: grid;
     gap: 1rem;
+}
+
+.compra-item {
+    background: #faf8fc;
+    border-radius: 16px;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    transition: 0.2s;
+}
+
+.compra-item:hover {
+    border-color: #b695e6;
+    transform: translateY(-2px);
+}
+
+/* ===== IMAGEN VISTA PREVIA ===== */
+.image-preview {
+    margin-top: 0.5rem;
+    width: 100%;
+    height: 180px;
+    background: #f5f0f9;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed #d9c4e8;
+}
+
+.image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image-preview .empty-preview {
+    text-align: center;
+    color: #8b5cf6;
+    padding: 1rem;
+}
+
+.image-preview .empty-preview i {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+/* ===== BOTONES DE COMENTARIOS ===== */
+.btn-edit-comment {
+    background: #ede6f5;
+    color: var(--primary);
+    border: none;
+    padding: 0.2rem 0.8rem;
+    border-radius: 40px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    min-height: 28px;
+}
+
+.btn-edit-comment:hover {
+    background: #ddd0eb;
+}
+
+.btn-delete-comment {
+    background: #fce4ec;
+    color: #c62828;
+    border: none;
+    padding: 0.2rem 0.8rem;
+    border-radius: 40px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    min-height: 28px;
+}
+
+.btn-delete-comment:hover {
+    background: #f8d0d8;
+}
+
+/* ===== MODAL EDITAR COMENTARIO ===== */
+#edit-comment-modal .modal-box {
+    max-width: 500px;
+    text-align: left;
+}
+
+#edit-comment-modal .modal-box .modal-icon {
+    text-align: center;
+}
+
+#edit-comment-modal .modal-box textarea {
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: #faf8fc;
+    font-size: 0.95rem;
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
+}
+
+#edit-comment-modal .modal-box textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+#edit-comment-modal .modal-box label {
+    font-weight: 600;
+    color: var(--text-primary);
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+}
+
+/* ===== MODAL EDITAR COMENTARIO ===== */
+#edit-comment-modal .modal-box {
+    max-width: 500px;
+    text-align: left;
+}
+
+#edit-comment-modal .modal-box .modal-icon {
+    text-align: center;
+}
+
+#edit-comment-modal .modal-box textarea {
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: #faf8fc;
+    font-size: 0.95rem;
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
+}
+
+#edit-comment-modal .modal-box textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+#edit-comment-modal .modal-box label {
+    font-weight: 600;
+    color: var(--text-primary);
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
 }

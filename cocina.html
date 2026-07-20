@@ -13,7 +13,7 @@
 
     <div class="app" id="main-content" role="main">
 
-        <!-- ===== NAVBAR ===== -->
+        <!-- ===== NAVBAR CON DROPDOWN ===== -->
         <nav class="navbar" aria-label="Navegación principal">
             <div class="logo-area">
                 <div class="logo-icon" aria-hidden="true"><i class="fas fa-utensils"></i></div>
@@ -31,12 +31,39 @@
                     <i class="fas fa-store-alt" aria-hidden="true"></i> Marketplace
                 </a></li>
                 <li class="admin-nav"><span style="color:var(--primary); font-weight:600; padding:0.3rem 0.5rem;"></span></li>
-                <li><a href="#" class="login-btn" id="nav-login-btn" data-page="login"><i class="fas fa-user-circle" aria-hidden="true"></i> Iniciar sesión</a></li>
+                
+                <!-- ===== DROPDOWN DE PERFIL ===== -->
+                <li class="user-nav profile-dropdown-container" id="profile-dropdown-container" style="display:none;">
+                    <a href="#" class="login-btn profile-btn" id="nav-profile-btn">
+                        <i class="fas fa-user-circle" aria-hidden="true"></i> 
+                        <span id="nav-profile-name">Mi Perfil</span>
+                        <i class="fas fa-chevron-down dropdown-arrow" aria-hidden="true"></i>
+                    </a>
+                    <ul class="profile-dropdown-menu" id="profile-dropdown-menu" role="menu">
+                        <li><a href="#" data-page="perfil" role="menuitem"><i class="fas fa-user" aria-hidden="true"></i> Mi Perfil</a></li>
+                        <li><a href="#" data-page="mis-compras" role="menuitem"><i class="fas fa-shopping-bag" aria-hidden="true"></i> Mis Compras</a></li>
+                        <li><a href="#" data-page="mis-publicaciones" role="menuitem"><i class="fas fa-boxes" aria-hidden="true"></i> Mis Publicaciones</a></li>
+                        <li><a href="#" data-page="publicar-producto" role="menuitem"><i class="fas fa-plus-circle" aria-hidden="true"></i> Publicar Producto</a></li>
+                        <li><a href="#" data-page="mis-comentarios" role="menuitem"><i class="fas fa-comments" aria-hidden="true"></i> Mis Comentarios</a></li>
+                        <li class="dropdown-divider" role="separator"></li>
+                        <li><a href="#" id="dropdown-logout-btn" role="menuitem"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Cerrar Sesión</a></li>
+                    </ul>
+                </li>
+                
+                <!-- ===== BOTÓN ADMIN ===== -->
                 <li class="admin-nav">
                     <button class="logout-btn-nav" id="nav-admin-logout">
                         <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Cerrar sesión
                     </button>
                 </li>
+                
+                <!-- ===== BOTÓN DE LOGIN ===== -->
+                <li class="user-nav" id="nav-login-li">
+                    <a href="#" class="login-btn" id="nav-login-btn" data-page="login">
+                        <i class="fas fa-user-circle" aria-hidden="true"></i> Iniciar sesión
+                    </a>
+                </li>
+                
                 <li class="user-nav">
                     <button class="cart-icon-wrapper" id="cart-toggle-btn" aria-label="Abrir carrito de compras" aria-expanded="false">
                         <i class="fas fa-shopping-cart" aria-hidden="true"></i>
@@ -88,6 +115,30 @@
                     <button class="btn-primary" id="confirm-btn" style="min-width:100px;">Aceptar</button>
                     <button class="btn-secondary" id="confirm-cancel-btn" style="min-width:100px;">Cancelar</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- ===== MODAL EDITAR COMENTARIO ===== -->
+        <div class="modal-overlay" id="edit-comment-modal" style="display: none;">
+            <div class="modal-box" style="max-width: 500px; text-align: left;">
+                <div class="modal-icon" aria-hidden="true"><i class="fas fa-edit" style="color: #8b5cf6;"></i></div>
+                <h2 style="text-align: center;">Editar comentario</h2>
+                <div style="margin-top: 1rem;">
+                    <label for="edit-comment-text" style="font-weight: 600; color: var(--text-primary); display: block; margin-bottom: 0.3rem; font-size: 0.9rem;">
+                        <i class="fas fa-comment" aria-hidden="true"></i> Comentario
+                    </label>
+                    <textarea id="edit-comment-text" placeholder="Escribe tu comentario..." 
+                        style="width: 100%; padding: 0.7rem 0.9rem; border-radius: 14px; border: 1px solid var(--border); background: #faf8fc; font-size: 0.95rem; resize: vertical; min-height: 100px;"></textarea>
+                </div>
+                <div style="display:flex; gap:0.8rem; justify-content:center; flex-wrap:wrap; margin-top:1.5rem;">
+                    <button class="btn-primary" id="edit-comment-save-btn" style="min-width:100px;">
+                        <i class="fas fa-save" aria-hidden="true"></i> Guardar
+                    </button>
+                    <button class="btn-secondary" id="edit-comment-cancel-btn" style="min-width:100px;">
+                        <i class="fas fa-times" aria-hidden="true"></i> Cancelar
+                    </button>
+                </div>
+                <div id="edit-comment-feedback" class="hidden alert-message" style="margin-top:1rem; width:100%; text-align:center;"></div>
             </div>
         </div>
 
@@ -280,15 +331,6 @@
                             <div>
                                 <div class="resumen-number" id="resumen-publicaciones">0</div>
                                 <div class="resumen-label">Productos publicados</div>
-                            </div>
-                        </div>
-                        <div class="resumen-card">
-                            <div class="resumen-icon" style="background: #e8f5e9; color: #4caf50;">
-                                <i class="fas fa-shopping-cart"></i>
-                            </div>
-                            <div>
-                                <div class="resumen-number" id="resumen-compras">0</div>
-                                <div class="resumen-label">Compras realizadas</div>
                             </div>
                         </div>
                     </div>
@@ -544,6 +586,8 @@
                         <p><i class="fas fa-calendar-alt" style="color:#8b5cf6;" aria-hidden="true"></i> Miembro desde 2024</p>
                     </div>
                 </div>
+                
+                <!-- ===== DATOS DEL USUARIO ===== -->
                 <div class="profile-section">
                     <h4><i class="fas fa-id-card" aria-hidden="true"></i> Mis datos</h4>
                     <div class="profile-field"><span class="label">Nombre completo</span><span class="value" id="profile-fullname">Juan Pérez</span></div>
@@ -551,44 +595,8 @@
                     <div class="profile-field"><span class="label">Teléfono</span><span class="value" id="profile-phone">+52 55 1234 5678</span></div>
                     <div class="profile-field"><span class="label">Dirección</span><span class="value" id="profile-address">Calle Principal 123, Colonia Centro</span></div>
                 </div>
-                <div class="profile-section" style="border: 2px solid var(--primary);">
-                    <h4 style="color: var(--primary);"><i class="fas fa-store-alt" style="color: var(--primary);"></i> Mi Marketplace</h4>
-                    <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
-                        <button class="btn-primary" id="profile-publicar-btn" style="width: 100%; justify-content: center;">
-                            <i class="fas fa-plus-circle" aria-hidden="true"></i> Publicar producto
-                        </button>
-                        <button class="btn-secondary" id="profile-mis-publicaciones-btn" style="width: 100%; justify-content: center;">
-                            <i class="fas fa-boxes" aria-hidden="true"></i> Mis publicaciones
-                        </button>
-                    </div>
-                </div>
-                <div class="profile-section">
-                    <h4><i class="fas fa-pen-fancy" aria-hidden="true"></i> Publicar comentario</h4>
-                    <form id="profile-comment-form" style="margin-top: 0.5rem;" onsubmit="return false;">
-                        <div class="form-group" style="margin-bottom: 0.8rem;">
-                            <label for="profile-comment-text" style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: block; margin-bottom: 0.3rem;">
-                                <i class="fas fa-comment" aria-hidden="true"></i> Escribe tu comentario
-                            </label>
-                            <textarea id="profile-comment-text" placeholder="Comparte tu opinión con la comunidad..." 
-                                style="width: 100%; padding: 0.7rem 0.9rem; border-radius: 14px; border: 1px solid var(--border); background: #faf8fc; font-size: 0.95rem; resize: vertical; min-height: 80px;"></textarea>
-                        </div>
-                        <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; min-height: 44px;">
-                            <i class="fas fa-paper-plane" aria-hidden="true"></i> Publicar en comunidad
-                        </button>
-                        <div id="profile-comment-feedback" class="hidden alert-message" style="margin-top: 0.8rem; width: 100%; text-align: center;"></div>
-                    </form>
-                </div>
-                <div class="profile-section">
-                    <h4><i class="fas fa-comment" aria-hidden="true"></i> Mis comentarios en la comunidad</h4>
-                    <div id="profile-comments-list"></div>
-                </div>
                 
-                <!-- ===== SECCIÓN MIS COMPRAS EN EL PERFIL ===== -->
-                <div class="profile-section" style="border: 2px solid #4caf50;">
-                    <h4 style="color: #2e7d32;"><i class="fas fa-shopping-bag" style="color: #4caf50;"></i> Mis compras</h4>
-                    <div id="profile-compras-resumen"></div>
-                </div>
-                
+                <!-- ===== BOTONES DE ACCIÓN ===== -->
                 <div class="profile-actions">
                     <button class="btn-secondary" id="go-to-community-btn"><i class="fas fa-users" aria-hidden="true"></i> Ir a comunidad</button>
                     <button class="btn-secondary" id="edit-profile-btn"><i class="fas fa-edit" aria-hidden="true"></i> Editar perfil</button>
@@ -1196,6 +1204,66 @@
                 <button class="btn-secondary" id="factura-volver-btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Volver al perfil</button>
             </div>
             <div id="factura-feedback" class="hidden alert-message" style="margin-top:1rem; text-align:center;"></div>
+        </section>
+
+        <!-- ===== PÁGINA MIS COMPRAS ===== -->
+        <section id="page-mis-compras" class="page-section" aria-labelledby="mis-compras-title">
+            <h2 id="mis-compras-title" class="section-title"><i class="fas fa-shopping-bag" aria-hidden="true"></i> Mis Compras</h2>
+            <div class="compras-container">
+                <div class="compras-filtros">
+                    <div class="compras-buscar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="compras-buscar" placeholder="Buscar por producto o pedido...">
+                    </div>
+                    <select id="compras-filtro-estado">
+                        <option value="todos">Todos los estados</option>
+                        <option value="entregado">Entregado</option>
+                        <option value="en preparacion">En preparación</option>
+                        <option value="pendiente">Pendiente</option>
+                    </select>
+                </div>
+                <div id="compras-vacio" class="compras-vacio">
+                    <i class="fas fa-shopping-bag" aria-hidden="true"></i>
+                    <h3>No tienes compras registradas</h3>
+                    <p>Explora nuestro catálogo y haz tu primera compra.</p>
+                    <button class="btn-primary" id="compras-ir-catalogo"><i class="fas fa-utensils"></i> Ir al catálogo</button>
+                </div>
+                <div id="compras-lista-container" class="compras-lista"></div>
+            </div>
+        </section>
+
+        <!-- ===== PÁGINA MIS COMENTARIOS ===== -->
+        <section id="page-mis-comentarios" class="page-section" aria-labelledby="mis-comentarios-title">
+            <h2 id="mis-comentarios-title" class="section-title"><i class="fas fa-comments" aria-hidden="true"></i> Mis Comentarios</h2>
+            
+            <div class="community-container" style="grid-template-columns: 1fr; max-width: 800px; margin: 0 auto;">
+                <!-- Formulario para publicar comentario -->
+                <div class="community-form-card" style="margin-bottom: 1.5rem;">
+                    <div class="community-form-header">
+                        <h3><i class="fas fa-pen-fancy" aria-hidden="true"></i> Publicar comentario</h3>
+                        <p>Comparte tu experiencia con la comunidad</p>
+                    </div>
+                    <form id="mis-comentarios-form" onsubmit="return false;">
+                        <div class="form-group">
+                            <label for="mis-comentarios-text"><i class="fas fa-comment" aria-hidden="true"></i> Comentario</label>
+                            <textarea id="mis-comentarios-text" placeholder="Escribe tu opinión aquí..." style="min-height: 80px;"></textarea>
+                        </div>
+                        <button class="btn-primary" type="submit" style="width:100%; justify-content:center;">
+                            <i class="fas fa-paper-plane" aria-hidden="true"></i> Publicar comentario
+                        </button>
+                        <div id="mis-comentarios-feedback" class="hidden alert-message" style="margin-top:1rem; width:100%; text-align:center;"></div>
+                    </form>
+                </div>
+                
+                <!-- Lista de comentarios del usuario -->
+                <div class="community-list-card">
+                    <div class="community-list-header">
+                        <h3><i class="fas fa-heart" aria-hidden="true"></i> Mis comentarios</h3>
+                        <span class="community-count" id="mis-comentarios-count">0</span>
+                    </div>
+                    <div id="mis-comentarios-list" class="comments-list" style="max-height: 600px;"></div>
+                </div>
+            </div>
         </section>
 
         <footer class="footer-note">
