@@ -6,101 +6,6 @@
     <title>DeliciasResto</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="estilos.css">
-    <style>
-        /* Estilos adicionales para el formulario de publicar */
-        .campo-opcional {
-            font-size: 0.8rem;
-            color: #6b4f7a;
-            font-weight: normal;
-        }
-        
-        #publicar-form .form-group {
-            margin-bottom: 1.2rem;
-        }
-        
-        #publicar-form .form-control,
-        #publicar-form input,
-        #publicar-form select,
-        #publicar-form textarea {
-            width: 100%;
-            padding: 0.7rem 1rem;
-            border: 2px solid #e8e0f0;
-            border-radius: 10px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            background: white;
-            box-sizing: border-box;
-        }
-        
-        #publicar-form input:focus,
-        #publicar-form select:focus,
-        #publicar-form textarea:focus {
-            border-color: #8b5cf6;
-            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
-            outline: none;
-        }
-        
-        #publicar-form textarea {
-            resize: vertical;
-            min-height: 100px;
-            font-family: inherit;
-        }
-        
-        .image-preview {
-            width: 100%;
-            height: 180px;
-            background: #f5f0f9;
-            border-radius: 12px;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px dashed #d9c4e8;
-            margin-top: 0.5rem;
-        }
-        
-        .image-preview img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .empty-preview {
-            text-align: center;
-            color: #8b5cf6;
-            padding: 1rem;
-        }
-        
-        .empty-preview i {
-            font-size: 2rem;
-            display: block;
-            margin-bottom: 0.5rem;
-        }
-        
-        #publicar-btn {
-            width: 100%;
-            justify-content: center;
-            min-height: 48px;
-        }
-        
-        /* Ocultar validación nativa del navegador */
-        input:invalid, textarea:invalid, select:invalid {
-            box-shadow: none !important;
-            border-color: #e8e0f0 !important;
-        }
-        
-        input:invalid:focus, textarea:invalid:focus, select:invalid:focus {
-            border-color: #8b5cf6 !important;
-            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1) !important;
-        }
-        
-        .form-group small {
-            display: block;
-            margin-top: 0.25rem;
-            color: #6b4f7a;
-            font-size: 0.75rem;
-        }
-    </style>
 </head>
 <body>
 
@@ -170,19 +75,6 @@
                 <button class="btn-checkout" id="checkout-btn" disabled>
                     <i class="fas fa-credit-card" aria-hidden="true"></i> Pagar ahora
                 </button>
-            </div>
-        </div>
-
-        <!-- ===== MODAL LOGIN REQUERIDO ===== -->
-        <div class="modal-overlay" id="login-required-modal" role="dialog" aria-modal="true" aria-label="Inicio de sesión requerido" style="display: none;">
-            <div class="modal-box">
-                <div class="modal-icon" aria-hidden="true"><i class="fas fa-user-lock"></i></div>
-                <h2>Inicio de sesión requerido</h2>
-                <p>Para finalizar tu compra, necesitas iniciar sesión en tu cuenta.</p>
-                <button class="btn-primary" id="login-required-btn">
-                    <i class="fas fa-sign-in-alt" aria-hidden="true"></i> Iniciar sesión
-                </button>
-                <button class="btn-secondary" id="login-required-cancel">Cancelar</button>
             </div>
         </div>
 
@@ -314,7 +206,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="testimonials-section">
                 <h3><i class="fas fa-comments" aria-hidden="true"></i> Lo que dicen nuestros clientes</h3>
                 <div class="testimonial-grid">
@@ -337,39 +228,32 @@
         <!-- ===== PÁGINA COMUNIDAD ===== -->
         <section id="page-comunidad" class="page-section" aria-labelledby="comunidad-title">
             <h2 id="comunidad-title" class="section-title"><i class="fas fa-comments" aria-hidden="true"></i> Comunidad</h2>
-            
             <div class="community-container">
                 <div class="community-form-card">
                     <div class="community-form-header">
                         <h3><i class="fas fa-pen-fancy" aria-hidden="true"></i> Deja tu comentario</h3>
                         <p>Comparte tu experiencia con la comunidad</p>
                     </div>
-                    
                     <form id="community-form" onsubmit="return false;">
                         <div class="form-group">
                             <label for="community-name"><i class="fas fa-user" aria-hidden="true"></i> Tu nombre</label>
                             <input type="text" id="community-name" placeholder="Ej: Juan Pérez">
                         </div>
-                        
                         <div class="form-group">
                             <label for="community-comment"><i class="fas fa-comment" aria-hidden="true"></i> Comentario</label>
                             <textarea id="community-comment" placeholder="Escribe tu opinión aquí..."></textarea>
                         </div>
-                        
                         <button class="btn-primary" type="submit" style="width:100%; justify-content:center;">
                             <i class="fas fa-paper-plane" aria-hidden="true"></i> Publicar comentario
                         </button>
-                        
                         <div id="community-feedback" class="hidden alert-message" style="margin-top:1rem; width:100%; text-align:center;"></div>
                     </form>
                 </div>
-
                 <div class="community-list-card">
                     <div class="community-list-header">
                         <h3><i class="fas fa-heart" aria-hidden="true"></i> Comentarios recientes</h3>
                         <span class="community-count" id="community-count">0</span>
                     </div>
-                    
                     <div id="community-comments-list" class="comments-list"></div>
                 </div>
             </div>
@@ -378,8 +262,6 @@
         <!-- ===== PÁGINA MARKETPLACE ===== -->
         <section id="page-marketplace" class="page-section" aria-labelledby="marketplace-title">
             <h2 id="marketplace-title" class="section-title"><i class="fas fa-store-alt" aria-hidden="true"></i> Marketplace</h2>
-            
-            <!-- PESTAÑAS DE MARKETPLACE -->
             <div class="marketplace-tabs">
                 <button class="marketplace-tab active" data-tab="productos">
                     <i class="fas fa-boxes" aria-hidden="true"></i> Productos
@@ -388,8 +270,6 @@
                     <i class="fas fa-gavel" aria-hidden="true"></i> Subasta
                 </button>
             </div>
-
-            <!-- CONTENIDO: PRODUCTOS -->
             <div id="marketplace-productos" class="marketplace-tab-content active">
                 <div class="marketplace-dashboard">
                     <div class="marketplace-resumen">
@@ -412,18 +292,14 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="marketplace-ultimas">
                         <h3><i class="fas fa-clock" style="color: var(--primary);"></i> Productos disponibles</h3>
                         <div id="ultimas-publicaciones-list" class="ultimas-grid"></div>
                     </div>
                 </div>
             </div>
-
-            <!-- CONTENIDO: SUBASTA -->
             <div id="marketplace-subasta" class="marketplace-tab-content">
                 <div class="subasta-container">
-                    <!-- Producto en subasta -->
                     <div class="subasta-producto-card">
                         <div class="subasta-producto-imagen">
                             <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&h=400&fit=crop&crop=center" alt="Cena para 2 con pizza" loading="lazy">
@@ -450,8 +326,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Control de subasta -->
                     <div class="subasta-controls">
                         <div class="subasta-temporizador-container">
                             <div class="subasta-temporizador-label">
@@ -464,7 +338,6 @@
                                 <div class="subasta-temporizador-progreso" id="subasta-progreso" style="width: 100%;"></div>
                             </div>
                         </div>
-
                         <div class="subasta-oferta-area">
                             <div class="subasta-oferta-input-group">
                                 <label for="subasta-oferta-main">
@@ -480,8 +353,6 @@
                             </div>
                             <div id="subasta-feedback-main" class="subasta-feedback" style="display: none;"></div>
                         </div>
-
-                        <!-- Lista de ofertas -->
                         <div class="subasta-lista-ofertas-container">
                             <div class="subasta-lista-header">
                                 <h4><i class="fas fa-list" aria-hidden="true"></i> Ofertas realizadas</h4>
@@ -499,26 +370,22 @@
             </div>
         </section>
 
-        <!-- ===== PÁGINA PUBLICAR PRODUCTO (MODIFICADA - CAMPOS OPCIONALES) ===== -->
+        <!-- ===== PÁGINA PUBLICAR PRODUCTO ===== -->
         <section id="page-publicar-producto" class="page-section" aria-labelledby="publicar-title">
             <h2 id="publicar-title" class="section-title"><i class="fas fa-plus-circle" aria-hidden="true"></i> Publica tu producto</h2>
             <div class="auth-container" style="max-width: 600px;">
                 <div id="publicar-message" class="alert-message hidden"></div>
                 <form id="publicar-form" onsubmit="return false;">
                     <div class="form-group">
-                        <label for="publicar-nombre"><i class="fas fa-tag" aria-hidden="true"></i> Nombre del producto <span style="color: #6b4f7a; font-size: 0.8rem; font-weight: normal;">(opcional)</span></label>
+                        <label for="publicar-nombre"><i class="fas fa-tag" aria-hidden="true"></i> Nombre del producto <span class="campo-opcional">(opcional)</span></label>
                         <input type="text" id="publicar-nombre" placeholder="Ej: Pizza Hawaiana" style="width:100%; padding:0.7rem 0.9rem; border-radius:14px; border:1px solid var(--border); background:#faf8fc; font-size:0.95rem; min-height:44px;">
-                        <small style="color: #6b4f7a; font-size: 0.75rem; display: block; margin-top: 0.2rem;">Si lo dejas vacío, se usará "Producto sin nombre"</small>
                     </div>
-                    
                     <div class="form-group">
-                        <label for="publicar-precio"><i class="fas fa-dollar-sign" aria-hidden="true"></i> Precio <span style="color: #6b4f7a; font-size: 0.8rem; font-weight: normal;">(opcional)</span></label>
+                        <label for="publicar-precio"><i class="fas fa-dollar-sign" aria-hidden="true"></i> Precio <span class="campo-opcional">(opcional)</span></label>
                         <input type="number" step="0.01" id="publicar-precio" placeholder="0.00" style="width:100%; padding:0.7rem 0.9rem; border-radius:14px; border:1px solid var(--border); background:#faf8fc; font-size:0.95rem; min-height:44px;">
-                        <small style="color: #6b4f7a; font-size: 0.75rem; display: block; margin-top: 0.2rem;">Si lo dejas vacío, se usará $0.00</small>
                     </div>
-                    
                     <div class="form-group">
-                        <label for="publicar-categoria"><i class="fas fa-utensils" aria-hidden="true"></i> Categoría <span style="color: #6b4f7a; font-size: 0.8rem; font-weight: normal;">(opcional)</span></label>
+                        <label for="publicar-categoria"><i class="fas fa-utensils" aria-hidden="true"></i> Categoría <span class="campo-opcional">(opcional)</span></label>
                         <select id="publicar-categoria" style="width:100%; padding:0.7rem 0.9rem; border-radius:14px; border:1px solid var(--border); background:#faf8fc; font-size:0.95rem; min-height:44px;">
                             <option value="Otros">Otros</option>
                             <option value="Pizzas">Pizzas</option>
@@ -539,18 +406,14 @@
                             <option value="Salud">Salud</option>
                             <option value="Belleza">Belleza</option>
                         </select>
-                        <small style="color: #6b4f7a; font-size: 0.75rem; display: block; margin-top: 0.2rem;">Selecciona una categoría o deja "Otros"</small>
                     </div>
-                    
                     <div class="form-group">
-                        <label for="publicar-descripcion"><i class="fas fa-align-left" aria-hidden="true"></i> Descripción <span style="color: #6b4f7a; font-size: 0.8rem; font-weight: normal;">(opcional)</span></label>
+                        <label for="publicar-descripcion"><i class="fas fa-align-left" aria-hidden="true"></i> Descripción <span class="campo-opcional">(opcional)</span></label>
                         <textarea id="publicar-descripcion" placeholder="Describe tu producto..." style="width:100%; padding:0.7rem 0.9rem; border-radius:14px; border:1px solid var(--border); background:#faf8fc; font-size:0.95rem; min-height:100px; resize:vertical;"></textarea>
                     </div>
-                    
                     <div class="form-group">
-                        <label for="publicar-foto"><i class="fas fa-image" aria-hidden="true"></i> Foto (URL) <span style="color: #6b4f7a; font-size: 0.8rem; font-weight: normal;">(opcional)</span></label>
+                        <label for="publicar-foto"><i class="fas fa-image" aria-hidden="true"></i> Foto (URL) <span class="campo-opcional">(opcional)</span></label>
                         <input type="text" id="publicar-foto" placeholder="https://ejemplo.com/foto.jpg" style="width:100%; padding:0.7rem 0.9rem; border-radius:14px; border:1px solid var(--border); background:#faf8fc; font-size:0.95rem; min-height:44px;">
-                        <small style="color: #6b4f7a; font-size: 0.75rem; display: block; margin-top: 0.2rem;">Si lo dejas vacío, se usará una imagen por defecto</small>
                         <div class="image-preview" id="publicar-image-preview" style="margin-top: 0.5rem; width:100%; height:180px; background:#f5f0f9; border-radius:12px; overflow:hidden; display:flex; align-items:center; justify-content:center; border:2px dashed #d9c4e8;">
                             <div class="empty-preview" style="text-align:center; color:#8b5cf6; padding:1rem;">
                                 <i class="fas fa-image" style="font-size:2rem; display:block; margin-bottom:0.5rem;" aria-hidden="true"></i>
@@ -558,7 +421,6 @@
                             </div>
                         </div>
                     </div>
-                    
                     <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 0.5rem;">
                         <button type="submit" class="btn-primary" id="publicar-btn" style="flex: 1; min-width: 150px; justify-content: center; min-height: 48px;">
                             <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> Publicar producto
@@ -682,7 +544,6 @@
                         <p><i class="fas fa-calendar-alt" style="color:#8b5cf6;" aria-hidden="true"></i> Miembro desde 2024</p>
                     </div>
                 </div>
-                
                 <div class="profile-section">
                     <h4><i class="fas fa-id-card" aria-hidden="true"></i> Mis datos</h4>
                     <div class="profile-field"><span class="label">Nombre completo</span><span class="value" id="profile-fullname">Juan Pérez</span></div>
@@ -690,7 +551,6 @@
                     <div class="profile-field"><span class="label">Teléfono</span><span class="value" id="profile-phone">+52 55 1234 5678</span></div>
                     <div class="profile-field"><span class="label">Dirección</span><span class="value" id="profile-address">Calle Principal 123, Colonia Centro</span></div>
                 </div>
-
                 <div class="profile-section" style="border: 2px solid var(--primary);">
                     <h4 style="color: var(--primary);"><i class="fas fa-store-alt" style="color: var(--primary);"></i> Mi Marketplace</h4>
                     <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
@@ -702,7 +562,6 @@
                         </button>
                     </div>
                 </div>
-                
                 <div class="profile-section">
                     <h4><i class="fas fa-pen-fancy" aria-hidden="true"></i> Publicar comentario</h4>
                     <form id="profile-comment-form" style="margin-top: 0.5rem;" onsubmit="return false;">
@@ -719,15 +578,15 @@
                         <div id="profile-comment-feedback" class="hidden alert-message" style="margin-top: 0.8rem; width: 100%; text-align: center;"></div>
                     </form>
                 </div>
-                
                 <div class="profile-section">
                     <h4><i class="fas fa-comment" aria-hidden="true"></i> Mis comentarios en la comunidad</h4>
                     <div id="profile-comments-list"></div>
                 </div>
                 
-                <div class="profile-section">
-                    <h4><i class="fas fa-shopping-bag" aria-hidden="true"></i> Mis compras <span class="coming-soon">Próximamente</span></h4>
-                    <p style="color:#6b4f7a; font-size:0.9rem; margin-top:0.3rem;"><i class="fas fa-clock" style="color:#8b5cf6;" aria-hidden="true"></i> Pronto podrás ver el historial de tus pedidos aquí.</p>
+                <!-- ===== SECCIÓN MIS COMPRAS EN EL PERFIL ===== -->
+                <div class="profile-section" style="border: 2px solid #4caf50;">
+                    <h4 style="color: #2e7d32;"><i class="fas fa-shopping-bag" style="color: #4caf50;"></i> Mis compras</h4>
+                    <div id="profile-compras-resumen"></div>
                 </div>
                 
                 <div class="profile-actions">
@@ -742,7 +601,6 @@
         <!-- ===== PÁGINA ADMIN ===== -->
         <section id="page-admin" class="page-section" aria-labelledby="admin-title">
             <h2 id="admin-title" class="section-title"><i class="fas fa-tachometer-alt" aria-hidden="true"></i> Panel de Administración</h2>
-
             <div class="admin-layout">
                 <aside class="admin-sidebar" aria-label="Menú de administración">
                     <div class="admin-user">
@@ -761,7 +619,6 @@
                         <li><a href="#" data-admin-page="reportes"><i class="fas fa-file-alt" aria-hidden="true"></i> Reportes</a></li>
                     </ul>
                 </aside>
-
                 <div class="admin-content">
                     <div id="admin-dashboard" class="admin-page active">
                         <div class="admin-dashboard-grid">
@@ -791,13 +648,11 @@
                                 <div class="stat-label">Productos agotados</div>
                             </div>
                         </div>
-
                         <div class="admin-actions">
                             <button class="btn-primary" id="admin-add-product-btn"><i class="fas fa-plus" aria-hidden="true"></i> Agregar producto</button>
                             <button class="btn-secondary" id="admin-view-orders-btn"><i class="fas fa-eye" aria-hidden="true"></i> Ver pedidos</button>
                             <button class="btn-success" id="admin-create-promo-btn"><i class="fas fa-tag" aria-hidden="true"></i> Crear promoción</button>
                         </div>
-
                         <div class="activity-feed">
                             <h3><i class="fas fa-bolt" aria-hidden="true"></i> Actividad reciente</h3>
                             <div class="activity-item">
@@ -827,7 +682,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div id="admin-productos" class="admin-page hidden">
                         <div class="product-table-container">
                             <div class="table-header">
@@ -853,7 +707,6 @@
                                 </div>
                                 <button class="btn-primary" id="admin-add-product-btn2"><i class="fas fa-plus" aria-hidden="true"></i> Agregar producto</button>
                             </div>
-
                             <div style="overflow-x:auto;">
                                 <table class="product-table" id="product-table">
                                     <thead>
@@ -872,7 +725,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div id="admin-product-form" class="admin-page hidden">
                         <div class="product-form-container">
                             <h3 style="margin-bottom:1.2rem; display:flex; align-items:center; gap:0.6rem; font-size:1.3rem;">
@@ -931,7 +783,6 @@
                             </form>
                         </div>
                     </div>
-
                     <div id="admin-pedidos" class="admin-page hidden">
                         <div class="product-table-container">
                             <h3 style="margin-bottom:1.2rem; display:flex; align-items:center; gap:0.6rem; font-size:1.2rem;">
@@ -947,7 +798,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div id="admin-promociones" class="admin-page hidden">
                         <div class="product-table-container">
                             <div class="table-header">
@@ -966,7 +816,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div id="admin-promo-form" class="admin-page hidden">
                         <div class="product-form-container">
                             <h3 style="margin-bottom:1.2rem; display:flex; align-items:center; gap:0.6rem; font-size:1.3rem;">
@@ -1008,7 +857,6 @@
                             </form>
                         </div>
                     </div>
-
                     <div id="admin-clientes" class="admin-page hidden">
                         <div class="product-table-container">
                             <div class="table-header">
@@ -1027,7 +875,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div id="admin-client-form" class="admin-page hidden">
                         <div class="product-form-container">
                             <h3 style="margin-bottom:1.2rem; display:flex; align-items:center; gap:0.6rem; font-size:1.3rem;">
@@ -1060,7 +907,6 @@
                             </form>
                         </div>
                     </div>
-
                     <div id="admin-reportes" class="admin-page hidden">
                         <div class="product-table-container">
                             <h3 style="margin-bottom:1.2rem; display:flex; align-items:center; gap:0.6rem; font-size:1.2rem;">
@@ -1096,7 +942,6 @@
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
         </section>
@@ -1110,6 +955,247 @@
                 <div class="order-details" id="success-details"></div>
                 <button class="btn-primary" id="success-continue-btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Seguir comprando</button>
             </div>
+        </section>
+
+        <!-- ===== PÁGINA CHECKOUT ===== -->
+        <section id="page-checkout" class="page-section" aria-labelledby="checkout-title">
+            <h2 id="checkout-title" class="section-title"><i class="fas fa-shopping-bag" aria-hidden="true"></i> Checkout</h2>
+            
+            <div class="checkout-progress">
+                <div class="step-indicator active" data-step="1">
+                    <span class="step-number">1</span>
+                    <span class="step-label">Dirección</span>
+                </div>
+                <div class="step-line"></div>
+                <div class="step-indicator" data-step="2">
+                    <span class="step-number">2</span>
+                    <span class="step-label">Pago</span>
+                </div>
+                <div class="step-line"></div>
+                <div class="step-indicator" data-step="3">
+                    <span class="step-number">3</span>
+                    <span class="step-label">Confirmación</span>
+                </div>
+            </div>
+
+            <!-- STEP 1: Dirección -->
+            <div class="checkout-step active" id="checkout-step-1">
+                <div class="checkout-card">
+                    <h3><i class="fas fa-map-pin" aria-hidden="true"></i> Dirección de envío</h3>
+                    <form id="checkout-direccion-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="checkout-nombre"><i class="fas fa-user" aria-hidden="true"></i> Nombre completo <span style="font-weight:400; color:#6b4f7a; font-size:0.8rem;">(opcional)</span></label>
+                                <input type="text" id="checkout-nombre" placeholder="Juan Pérez">
+                            </div>
+                            <div class="form-group">
+                                <label for="checkout-email"><i class="fas fa-envelope" aria-hidden="true"></i> Correo electrónico <span style="font-weight:400; color:#6b4f7a; font-size:0.8rem;">(opcional)</span></label>
+                                <input type="email" id="checkout-email" placeholder="juan@email.com">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="checkout-telefono"><i class="fas fa-phone" aria-hidden="true"></i> Teléfono <span style="font-weight:400; color:#6b4f7a; font-size:0.8rem;">(opcional)</span></label>
+                            <input type="tel" id="checkout-telefono" placeholder="55 1234 5678">
+                        </div>
+                        <div class="form-group">
+                            <label for="checkout-direccion"><i class="fas fa-home" aria-hidden="true"></i> Dirección <span style="font-weight:400; color:#6b4f7a; font-size:0.8rem;">(opcional)</span></label>
+                            <input type="text" id="checkout-direccion" placeholder="Calle Principal 123">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="checkout-ciudad">Ciudad <span style="font-weight:400; color:#6b4f7a; font-size:0.8rem;">(opcional)</span></label>
+                                <input type="text" id="checkout-ciudad" placeholder="Ciudad">
+                            </div>
+                            <div class="form-group">
+                                <label for="checkout-cp">Código Postal <span style="font-weight:400; color:#6b4f7a; font-size:0.8rem;">(opcional)</span></label>
+                                <input type="text" id="checkout-cp" placeholder="CP">
+                            </div>
+                        </div>
+                        <div id="checkout-message"></div>
+                        <button class="btn-primary checkout-next-btn" style="width:100%; justify-content:center; min-height:48px;">
+                            <i class="fas fa-arrow-right" aria-hidden="true"></i> Continuar con el pago
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- STEP 2: Método de pago -->
+            <div class="checkout-step" id="checkout-step-2">
+                <div class="checkout-card">
+                    <h3><i class="fas fa-credit-card" aria-hidden="true"></i> Método de pago</h3>
+                    
+                    <div class="payment-methods">
+                        <!-- Tarjeta -->
+                        <label class="payment-method active">
+                            <input type="radio" name="payment-method" value="tarjeta" checked>
+                            <div class="payment-method-icon"><i class="fas fa-credit-card"></i></div>
+                            <span>Tarjeta</span>
+                            <div class="payment-form">
+                                <div class="form-group">
+                                    <label for="checkout-tarjeta-nombre">Nombre en la tarjeta <span style="font-weight:400; color:#6b4f7a; font-size:0.8rem;">(opcional)</span></label>
+                                    <input type="text" id="checkout-tarjeta-nombre" placeholder="Juan Pérez">
+                                </div>
+                                <div class="form-group">
+                                    <label for="checkout-tarjeta-numero">Número de tarjeta <span style="font-weight:400; color:#6b4f7a; font-size:0.8rem;">(opcional)</span></label>
+                                    <input type="text" id="checkout-tarjeta-numero" placeholder="4242 4242 4242 4242">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="checkout-tarjeta-fecha">Fecha de expiración <span style="font-weight:400; color:#6b4f7a; font-size:0.8rem;">(opcional)</span></label>
+                                        <input type="text" id="checkout-tarjeta-fecha" placeholder="MM/AA">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="checkout-tarjeta-cvv">CVV <span style="font-weight:400; color:#6b4f7a; font-size:0.8rem;">(opcional)</span></label>
+                                        <input type="text" id="checkout-tarjeta-cvv" placeholder="123">
+                                    </div>
+                                </div>
+                            </div>
+                        </label>
+                        
+                        <!-- Transferencia -->
+                        <label class="payment-method">
+                            <input type="radio" name="payment-method" value="transferencia">
+                            <div class="payment-method-icon"><i class="fas fa-university"></i></div>
+                            <span>Transferencia</span>
+                            <div class="payment-form" style="display:none;">
+                                <p style="background:#ede6f5; padding:1rem; border-radius:12px; font-size:0.9rem; margin:0;">
+                                    <strong>Datos para transferencia:</strong><br>
+                                    Banco: BBVA<br>
+                                    Cuenta: 0123 4567 8901 2345<br>
+                                    CLABE: 0123 4567 8901 2345 6789<br>
+                                    Referencia: DELICIA-2026-001
+                                </p>
+                            </div>
+                        </label>
+                        
+                        <!-- E-wallet -->
+                        <label class="payment-method">
+                            <input type="radio" name="payment-method" value="ewallet">
+                            <div class="payment-method-icon"><i class="fas fa-wallet"></i></div>
+                            <span>E-wallet</span>
+                            <div class="payment-form" style="display:none;">
+                                <p style="background:#ede6f5; padding:1rem; border-radius:12px; font-size:0.9rem; margin:0;">
+                                    <strong>Saldo disponible: <span style="color:#8b5cf6;">$5.00</span></strong><br>
+                                    <span style="font-size:0.8rem; color:#6b4f7a;">Simulación - No se realizará un cargo real.</span>
+                                </p>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <div style="display:flex; gap:0.8rem; flex-wrap:wrap; margin-top:1.5rem;">
+                        <button class="btn-secondary checkout-prev-btn" style="flex:1; justify-content:center; min-height:48px;">
+                            <i class="fas fa-arrow-left" aria-hidden="true"></i> Volver
+                        </button>
+                        <button class="btn-primary checkout-next-btn" style="flex:2; justify-content:center; min-height:48px;">
+                            <i class="fas fa-check-circle" aria-hidden="true"></i> Pagar ahora
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 3: Confirmación -->
+            <div class="checkout-step" id="checkout-step-3">
+                <div class="checkout-card" style="text-align:center;">
+                    <div class="big-icon" style="color:#4caf50; font-size:3.5rem; margin-bottom:0.5rem;">
+                        <i class="fas fa-check-circle" aria-hidden="true"></i>
+                    </div>
+                    <h2 style="font-size:1.6rem; color:var(--text-primary);">¡Pago aprobado!</h2>
+                    <p style="color:var(--text-secondary); margin-bottom:0.5rem;">Tu compra ha sido confirmada exitosamente.</p>
+                    
+                    <div class="order-confirmation">
+                        <div style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid var(--border);">
+                            <span style="font-weight:600;">Número de pedido</span>
+                            <span id="checkout-order-number" style="color:var(--primary); font-weight:700;">#DEL-2026-1234</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid var(--border);">
+                            <span style="font-weight:600;">Fecha</span>
+                            <span id="checkout-order-date">15/01/2026 14:30</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid var(--border);">
+                            <span style="font-weight:600;">Método de pago</span>
+                            <span id="checkout-payment-method">Tarjeta</span>
+                        </div>
+                        <div style="margin-top:0.5rem;">
+                            <div style="font-weight:600; margin-bottom:0.3rem;">Resumen:</div>
+                            <div id="checkout-resumen-items"></div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-top:0.5rem; padding-top:0.5rem; border-top:2px solid var(--border); font-weight:700; font-size:1.1rem;">
+                            <span>Total</span>
+                            <span id="checkout-total" style="color:var(--primary);">$0.00</span>
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex; gap:0.8rem; flex-wrap:wrap; justify-content:center;">
+                        <button class="btn-primary" id="checkout-generar-factura" style="min-width:140px; justify-content:center;">
+                            <i class="fas fa-file-invoice" aria-hidden="true"></i> Ver factura
+                        </button>
+                        <button class="btn-secondary" id="checkout-continuar-btn" style="min-width:140px; justify-content:center;">
+                            <i class="fas fa-arrow-right" aria-hidden="true"></i> Ir al perfil
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== PÁGINA FACTURA ===== -->
+        <section id="page-factura" class="page-section" aria-labelledby="factura-title">
+            <div class="factura-container" id="factura-contenido">
+                <div class="factura-header">
+                    <div class="factura-logo">
+                        <i class="fas fa-utensils" aria-hidden="true"></i>
+                        <span>Delicias<span>Resto</span></span>
+                    </div>
+                    <div class="factura-datos-empresa">
+                        <div>RFC: DRE-123456-789</div>
+                        <div>Tel: (55) 1234-5678</div>
+                        <div>Av. Principal 123, Centro</div>
+                    </div>
+                </div>
+                
+                <div class="factura-titulo">
+                    <h2>FACTURA / COMPROBANTE</h2>
+                    <div class="factura-folio">
+                        <span>Folio: <strong id="factura-folio">DEL-2026-1234</strong></span>
+                        <span>Fecha: <strong id="factura-fecha">15/01/2026</strong></span>
+                        <span>Hora: <strong id="factura-hora">14:30</strong></span>
+                    </div>
+                </div>
+                
+                <div class="factura-cliente">
+                    <h4>Datos del cliente</h4>
+                    <div class="factura-cliente-info">
+                        <span><strong>Nombre:</strong> <span id="factura-cliente-nombre">Juan Pérez</span></span>
+                        <span><strong>Email:</strong> <span id="factura-cliente-email">juan@email.com</span></span>
+                        <span><strong>Dirección:</strong> <span id="factura-cliente-direccion">Calle Principal 123</span></span>
+                    </div>
+                </div>
+                
+                <div class="factura-productos">
+                    <h4>Productos</h4>
+                    <table>
+                        <thead>
+                            <tr><th>Cant.</th><th>Producto</th><th>Precio</th><th>Total</th></tr>
+                        </thead>
+                        <tbody id="factura-productos-body"></tbody>
+                    </table>
+                </div>
+                
+                <div class="factura-total">
+                    <span>Total a pagar</span>
+                    <span id="factura-total">$0.00</span>
+                </div>
+                
+                <div class="factura-footer">
+                    <p>¡Gracias por tu compra! Este comprobante es válido como factura.</p>
+                </div>
+            </div>
+            
+            <div class="factura-actions">
+                <button class="btn-primary" id="factura-descargar-pdf"><i class="fas fa-file-pdf" aria-hidden="true"></i> Descargar PDF</button>
+                <button class="btn-secondary" id="factura-imprimir-btn"><i class="fas fa-print" aria-hidden="true"></i> Imprimir</button>
+                <button class="btn-secondary" id="factura-volver-btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Volver al perfil</button>
+            </div>
+            <div id="factura-feedback" class="hidden alert-message" style="margin-top:1rem; text-align:center;"></div>
         </section>
 
         <footer class="footer-note">

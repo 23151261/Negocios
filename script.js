@@ -2807,6 +2807,462 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
+// CHECKOUT - FUNCIONALIDAD
+// ============================================================
+
+let checkoutCurrentStep = 1;
+let checkoutData = {
+    direccion: {},
+    metodoPago: 'tarjeta',
+    total: 0,
+    items: []
+};
+
+function actualizarCheckoutProgress(step) {
+    document.querySelectorAll('.step-indicator').forEach(function(el) {
+        const s = parseInt(el.getAttribute('data-step'));
+        el.classList.remove('active', 'done');
+        if (s === step) el.classList.add('active');
+        else if (s < step) el.classList.add('done');
+    });
+    
+    document.querySelectorAll('.checkout-step').forEach(function(el) {
+        el.classList.remove('active');
+    });
+    const target = document.getElementById('checkout-step-' + step);
+    if (target) target.classList.add('active');
+}
+
+function irAlPaso(step) {
+    checkoutCurrentStep = step;
+    actualizarCheckoutProgress(step);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Navegación del checkout
+document.querySelectorAll('.checkout-next-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Validar paso 1
+        if (checkoutCurrentStep === 1) {
+            const nombre = document.getElementById('checkout-nombre')?.value || '';
+            const email = document.getElementById('checkout-email')?.value || '';
+            const direccion = document.getElementById('checkout-direccion')?.value || '';
+            
+            if (!nombre || !email || !direccion) {
+                const msg = document.getElementById('checkout-message') || document.createElement('div');
+                msg.id = 'checkout-message';
+                msg.className = 'auth-error alert-message';
+                msg.textContent = '⚠️ Por favor completa todos los campos obligatorios.';
+                const form = document.getElementById('checkout-direccion-form');
+                if (!document.getElementById('checkout-message')) {
+                    form.appendChild(msg);
+                }
+                return;
+            }
+            
+            checkoutData.direccion = {
+                nombre: nombre,
+                email: email,
+                telefono: document.getElementById('checkout-telefono')?.value || '',
+                direccion: direccion,
+                ciudad: document.getElementById('checkout-ciudad')?.value || '',
+                cp: document.getElementById('checkout-cp')?.value || ''
+            };
+            
+            irAlPaso(2);
+        } else if (checkoutCurrentStep === 2) {
+            // Procesar pago
+            const metodoSeleccionado = document.querySelector('input[name="payment-method"]:checked');
+            if (metodoSeleccionado) {
+                checkoutData.metodoPago = metodoSeleccionado.value;
+            }
+            
+            // Obtener total del carrito
+            let total = 0;
+            const items = [];
+            for (let i = 0; i < cart.length; i++) {
+                const p = products.find(function(pr) { return pr.id === cart[i].productId; });
+                if (p) {
+                    const subtotal = p.price * cart[i].quantity;
+                    total += subtotal;
+                    items.push({
+                        name: p.name,
+                        quantity: cart[i].quantity,
+                        price: p.price,
+                        subtotal: subtotal
+                    });
+                }
+            }
+            
+            // Si hay productos del marketplace
+            for (let i = 0; i < cart.length; i++) {
+                if (cart[i].esMarketplace) {
+                    items.push({
+                        name: cart[i].nombre || 'Producto marketplace',
+                        quantity: cart[i].quantity,
+                        price: cart[i].precio || 0,
+                        subtotal: (cart[i].precio || 0) * cart[i].quantity
+                    });
+                }
+            }
+            
+            checkoutData.total = total;
+            checkoutData.items = items;
+            
+            // Mostrar confirmación
+            document.getElementById('checkout-total').textContent = '$' + total.toFixed(2);
+            document.getElementById('checkout-payment-method').textContent = 
+                metodoSeleccionado ? metodoSeleccionado.value.charAt(0).toUpperCase() + metodoSeleccionado.value.slice(1) : 'Tarjeta';
+            
+            // Número de pedido aleatorio
+            const numeroPedido = 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000);
+            document.getElementById('checkout-order-number').textContent = '#' + numeroPedido;
+            document.getElementById('checkout-order-date').textContent = new Date().toLocaleString('es-ES');
+            
+            // Resumen de productos
+            const resumenContainer = document.getElementById('checkout-resumen-items');
+            let htmlResumen = '';
+            for (let i = 0; i < items.length; i++) {
+                htmlResumen += '<div style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid #ede6f5; font-size:0.9rem;">';
+                htmlResumen += '<span>' + items[i].quantity + ' x ' + items[i].name + '</span>';
+                htmlResumen += '<span>$' + items[i].subtotal.toFixed(2) + '</span>';
+                htmlResumen += '</div>';
+            }
+            resumenContainer.innerHTML = htmlResumen;
+            
+            irAlPaso(3);
+            
+            // Guardar en historial de compras
+            guardarCompra({
+                id: numeroPedido,
+                fecha: new Date().toLocaleString('es-ES'),
+                items: items,
+                total: total,
+                metodo: checkoutData.metodoPago,
+                estado: 'entregado'
+            });
+            
+            // Vaciar carrito
+            cart = [];
+            saveCart();
+            updateCartUI();
+        }
+    });
+});
+
+document.querySelectorAll('.checkout-prev-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (checkoutCurrentStep > 1) {
+            irAlPaso(checkoutCurrentStep - 1);
+        }
+    });
+});
+
+// Mostrar/ocultar formularios de pago
+document.querySelectorAll('.payment-method').forEach(function(method) {
+    method.addEventListener('click', function() {
+        const radio = this.querySelector('input[type="radio"]');
+        if (radio) radio.checked = true;
+        
+        document.querySelectorAll('.payment-form').forEach(function(form) {
+            form.style.display = 'none';
+        });
+        
+        const target = this.querySelector('.payment-form');
+        if (target) target.style.display = 'block';
+    });
+});
+
+// Inicializar método de pago por defecto
+document.querySelector('input[name="payment-method"][value="tarjeta"]').checked = true;
+
+// Botón continuar después de factura
+document.getElementById('checkout-continuar-btn')?.addEventListener('click', function() {
+    showPage('perfil');
+});
+
+// ============================================================
+// FACTURA - FUNCIONALIDAD
+// ============================================================
+
+let facturaData = null;
+
+function generarFactura(compra) {
+    facturaData = compra || {
+        folio: 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000),
+        fecha: new Date().toLocaleDateString('es-ES'),
+        hora: new Date().toLocaleTimeString('es-ES'),
+        cliente: {
+            nombre: currentUser.name || 'Juan Pérez',
+            email: currentUser.email || 'juan@email.com',
+            direccion: currentUser.address || 'Calle Principal 123, Colonia Centro'
+        },
+        items: checkoutData.items || [],
+        total: checkoutData.total || 0
+    };
+    
+    // Actualizar UI de factura
+    document.getElementById('factura-folio').textContent = facturaData.folio;
+    document.getElementById('factura-fecha').textContent = facturaData.fecha;
+    document.getElementById('factura-hora').textContent = facturaData.hora;
+    document.getElementById('factura-cliente-nombre').textContent = facturaData.cliente.nombre;
+    document.getElementById('factura-cliente-email').textContent = facturaData.cliente.email;
+    document.getElementById('factura-cliente-direccion').textContent = facturaData.cliente.direccion;
+    
+    const tbody = document.getElementById('factura-productos-body');
+    let htmlItems = '';
+    for (let i = 0; i < facturaData.items.length; i++) {
+        const item = facturaData.items[i];
+        htmlItems += '<tr>';
+        htmlItems += '<td style="padding:0.3rem 0.5rem;">' + item.quantity + '</td>';
+        htmlItems += '<td style="padding:0.3rem 0.5rem;">' + item.name + '</td>';
+        htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + item.price.toFixed(2) + '</td>';
+        htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + item.subtotal.toFixed(2) + '</td>';
+        htmlItems += '</tr>';
+    }
+    tbody.innerHTML = htmlItems;
+    document.getElementById('factura-total').textContent = '$' + facturaData.total.toFixed(2);
+    
+    showPage('factura');
+}
+
+document.getElementById('checkout-generar-factura')?.addEventListener('click', function() {
+    generarFactura();
+});
+
+document.getElementById('factura-descargar-pdf')?.addEventListener('click', function() {
+    const feedback = document.getElementById('factura-feedback');
+    feedback.className = 'auth-success alert-message';
+    feedback.textContent = '📄 Descargando PDF (simulado)...';
+    feedback.classList.remove('hidden');
+    
+    setTimeout(function() {
+        feedback.textContent = '✅ PDF descargado correctamente (simulación)';
+        setTimeout(function() {
+            feedback.classList.add('hidden');
+        }, 2500);
+    }, 1500);
+});
+
+document.getElementById('factura-imprimir-btn')?.addEventListener('click', function() {
+    window.print();
+});
+
+document.getElementById('factura-volver-btn')?.addEventListener('click', function() {
+    showPage('perfil');
+});
+
+// ============================================================
+// HISTORIAL DE COMPRAS
+// ============================================================
+
+let historialCompras = [];
+
+// Cargar historial desde localStorage
+try {
+    const saved = localStorage.getItem('delicias_historial');
+    if (saved) {
+        historialCompras = JSON.parse(saved);
+    }
+} catch (e) {}
+
+function guardarCompra(compra) {
+    historialCompras.unshift(compra);
+    try {
+        localStorage.setItem('delicias_historial', JSON.stringify(historialCompras));
+    } catch (e) {}
+    renderHistorialCompras();
+}
+
+function renderHistorialCompras() {
+    const container = document.getElementById('compras-lista-container');
+    const vacio = document.getElementById('compras-vacio');
+    const filtroEstado = document.getElementById('compras-filtro-estado')?.value || 'todos';
+    const busqueda = document.getElementById('compras-buscar')?.value?.toLowerCase() || '';
+    
+    let filtrados = historialCompras;
+    
+    if (filtroEstado !== 'todos') {
+        filtrados = filtrados.filter(function(c) { return c.estado === filtroEstado; });
+    }
+    
+    if (busqueda) {
+        filtrados = filtrados.filter(function(c) {
+            return c.id.toLowerCase().includes(busqueda) ||
+                   c.items.some(function(i) { return i.name.toLowerCase().includes(busqueda); });
+        });
+    }
+    
+    if (filtrados.length === 0) {
+        container.innerHTML = '';
+        vacio.classList.remove('hidden');
+        return;
+    }
+    vacio.classList.add('hidden');
+    
+    let html = '';
+    for (let i = 0; i < filtrados.length; i++) {
+        const c = filtrados[i];
+        const estadoClass = c.estado === 'entregado' ? 'status-available' : 
+                           (c.estado === 'en preparacion' ? 'status-warning' : 
+                           (c.estado === 'pendiente' ? 'status-out-of-stock' : 'status-inactive'));
+        
+        html += '<div class="compra-item" style="background:#faf8fc; border-radius:16px; padding:1rem; border:1px solid var(--border); transition:0.2s;">';
+        html += '<div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.5rem;">';
+        html += '<div>';
+        html += '<div style="font-weight:700; color:var(--text-primary);">' + c.id + '</div>';
+        html += '<div style="font-size:0.8rem; color:var(--text-secondary);"><i class="far fa-calendar-alt"></i> ' + c.fecha + '</div>';
+        html += '<div style="font-size:0.8rem; color:var(--text-secondary);">' + c.items.length + ' productos</div>';
+        html += '</div>';
+        html += '<div style="text-align:right;">';
+        html += '<span class="status-badge ' + estadoClass + '" style="font-size:0.75rem;">' + c.estado.charAt(0).toUpperCase() + c.estado.slice(1) + '</span>';
+        html += '<div style="font-weight:700; color:var(--primary); font-size:1.1rem; margin-top:0.3rem;">$' + c.total.toFixed(2) + '</div>';
+        html += '</div>';
+        html += '</div>';
+        html += '<div style="display:flex; gap:0.5rem; margin-top:0.8rem; flex-wrap:wrap;">';
+        html += '<button class="btn-secondary compra-ver-detalle" data-index="' + i + '" style="padding:0.3rem 1rem; font-size:0.8rem; min-height:32px;">';
+        html += '<i class="fas fa-eye"></i> Ver detalle';
+        html += '</button>';
+        html += '<button class="btn-secondary compra-ver-factura" data-index="' + i + '" style="padding:0.3rem 1rem; font-size:0.8rem; min-height:32px;">';
+        html += '<i class="fas fa-file-invoice"></i> Factura';
+        html += '</button>';
+        html += '</div>';
+        html += '</div>';
+    }
+    container.innerHTML = html;
+    
+    // Eventos de ver detalle
+    container.querySelectorAll('.compra-ver-detalle').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const idx = parseInt(this.getAttribute('data-index'));
+            mostrarDetalleCompra(idx);
+        });
+    });
+    
+    container.querySelectorAll('.compra-ver-factura').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const idx = parseInt(this.getAttribute('data-index'));
+            const compra = historialCompras[idx];
+            if (compra) {
+                generarFactura(compra);
+            }
+        });
+    });
+}
+
+function mostrarDetalleCompra(index) {
+    const compra = historialCompras[index];
+    if (!compra) return;
+    
+    let html = '';
+    html += '<div style="background:var(--card-bg); border-radius:20px; padding:1.5rem; border:1px solid var(--border); max-width:500px; margin:0 auto;">';
+    html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">';
+    html += '<h3 style="font-size:1.1rem;">' + compra.id + '</h3>';
+    html += '<span class="status-badge ' + (compra.estado === 'entregado' ? 'status-available' : 'status-warning') + '">' + compra.estado + '</span>';
+    html += '</div>';
+    html += '<div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.8rem;">Fecha: ' + compra.fecha + '</div>';
+    html += '<div style="border-top:1px solid var(--border); padding-top:0.8rem; margin-bottom:0.8rem;">';
+    html += '<div style="font-weight:600; margin-bottom:0.3rem;">Productos:</div>';
+    for (let i = 0; i < compra.items.length; i++) {
+        const item = compra.items[i];
+        html += '<div style="display:flex; justify-content:space-between; padding:0.2rem 0; font-size:0.9rem;">';
+        html += '<span>' + item.quantity + ' x ' + item.name + '</span>';
+        html += '<span>$' + item.subtotal.toFixed(2) + '</span>';
+        html += '</div>';
+    }
+    html += '</div>';
+    html += '<div style="display:flex; justify-content:space-between; border-top:2px solid var(--border); padding-top:0.8rem; font-weight:700; font-size:1.1rem;">';
+    html += '<span>Total</span>';
+    html += '<span style="color:var(--primary);">$' + compra.total.toFixed(2) + '</span>';
+    html += '</div>';
+    html += '<div style="display:flex; gap:0.8rem; margin-top:1rem;">';
+    html += '<button class="btn-secondary" id="detalle-cerrar" style="flex:1; justify-content:center;">Cerrar</button>';
+    html += '<button class="btn-primary" id="detalle-factura" style="flex:1; justify-content:center;"><i class="fas fa-file-invoice"></i> Factura</button>';
+    html += '</div>';
+    html += '</div>';
+    
+    // Mostrar en modal
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay show';
+    modal.style.display = 'flex';
+    modal.innerHTML = '<div class="modal-box" style="max-width:550px; width:95%; padding:1.5rem; text-align:left;">' + html + '</div>';
+    document.body.appendChild(modal);
+    
+    modal.querySelector('#detalle-cerrar').addEventListener('click', function() {
+        modal.remove();
+    });
+    
+    modal.querySelector('#detalle-factura').addEventListener('click', function() {
+        modal.remove();
+        generarFactura(compra);
+    });
+    
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) modal.remove();
+    });
+}
+
+// Filtros de historial
+document.getElementById('compras-filtro-estado')?.addEventListener('change', renderHistorialCompras);
+document.getElementById('compras-buscar')?.addEventListener('input', renderHistorialCompras);
+
+// Ir a catálogo desde compras vacías
+document.getElementById('compras-ir-catalogo')?.addEventListener('click', function() {
+    showPage('catalogo');
+});
+
+// ============================================================
+// INTEGRACIÓN CON EL MENÚ DE NAVEGACIÓN
+// ============================================================
+
+// Agregar enlaces al navbar (se debe agregar manualmente en el HTML)
+// <li class="user-nav"><a href="#" data-page="checkout">Checkout</a></li>
+// <li class="user-nav"><a href="#" data-page="mis-compras">Mis compras</a></li>
+
+// Event listeners para las nuevas páginas
+document.querySelectorAll('.nav-links a[data-page="checkout"]').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        irAlPaso(1);
+        showPage('checkout');
+    });
+});
+
+document.querySelectorAll('.nav-links a[data-page="mis-compras"]').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        renderHistorialCompras();
+        showPage('mis-compras');
+    });
+});
+
+// Agregar página factura al sistema de navegación
+const pageFactura = document.getElementById('page-factura');
+if (pageFactura) {
+    pages.factura = pageFactura;
+}
+
+// Agregar página mis-compras
+const pageMisCompras = document.getElementById('page-mis-compras');
+if (pageMisCompras) {
+    pages['mis-compras'] = pageMisCompras;
+}
+
+// Agregar página checkout
+const pageCheckout = document.getElementById('page-checkout');
+if (pageCheckout) {
+    pages.checkout = pageCheckout;
+}
+
+// Actualizar showPage para incluir nuevas páginas
+// (si no se actualiza, se puede llamar directamente a las funciones)
+
+console.log('✅ Checkout, Factura e Historial de compras integrados correctamente.');
+
+    // ============================================================
     // INICIALIZACIÓN
     // ============================================================
 

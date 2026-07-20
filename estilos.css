@@ -3107,3 +3107,457 @@ body.admin-mode .user-nav {
     margin: 0.3rem;
     min-width: 120px;
 }
+
+/* ===== CHECKOUT ===== */
+.checkout-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0.5rem;
+}
+
+.step-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    flex: 1;
+    text-align: center;
+    position: relative;
+}
+
+.step-indicator .step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #ede6f5;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    transition: 0.3s;
+}
+
+.step-indicator.active .step-number {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.step-indicator.done .step-number {
+    background: #4caf50;
+    color: white;
+}
+
+.step-indicator .step-label {
+    font-weight: 500;
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+.step-line {
+    flex: 0.5;
+    height: 2px;
+    background: #ede6f5;
+    min-width: 20px;
+}
+
+.step-indicator.done + .step-line {
+    background: #4caf50;
+}
+
+.checkout-card {
+    background: var(--card-bg);
+    border-radius: 24px;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    max-width: 700px;
+    margin: 0 auto;
+    box-shadow: var(--shadow);
+}
+
+@media (min-width: 768px) {
+    .checkout-card { padding: 2rem; }
+}
+
+.checkout-card h3 {
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.checkout-card h3 i { color: var(--primary); }
+
+.checkout-step {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.checkout-step.active { display: block; }
+
+/* Métodos de pago */
+.payment-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.payment-method {
+    background: #faf8fc;
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.payment-method:hover {
+    border-color: #b695e6;
+}
+
+.payment-method.active {
+    border-color: var(--primary);
+    background: #f5ebff;
+}
+
+.payment-method input[type="radio"] {
+    display: none;
+}
+
+.payment-method .payment-method-icon {
+    font-size: 1.4rem;
+    color: var(--primary);
+    width: 40px;
+    text-align: center;
+}
+
+.payment-method span {
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.payment-method .payment-form {
+    width: 100%;
+    margin-top: 0.8rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border);
+    display: none;
+}
+
+.payment-method.active .payment-form {
+    display: block;
+}
+
+.payment-form .form-group {
+    margin-bottom: 0.8rem;
+}
+
+.payment-form .form-group:last-child {
+    margin-bottom: 0;
+}
+
+.payment-form label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+.payment-form input {
+    width: 100%;
+    padding: 0.5rem 0.7rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: white;
+    font-size: 0.9rem;
+    min-height: 40px;
+}
+
+.payment-form input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.order-confirmation {
+    background: #faf8fc;
+    border-radius: 16px;
+    padding: 1.2rem;
+    margin: 1rem 0;
+    border: 1px solid var(--border);
+    text-align: left;
+}
+
+/* ===== FACTURA ===== */
+.factura-container {
+    max-width: 700px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 24px;
+    padding: 2rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+
+@media (min-width: 768px) {
+    .factura-container { padding: 2.5rem; }
+}
+
+.factura-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 1.5rem;
+}
+
+.factura-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.factura-logo i {
+    color: var(--primary);
+    font-size: 1.6rem;
+}
+
+.factura-logo span span {
+    color: var(--primary);
+}
+
+.factura-datos-empresa {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-align: right;
+    line-height: 1.5;
+}
+
+.factura-titulo {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.factura-titulo h2 {
+    font-size: 1.3rem;
+    color: var(--text-primary);
+    letter-spacing: 2px;
+}
+
+.factura-folio {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+    margin-top: 0.3rem;
+}
+
+.factura-cliente {
+    background: #faf8fc;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border);
+}
+
+.factura-cliente h4 {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.factura-cliente-info {
+    display: grid;
+    gap: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.factura-productos {
+    margin-bottom: 1.5rem;
+}
+
+.factura-productos h4 {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.factura-productos table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.factura-productos table th {
+    background: #f0eaf5;
+    padding: 0.4rem 0.5rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.factura-productos table td {
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid #ede6f5;
+}
+
+.factura-productos table tr:last-child td {
+    border-bottom: none;
+}
+
+.factura-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--primary);
+    color: white;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+.factura-total span:last-child {
+    font-size: 1.4rem;
+}
+
+.factura-footer {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.factura-actions {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.factura-actions button {
+    min-width: 140px;
+    justify-content: center;
+}
+
+/* ===== MIS COMPRAS ===== */
+.compras-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.compras-filtros {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (min-width: 480px) {
+    .compras-filtros {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+.compras-buscar {
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    padding: 0 1rem;
+    flex: 1;
+    min-height: 44px;
+}
+
+.compras-buscar i {
+    color: var(--text-secondary);
+    margin-right: 0.5rem;
+}
+
+.compras-buscar input {
+    border: none;
+    padding: 0.5rem 0;
+    flex: 1;
+    font-size: 0.95rem;
+    background: transparent;
+    min-height: 36px;
+}
+
+.compras-buscar input:focus {
+    outline: none;
+}
+
+.compras-filtros select {
+    padding: 0.5rem 1rem;
+    border-radius: 40px;
+    border: 1px solid var(--border);
+    background: white;
+    font-size: 0.9rem;
+    min-height: 44px;
+    min-width: 150px;
+}
+
+.compras-vacio {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: white;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+}
+
+.compras-vacio i {
+    font-size: 3rem;
+    color: #d9c4e8;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.compras-vacio h3 {
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    margin-bottom: 0.3rem;
+}
+
+.compras-vacio p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.compras-lista {
+    display: grid;
+    gap: 1rem;
+}
