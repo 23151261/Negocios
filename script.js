@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // ============================================================
-    // COMENTARIOS DE LA COMUNIDAD (CON COMENTARIOS PRECARGADOS DEL USUARIO)
+    // COMENTARIOS DE LA COMUNIDAD
     // ============================================================
     
     let communityComments = [
@@ -149,7 +149,6 @@ document.addEventListener('DOMContentLoaded', function() {
             date: '12/01/2025 20:10',
             edited: false 
         },
-        // ===== COMENTARIOS DEL USUARIO ACTUAL (precargados) =====
         { 
             id: 5, 
             name: 'Juan Pérez', 
@@ -169,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let nextCommentId = 7;
 
     // ============================================================
-    // C2C - PUBLICACIONES DE USUARIOS (CON 2 PRECARGADAS)
+    // C2C - PUBLICACIONES DE USUARIOS
     // ============================================================
     
     let userPublications = [
@@ -347,7 +346,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function savePublications() {
         try {
             localStorage.setItem('delicias_publications', JSON.stringify(userPublications));
-        } catch (e) {}
+        } catch (e) {
+            console.log('Error guardando publicaciones:', e);
+        }
     }
 
     function saveHistorial() {
@@ -1627,7 +1628,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // FUNCIONES DE MIS COMENTARIOS (EDITAR Y ELIMINAR) - VERSIÓN CON MODAL
+    // FUNCIONES DE MIS COMENTARIOS
     // ============================================================
 
     function renderMisComentarios() {
@@ -1845,7 +1846,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         var resumenPublicaciones = document.getElementById('resumen-publicaciones');
         
-        // La caja de "Compras realizadas" ha sido eliminada del HTML
         if (resumenPublicaciones) resumenPublicaciones.textContent = totalPublicaciones;
 
         var container = document.getElementById('ultimas-publicaciones-list');
@@ -1927,7 +1927,117 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // C2C - PUBLICAR PRODUCTO
+    // FUNCIÓN PARA PUBLICAR PRODUCTO (VERSIÓN CORREGIDA)
+    // ============================================================
+
+    function publicarProducto() {
+        console.log('🔍 Función publicarProducto() ejecutada');
+        
+        // Obtener valores del formulario
+        var nombreInput = document.getElementById('publicar-nombre');
+        var precioInput = document.getElementById('publicar-precio');
+        var categoriaSelect = document.getElementById('publicar-categoria');
+        var descripcionTextarea = document.getElementById('publicar-descripcion');
+        var fotoInput = document.getElementById('publicar-foto');
+        var msg = document.getElementById('publicar-message');
+
+        // Verificar que los elementos existan
+        if (!nombreInput || !precioInput) {
+            console.error('❌ No se encontraron los campos del formulario');
+            if (msg) {
+                msg.className = 'auth-error alert-message';
+                msg.textContent = '❌ Error: No se encontraron los campos del formulario.';
+                msg.classList.remove('hidden');
+            }
+            return;
+        }
+
+        // Tomar valores (si están vacíos, usar valores por defecto)
+        var nombre = nombreInput.value || '';
+        var precio = precioInput.value || '';
+        var categoria = categoriaSelect ? categoriaSelect.value : 'Otros';
+        var descripcion = descripcionTextarea ? descripcionTextarea.value || '' : '';
+        var foto = fotoInput ? fotoInput.value || '' : '';
+
+        console.log('📝 Datos del formulario:', { nombre, precio, categoria, descripcion, foto });
+
+        // Si nombre está vacío, asignar un valor por defecto
+        if (!nombre || nombre.trim() === '') {
+            nombre = 'Producto sin nombre';
+            console.log('📝 Nombre vacío, usando valor por defecto');
+        }
+        
+        // Si precio está vacío, asignar 0
+        var precioNum = parseFloat(precio);
+        if (isNaN(precioNum) || precioNum < 0) {
+            precioNum = 0;
+            console.log('📝 Precio vacío o inválido, usando 0');
+        }
+
+        // Si no hay foto, usar imagen por defecto
+        if (!foto || foto.trim() === '') {
+            foto = 'https://via.placeholder.com/400x250/8b5cf6/ffffff?text=' + encodeURIComponent(nombre || 'Producto');
+            console.log('🖼️ Usando imagen por defecto');
+        }
+
+        // Fecha actual
+        var now = new Date();
+        var dateStr = now.getDate().toString().padStart(2, '0') + '/' + 
+                      (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                      now.getFullYear();
+
+        // Crear el nuevo producto
+        var newPublication = {
+            id: nextPublicationId++,
+            nombre: nombre.trim(),
+            precio: precioNum,
+            categoria: categoria || 'Otros',
+            descripcion: descripcion || '',
+            foto: foto,
+            fecha: dateStr,
+            usuario: currentUser.name || 'Usuario',
+            compras: 0
+        };
+
+        console.log('✅ Nuevo producto creado:', newPublication);
+
+        // Guardar en el array y en localStorage
+        userPublications.push(newPublication);
+        savePublications();
+        
+        // Actualizar la vista
+        renderMisPublicaciones();
+        renderMarketplace();
+
+        // Mostrar mensaje de éxito
+        showFormMessage(msg, '✅ ¡Producto "' + nombre.trim() + '" publicado exitosamente!', 'success');
+        console.log('✅ Producto publicado con éxito');
+
+        // Limpiar el formulario (todos los campos en blanco)
+        nombreInput.value = '';
+        precioInput.value = '';
+        if (categoriaSelect) categoriaSelect.value = 'Otros';
+        if (descripcionTextarea) descripcionTextarea.value = '';
+        if (fotoInput) fotoInput.value = '';
+        
+        // Limpiar vista previa
+        var preview = document.getElementById('publicar-image-preview');
+        if (preview) {
+            preview.innerHTML = '<div class="empty-preview" style="text-align:center; color:#8b5cf6; padding:1rem;">' +
+                '<i class="fas fa-image" style="font-size:2rem; display:block; margin-bottom:0.5rem;" aria-hidden="true"></i>' +
+                '<span>Vista previa</span>' +
+                '</div>';
+        }
+
+        // Redirigir después de un momento
+        setTimeout(function() {
+            console.log('🔀 Redirigiendo a "Mis publicaciones"');
+            showPage('mis-publicaciones');
+        }, 2000);
+    }
+
+    // ============================================================
+    // C2C - MIS PUBLICACIONES
     // ============================================================
 
     function renderMisPublicaciones() {
@@ -1988,61 +2098,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 eliminarPublicacion(id);
             });
         });
-    }
-
-    function publicarProducto() {
-        var nombre = document.getElementById('publicar-nombre')?.value || '';
-        var precio = document.getElementById('publicar-precio')?.value || '';
-        var categoria = document.getElementById('publicar-categoria')?.value || 'Otros';
-        var descripcion = document.getElementById('publicar-descripcion')?.value || '';
-        var foto = document.getElementById('publicar-foto')?.value || '';
-        var msg = document.getElementById('publicar-message');
-
-        if (!nombre || nombre.trim() === '') {
-            nombre = 'Producto sin nombre';
-        }
-        
-        var precioNum = parseFloat(precio);
-        if (isNaN(precioNum) || precioNum < 0) {
-            precioNum = 0;
-        }
-
-        if (!foto) {
-            foto = 'https://via.placeholder.com/400x250/8b5cf6/ffffff?text=Producto';
-        }
-
-        var now = new Date();
-        var dateStr = now.getDate().toString().padStart(2, '0') + '/' + 
-                      (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
-                      now.getFullYear();
-
-        var newPublication = {
-            id: nextPublicationId++,
-            nombre: nombre,
-            precio: precioNum,
-            categoria: categoria || 'Otros',
-            descripcion: descripcion || '',
-            foto: foto,
-            fecha: dateStr,
-            usuario: currentUser.name || 'Usuario',
-            compras: 0
-        };
-
-        userPublications.push(newPublication);
-        savePublications();
-        renderMisPublicaciones();
-
-        showFormMessage(msg, '¡Producto publicado exitosamente!', 'success');
-
-        document.getElementById('publicar-nombre').value = '';
-        document.getElementById('publicar-precio').value = '';
-        document.getElementById('publicar-descripcion').value = '';
-        document.getElementById('publicar-foto').value = '';
-        document.getElementById('publicar-image-preview').innerHTML = '<div class="empty-preview"><i class="fas fa-image" style="font-size:1.5rem; display:block; margin-bottom:0.3rem;" aria-hidden="true"></i>Vista previa</div>';
-
-        setTimeout(function() {
-            showPage('mis-publicaciones');
-        }, 1500);
     }
 
     function editarPublicacion(id) {
@@ -3414,6 +3469,30 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('compras-ir-catalogo')?.addEventListener('click', function() {
         showPage('catalogo');
     });
+
+    // ============================================================
+    // EVENT LISTENER - PUBLICAR PRODUCTO (CORREGIDO)
+    // ============================================================
+
+    // Este es el event listener que faltaba - asigna la función publicarProducto al botón
+    var publicarBtn = document.getElementById('publicar-btn');
+    if (publicarBtn) {
+        publicarBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('🖱️ Botón "Publicar producto" clickeado');
+            publicarProducto();
+        });
+    }
+
+    // También manejar el submit del formulario por si acaso
+    var publicarForm = document.getElementById('publicar-form');
+    if (publicarForm) {
+        publicarForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('📝 Formulario de publicación enviado');
+            publicarProducto();
+        });
+    }
 
     // ============================================================
     // INICIALIZACIÓN
