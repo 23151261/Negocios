@@ -220,6 +220,64 @@ document.addEventListener('DOMContentLoaded', function() {
     let historialCompras = [];
 
     // ============================================================
+    // CHECKOUT - VARIABLES
+    // ============================================================
+    
+    let checkoutCurrentStep = 1;
+    let checkoutData = {
+        direccion: {},
+        metodoPago: 'tarjeta',
+        total: 0,
+        items: []
+    };
+
+    // ============================================================
+    // HISTORIAL DE COMPRAS (PEDIDOS SIMULADOS CON TODOS LOS DATOS)
+    // ============================================================
+
+    const defaultHistorialCompras = [
+        {
+            id: 'DEL-2026-1001',
+            fecha: '15/01/2026 14:30',
+            items: [
+                { name: 'Pizza Margarita', quantity: 2, price: 12.50, subtotal: 25.00 },
+                { name: 'Café de especialidad', quantity: 1, price: 4.20, subtotal: 4.20 }
+            ],
+            total: 29.20,
+            metodo: 'Tarjeta',
+            estado: 'entregado',
+            direccion: {
+                nombre: 'Juan Pérez',
+                email: 'juan.perez@email.com',
+                telefono: '55 1234 5678',
+                direccion: 'Calle Principal 123, Colonia Centro',
+                ciudad: 'Ciudad de México',
+                cp: '12345'
+            }
+        },
+        {
+            id: 'DEL-2026-1002',
+            fecha: '10/01/2026 12:15',
+            items: [
+                { name: 'Hamburguesa Clásica', quantity: 1, price: 10.90, subtotal: 10.90 },
+                { name: 'Ensalada César', quantity: 1, price: 11.80, subtotal: 11.80 },
+                { name: 'Café de especialidad', quantity: 2, price: 4.20, subtotal: 8.40 }
+            ],
+            total: 31.10,
+            metodo: 'Transferencia',
+            estado: 'entregado',
+            direccion: {
+                nombre: 'Juan Pérez',
+                email: 'juan.perez@email.com',
+                telefono: '55 1234 5678',
+                direccion: 'Calle Principal 123, Colonia Centro',
+                ciudad: 'Ciudad de México',
+                cp: '12345'
+            }
+        }
+    ];
+
+    // ============================================================
     // CARGA DE DATOS DESDE LOCALSTORAGE
     // ============================================================
 
@@ -261,8 +319,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const savedHistorial = localStorage.getItem('delicias_historial');
         if (savedHistorial) {
             historialCompras = JSON.parse(savedHistorial);
+        } else {
+            historialCompras = JSON.parse(JSON.stringify(defaultHistorialCompras));
+            saveHistorial();
         }
-    } catch (e) {}
+    } catch (e) {
+        historialCompras = JSON.parse(JSON.stringify(defaultHistorialCompras));
+        saveHistorial();
+    }
 
     const defaultClients = [
         { id: 1, name: 'María García', email: 'maria@email.com', phone: '55 1234 5678', address: 'Av. Principal 123', orders: 8, spent: 340.50, registeredDate: '10/01/2024' },
@@ -429,6 +493,52 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
+    // FUNCIONES DE REDIRECCIÓN DESPUÉS DE LOGIN
+    // ============================================================
+
+    function verificarLoginAntesDeCheckout() {
+        if (!isLoggedIn) {
+            sessionStorage.setItem('redirect_after_login', 'checkout');
+            sessionStorage.setItem('cart_before_login', JSON.stringify(cart));
+            
+            var feedback = document.getElementById('cart-feedback');
+            if (feedback) {
+                setTimeout(function() { 
+                    feedback.style.display = 'none';
+                    closeCart();
+                    showPage('login');
+                }, 2000);
+            } else {
+                closeCart();
+                showPage('login');
+            }
+            return false;
+        }
+        return true;
+    }
+
+    function restaurarCarritoDespuesDeLogin() {
+        var redirectTo = sessionStorage.getItem('redirect_after_login');
+        var savedCart = sessionStorage.getItem('cart_before_login');
+        
+        if (redirectTo === 'checkout' && savedCart) {
+            try {
+                var parsedCart = JSON.parse(savedCart);
+                if (parsedCart && parsedCart.length > 0) {
+                    cart = parsedCart;
+                    saveCart();
+                    updateCartUI();
+                }
+            } catch (e) {}
+            
+            sessionStorage.removeItem('redirect_after_login');
+            sessionStorage.removeItem('cart_before_login');
+            return true;
+        }
+        return false;
+    }
+
+    // ============================================================
     // NAVEGACIÓN - PÁGINAS
     // ============================================================
 
@@ -508,6 +618,10 @@ document.addEventListener('DOMContentLoaded', function() {
             renderCommunityComments();
         }
 
+        if (pageId === 'login') {
+            mostrarMensajeLoginRequerido();
+        }
+
         if (pageId === 'marketplace') {
             renderMarketplace();
             setTimeout(function() {
@@ -581,6 +695,17 @@ document.addEventListener('DOMContentLoaded', function() {
         var statOutOfStock = document.getElementById('stat-out-of-stock');
         if (statProducts) statProducts.textContent = total;
         if (statOutOfStock) statOutOfStock.textContent = outOfStock;
+    }
+
+    function mostrarMensajeLoginRequerido() {
+        var redirectTo = sessionStorage.getItem('redirect_after_login');
+        var mensajeRequerido = document.getElementById('login-requerido');
+        
+        if (redirectTo === 'checkout' && mensajeRequerido) {
+            mensajeRequerido.classList.remove('hidden');
+        } else if (mensajeRequerido) {
+            mensajeRequerido.classList.add('hidden');
+        }
     }
 
     // ============================================================
@@ -883,34 +1008,139 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ============================================================
+    // FUNCIÓN PROCESAR PAGO (CON VERIFICACIÓN DE LOGIN)
+    // ============================================================
+
     function processPayment() {
         if (cart.length === 0) return;
-        var orderItems = cart.map(function(item) {
-            var p = products.find(function(pr) { return pr.id === item.productId; });
-            return { ...item, name: p ? p.name : 'Producto', price: p ? p.price : 0 };
-        });
-        var total = 0;
-        for (var i = 0; i < orderItems.length; i++) {
-            total += orderItems[i].price * orderItems[i].quantity;
+        
+        if (!isLoggedIn) {
+            sessionStorage.setItem('redirect_after_login', 'checkout');
+            sessionStorage.setItem('cart_before_login', JSON.stringify(cart));
+            
+            var feedback = document.getElementById('cart-feedback');
+            if (feedback) {
+                setTimeout(function() { 
+                    feedback.style.display = 'none';
+                    closeCart();
+                    showPage('login');
+                }, 2000);
+            } else {
+                closeCart();
+                showPage('login');
+            }
+            return;
         }
+        
+        var hasItems = false;
+        for (var i = 0; i < cart.length; i++) {
+            if (cart[i].quantity > 0) {
+                hasItems = true;
+                break;
+            }
+        }
+        
+        if (!hasItems) {
+            var feedback = document.getElementById('cart-feedback');
+            if (feedback) {
+                feedback.textContent = '⚠️ Tu carrito está vacío.';
+                feedback.style.display = 'block';
+                feedback.style.background = '#fce4ec';
+                feedback.style.color = '#c62828';
+                feedback.style.borderLeftColor = '#e53935';
+                setTimeout(function() { feedback.style.display = 'none'; }, 3000);
+            }
+            return;
+        }
+        
         closeCart();
-        cart = [];
-        saveCart();
-        updateCartUI();
-
-        var detailsContainer = document.getElementById('success-details');
-        var html = '';
-        for (var j = 0; j < orderItems.length; j++) {
-            var item = orderItems[j];
-            html += '<div class="detail-row"><span>' + item.quantity + ' x ' + item.name + '</span><span>$' + (item.price * item.quantity).toFixed(2) + '</span></div>';
+        showPage('checkout');
+        
+        checkoutCurrentStep = 1;
+        actualizarCheckoutProgress(1);
+        
+        if (isLoggedIn && currentUser) {
+            var nombreInput = document.getElementById('checkout-nombre');
+            var emailInput = document.getElementById('checkout-email');
+            var direccionInput = document.getElementById('checkout-direccion');
+            var telefonoInput = document.getElementById('checkout-telefono');
+            
+            if (nombreInput && currentUser.name) {
+                nombreInput.value = currentUser.name;
+            }
+            if (emailInput && currentUser.email) {
+                emailInput.value = currentUser.email;
+            }
+            if (direccionInput && currentUser.address) {
+                direccionInput.value = currentUser.address;
+            }
+            if (telefonoInput && currentUser.phone) {
+                telefonoInput.value = currentUser.phone;
+            }
         }
-        html += '<div class="detail-row"><span><strong>Total</strong></span><span><strong>$' + total.toFixed(2) + '</strong></span></div>';
-        detailsContainer.innerHTML = html;
-
-        for (var key in pages) {
-            if (pages[key]) pages[key].classList.remove('active');
+        
+        var total = 0;
+        checkoutData.items = [];
+        
+        for (var j = 0; j < cart.length; j++) {
+            var product = products.find(function(p) { return p.id === cart[j].productId; });
+            if (product) {
+                var subtotal = product.price * cart[j].quantity;
+                total += subtotal;
+                checkoutData.items.push({
+                    name: product.name,
+                    quantity: cart[j].quantity,
+                    price: product.price,
+                    subtotal: subtotal
+                });
+            } else if (cart[j].esMarketplace) {
+                var subtotalMP = (cart[j].precio || 0) * cart[j].quantity;
+                total += subtotalMP;
+                checkoutData.items.push({
+                    name: cart[j].nombre || 'Producto marketplace',
+                    quantity: cart[j].quantity,
+                    price: cart[j].precio || 0,
+                    subtotal: subtotalMP
+                });
+            }
         }
-        if (pages.exito) pages.exito.classList.add('active');
+        
+        checkoutData.total = total;
+    }
+
+    // ============================================================
+    // CHECKOUT - FUNCIONES
+    // ============================================================
+
+    function actualizarCheckoutProgress(step) {
+        document.querySelectorAll('.step-indicator').forEach(function(el) {
+            var s = parseInt(el.getAttribute('data-step'));
+            el.classList.remove('active', 'done');
+            if (s === step) {
+                el.classList.add('active');
+            } else if (s < step) {
+                el.classList.add('done');
+            }
+        });
+        
+        document.querySelectorAll('.checkout-step').forEach(function(el) {
+            el.classList.remove('active');
+        });
+        var target = document.getElementById('checkout-step-' + step);
+        if (target) {
+            target.classList.add('active');
+        }
+        
+        var checkoutContainer = document.querySelector('.checkout-card');
+        if (checkoutContainer) {
+            checkoutContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    function irAlPaso(step) {
+        checkoutCurrentStep = step;
+        actualizarCheckoutProgress(step);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -1927,13 +2157,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // FUNCIÓN PARA PUBLICAR PRODUCTO (VERSIÓN CORREGIDA)
+    // FUNCIÓN PARA PUBLICAR PRODUCTO
     // ============================================================
 
     function publicarProducto() {
         console.log('🔍 Función publicarProducto() ejecutada');
         
-        // Obtener valores del formulario
         var nombreInput = document.getElementById('publicar-nombre');
         var precioInput = document.getElementById('publicar-precio');
         var categoriaSelect = document.getElementById('publicar-categoria');
@@ -1941,7 +2170,6 @@ document.addEventListener('DOMContentLoaded', function() {
         var fotoInput = document.getElementById('publicar-foto');
         var msg = document.getElementById('publicar-message');
 
-        // Verificar que los elementos existan
         if (!nombreInput || !precioInput) {
             console.error('❌ No se encontraron los campos del formulario');
             if (msg) {
@@ -1952,7 +2180,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Tomar valores (si están vacíos, usar valores por defecto)
         var nombre = nombreInput.value || '';
         var precio = precioInput.value || '';
         var categoria = categoriaSelect ? categoriaSelect.value : 'Otros';
@@ -1961,32 +2188,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
         console.log('📝 Datos del formulario:', { nombre, precio, categoria, descripcion, foto });
 
-        // Si nombre está vacío, asignar un valor por defecto
         if (!nombre || nombre.trim() === '') {
             nombre = 'Producto sin nombre';
             console.log('📝 Nombre vacío, usando valor por defecto');
         }
         
-        // Si precio está vacío, asignar 0
         var precioNum = parseFloat(precio);
         if (isNaN(precioNum) || precioNum < 0) {
             precioNum = 0;
             console.log('📝 Precio vacío o inválido, usando 0');
         }
 
-        // Si no hay foto, usar imagen por defecto
         if (!foto || foto.trim() === '') {
             foto = 'https://via.placeholder.com/400x250/8b5cf6/ffffff?text=' + encodeURIComponent(nombre || 'Producto');
             console.log('🖼️ Usando imagen por defecto');
         }
 
-        // Fecha actual
         var now = new Date();
         var dateStr = now.getDate().toString().padStart(2, '0') + '/' + 
                       (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
                       now.getFullYear();
 
-        // Crear el nuevo producto
         var newPublication = {
             id: nextPublicationId++,
             nombre: nombre.trim(),
@@ -2001,26 +2223,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
         console.log('✅ Nuevo producto creado:', newPublication);
 
-        // Guardar en el array y en localStorage
         userPublications.push(newPublication);
         savePublications();
         
-        // Actualizar la vista
         renderMisPublicaciones();
         renderMarketplace();
 
-        // Mostrar mensaje de éxito
         showFormMessage(msg, '✅ ¡Producto "' + nombre.trim() + '" publicado exitosamente!', 'success');
         console.log('✅ Producto publicado con éxito');
 
-        // Limpiar el formulario (todos los campos en blanco)
         nombreInput.value = '';
         precioInput.value = '';
         if (categoriaSelect) categoriaSelect.value = 'Otros';
         if (descripcionTextarea) descripcionTextarea.value = '';
         if (fotoInput) fotoInput.value = '';
         
-        // Limpiar vista previa
         var preview = document.getElementById('publicar-image-preview');
         if (preview) {
             preview.innerHTML = '<div class="empty-preview" style="text-align:center; color:#8b5cf6; padding:1rem;">' +
@@ -2029,7 +2246,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 '</div>';
         }
 
-        // Redirigir después de un momento
         setTimeout(function() {
             console.log('🔀 Redirigiendo a "Mis publicaciones"');
             showPage('mis-publicaciones');
@@ -2795,7 +3011,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // EVENT LISTENERS - AUTH
+    // EVENT LISTENERS - AUTH (LOGIN CON REDIRECCIÓN)
     // ============================================================
 
     var registroBtn = document.getElementById('registro-btn');
@@ -2804,10 +3020,40 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             var msg = document.getElementById('registro-message');
             if (msg) showFormMessage(msg, 'Registro exitoso (simulado).', 'success');
+            
+            isLoggedIn = true;
+            isAdmin = false;
+            
             document.getElementById('registro-nombre').value = '';
             document.getElementById('registro-email').value = '';
             document.getElementById('registro-password').value = '';
-            setTimeout(function() { showPage('login'); }, 1500);
+            
+            var redirectTo = sessionStorage.getItem('redirect_after_login');
+            var savedCart = sessionStorage.getItem('cart_before_login');
+            
+            if (redirectTo === 'checkout' && savedCart) {
+                try {
+                    var parsedCart = JSON.parse(savedCart);
+                    if (parsedCart && parsedCart.length > 0) {
+                        cart = parsedCart;
+                        saveCart();
+                        updateCartUI();
+                    }
+                } catch (e) {}
+                
+                sessionStorage.removeItem('redirect_after_login');
+                sessionStorage.removeItem('cart_before_login');
+                
+                setTimeout(function() {
+                    updateNavVisibility();
+                    processPayment();
+                }, 1500);
+            } else {
+                setTimeout(function() {
+                    updateNavVisibility();
+                    showPage('login');
+                }, 1500);
+            }
         });
     }
 
@@ -2821,10 +3067,33 @@ document.addEventListener('DOMContentLoaded', function() {
             if (msg) showFormMessage(msg, 'Inicio de sesión exitoso.', 'success');
             document.getElementById('login-email').value = '';
             document.getElementById('login-password').value = '';
-            setTimeout(function() {
-                updateNavVisibility();
-                showPage('perfil');
-            }, 1500);
+            
+            var redirectTo = sessionStorage.getItem('redirect_after_login');
+            var savedCart = sessionStorage.getItem('cart_before_login');
+            
+            if (redirectTo === 'checkout' && savedCart) {
+                try {
+                    var parsedCart = JSON.parse(savedCart);
+                    if (parsedCart && parsedCart.length > 0) {
+                        cart = parsedCart;
+                        saveCart();
+                        updateCartUI();
+                    }
+                } catch (e) {}
+                
+                sessionStorage.removeItem('redirect_after_login');
+                sessionStorage.removeItem('cart_before_login');
+                
+                setTimeout(function() {
+                    updateNavVisibility();
+                    processPayment();
+                }, 1500);
+            } else {
+                setTimeout(function() {
+                    updateNavVisibility();
+                    showPage('perfil');
+                }, 1500);
+            }
         });
     }
 
@@ -2838,6 +3107,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (msg) showFormMessage(msg, 'Acceso de administrador concedido.', 'success');
             document.getElementById('login-email').value = '';
             document.getElementById('login-password').value = '';
+            sessionStorage.removeItem('redirect_after_login');
+            sessionStorage.removeItem('cart_before_login');
             setTimeout(function() {
                 updateNavVisibility();
                 showPage('admin');
@@ -3103,107 +3374,80 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // CHECKOUT - FUNCIONALIDAD
+    // CHECKOUT - EVENT LISTENERS
     // ============================================================
-
-    let checkoutCurrentStep = 1;
-    let checkoutData = {
-        direccion: {},
-        metodoPago: 'tarjeta',
-        total: 0,
-        items: []
-    };
-
-    function actualizarCheckoutProgress(step) {
-        document.querySelectorAll('.step-indicator').forEach(function(el) {
-            const s = parseInt(el.getAttribute('data-step'));
-            el.classList.remove('active', 'done');
-            if (s === step) el.classList.add('active');
-            else if (s < step) el.classList.add('done');
-        });
-        
-        document.querySelectorAll('.checkout-step').forEach(function(el) {
-            el.classList.remove('active');
-        });
-        const target = document.getElementById('checkout-step-' + step);
-        if (target) target.classList.add('active');
-    }
-
-    function irAlPaso(step) {
-        checkoutCurrentStep = step;
-        actualizarCheckoutProgress(step);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
 
     document.querySelectorAll('.checkout-next-btn').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             
             if (checkoutCurrentStep === 1) {
-                const nombre = document.getElementById('checkout-nombre')?.value || '';
-                const email = document.getElementById('checkout-email')?.value || '';
-                const direccion = document.getElementById('checkout-direccion')?.value || '';
+                var direccion = document.getElementById('checkout-direccion')?.value || '';
+                var nombre = document.getElementById('checkout-nombre')?.value || '';
+                var email = document.getElementById('checkout-email')?.value || '';
+                var telefono = document.getElementById('checkout-telefono')?.value || '';
+                var ciudad = document.getElementById('checkout-ciudad')?.value || '';
+                var cp = document.getElementById('checkout-cp')?.value || '';
                 
                 checkoutData.direccion = {
                     nombre: nombre || '',
                     email: email || '',
-                    telefono: document.getElementById('checkout-telefono')?.value || '',
+                    telefono: telefono || '',
                     direccion: direccion || '',
-                    ciudad: document.getElementById('checkout-ciudad')?.value || '',
-                    cp: document.getElementById('checkout-cp')?.value || ''
+                    ciudad: ciudad || '',
+                    cp: cp || ''
                 };
                 
                 irAlPaso(2);
+                
             } else if (checkoutCurrentStep === 2) {
-                const metodoSeleccionado = document.querySelector('input[name="payment-method"]:checked');
+                var metodoSeleccionado = document.querySelector('input[name="payment-method"]:checked');
                 if (metodoSeleccionado) {
                     checkoutData.metodoPago = metodoSeleccionado.value;
+                } else {
+                    checkoutData.metodoPago = 'tarjeta';
                 }
                 
-                let total = 0;
-                const items = [];
-                for (let i = 0; i < cart.length; i++) {
-                    const p = products.find(function(pr) { return pr.id === cart[i].productId; });
-                    if (p) {
-                        const subtotal = p.price * cart[i].quantity;
-                        total += subtotal;
-                        items.push({
-                            name: p.name,
-                            quantity: cart[i].quantity,
-                            price: p.price,
-                            subtotal: subtotal
-                        });
+                if (checkoutData.items.length === 0) {
+                    for (var i = 0; i < cart.length; i++) {
+                        var p = products.find(function(pr) { return pr.id === cart[i].productId; });
+                        if (p) {
+                            checkoutData.items.push({
+                                name: p.name,
+                                quantity: cart[i].quantity,
+                                price: p.price,
+                                subtotal: p.price * cart[i].quantity
+                            });
+                        } else if (cart[i].esMarketplace) {
+                            checkoutData.items.push({
+                                name: cart[i].nombre || 'Producto marketplace',
+                                quantity: cart[i].quantity,
+                                price: cart[i].precio || 0,
+                                subtotal: (cart[i].precio || 0) * cart[i].quantity
+                            });
+                        }
+                    }
+                    checkoutData.total = 0;
+                    for (var j = 0; j < checkoutData.items.length; j++) {
+                        checkoutData.total += checkoutData.items[j].subtotal;
                     }
                 }
                 
-                for (let i = 0; i < cart.length; i++) {
-                    if (cart[i].esMarketplace) {
-                        items.push({
-                            name: cart[i].nombre || 'Producto marketplace',
-                            quantity: cart[i].quantity,
-                            price: cart[i].precio || 0,
-                            subtotal: (cart[i].precio || 0) * cart[i].quantity
-                        });
-                    }
-                }
-                
-                checkoutData.total = total;
-                checkoutData.items = items;
-                
-                document.getElementById('checkout-total').textContent = '$' + total.toFixed(2);
+                document.getElementById('checkout-total').textContent = '$' + checkoutData.total.toFixed(2);
                 document.getElementById('checkout-payment-method').textContent = 
-                    metodoSeleccionado ? metodoSeleccionado.value.charAt(0).toUpperCase() + metodoSeleccionado.value.slice(1) : 'Tarjeta';
+                    checkoutData.metodoPago.charAt(0).toUpperCase() + checkoutData.metodoPago.slice(1);
                 
-                const numeroPedido = 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000);
+                var numeroPedido = 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000);
                 document.getElementById('checkout-order-number').textContent = '#' + numeroPedido;
                 document.getElementById('checkout-order-date').textContent = new Date().toLocaleString('es-ES');
                 
-                const resumenContainer = document.getElementById('checkout-resumen-items');
-                let htmlResumen = '';
-                for (let i = 0; i < items.length; i++) {
+                var resumenContainer = document.getElementById('checkout-resumen-items');
+                var htmlResumen = '';
+                for (var k = 0; k < checkoutData.items.length; k++) {
+                    var item = checkoutData.items[k];
                     htmlResumen += '<div style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid #ede6f5; font-size:0.9rem;">';
-                    htmlResumen += '<span>' + items[i].quantity + ' x ' + items[i].name + '</span>';
-                    htmlResumen += '<span>$' + items[i].subtotal.toFixed(2) + '</span>';
+                    htmlResumen += '<span>' + item.quantity + ' x ' + item.name + '</span>';
+                    htmlResumen += '<span>$' + item.subtotal.toFixed(2) + '</span>';
                     htmlResumen += '</div>';
                 }
                 resumenContainer.innerHTML = htmlResumen;
@@ -3213,8 +3457,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 guardarCompra({
                     id: numeroPedido,
                     fecha: new Date().toLocaleString('es-ES'),
-                    items: items,
-                    total: total,
+                    items: checkoutData.items,
+                    total: checkoutData.total,
                     metodo: checkoutData.metodoPago,
                     estado: 'entregado'
                 });
@@ -3222,6 +3466,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 cart = [];
                 saveCart();
                 updateCartUI();
+                
+                var mensajeExito = document.querySelector('#checkout-step-3 .checkout-card p');
+                if (mensajeExito) {
+                    mensajeExito.textContent = '✅ ¡Tu compra ha sido confirmada exitosamente!';
+                    mensajeExito.style.color = '#2e7d32';
+                    mensajeExito.style.fontWeight = '500';
+                }
             }
         });
     });
@@ -3249,32 +3500,62 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    document.querySelector('input[name="payment-method"][value="tarjeta"]').checked = true;
+    var defaultPaymentMethod = document.querySelector('input[name="payment-method"][value="tarjeta"]');
+    if (defaultPaymentMethod) {
+        defaultPaymentMethod.checked = true;
+        var defaultMethodContainer = defaultPaymentMethod.closest('.payment-method');
+        if (defaultMethodContainer) {
+            var defaultForm = defaultMethodContainer.querySelector('.payment-form');
+            if (defaultForm) defaultForm.style.display = 'block';
+        }
+    }
 
     document.getElementById('checkout-continuar-btn')?.addEventListener('click', function() {
         showPage('perfil');
     });
 
     // ============================================================
-    // FACTURA - FUNCIONALIDAD
+    // FACTURA - FUNCIONALIDAD (CORREGIDA PARA FUNCIONAR CON MIS COMPRAS)
     // ============================================================
 
     let facturaData = null;
 
     function generarFactura(compra) {
-        facturaData = compra || {
-            folio: 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000),
-            fecha: new Date().toLocaleDateString('es-ES'),
-            hora: new Date().toLocaleTimeString('es-ES'),
+        // Si no hay compra, usar datos por defecto
+        if (!compra) {
+            compra = {
+                id: 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000),
+                fecha: new Date().toLocaleString('es-ES'),
+                items: checkoutData.items || [],
+                total: checkoutData.total || 0,
+                metodo: checkoutData.metodoPago || 'Tarjeta',
+                estado: 'entregado',
+                direccion: checkoutData.direccion || {
+                    nombre: currentUser.name || 'Juan Pérez',
+                    email: currentUser.email || 'juan@email.com',
+                    telefono: currentUser.phone || '55 1234 5678',
+                    direccion: currentUser.address || 'Calle Principal 123, Colonia Centro',
+                    ciudad: 'Ciudad de México',
+                    cp: '12345'
+                }
+            };
+        }
+
+        facturaData = {
+            folio: compra.id || 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000),
+            fecha: compra.fecha || new Date().toLocaleDateString('es-ES'),
+            hora: compra.fecha ? compra.fecha.split(' ')[1] || '12:00' : new Date().toLocaleTimeString('es-ES'),
             cliente: {
-                nombre: currentUser.name || 'Juan Pérez',
-                email: currentUser.email || 'juan@email.com',
-                direccion: currentUser.address || 'Calle Principal 123, Colonia Centro'
+                nombre: compra.direccion?.nombre || currentUser.name || 'Juan Pérez',
+                email: compra.direccion?.email || currentUser.email || 'juan@email.com',
+                direccion: compra.direccion?.direccion || currentUser.address || 'Calle Principal 123, Colonia Centro'
             },
-            items: checkoutData.items || [],
-            total: checkoutData.total || 0
+            items: compra.items || [],
+            total: compra.total || 0,
+            metodo: compra.metodo || 'Tarjeta'
         };
         
+        // Actualizar la factura en el DOM
         document.getElementById('factura-folio').textContent = facturaData.folio;
         document.getElementById('factura-fecha').textContent = facturaData.fecha;
         document.getElementById('factura-hora').textContent = facturaData.hora;
@@ -3284,14 +3565,18 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const tbody = document.getElementById('factura-productos-body');
         let htmlItems = '';
-        for (let i = 0; i < facturaData.items.length; i++) {
-            const item = facturaData.items[i];
-            htmlItems += '<tr>';
-            htmlItems += '<td style="padding:0.3rem 0.5rem;">' + item.quantity + '</td>';
-            htmlItems += '<td style="padding:0.3rem 0.5rem;">' + (item.name || 'Producto') + '</td>';
-            htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + (item.price || 0).toFixed(2) + '</td>';
-            htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + (item.subtotal || 0).toFixed(2) + '</td>';
-            htmlItems += '</tr>';
+        if (facturaData.items && facturaData.items.length > 0) {
+            for (let i = 0; i < facturaData.items.length; i++) {
+                const item = facturaData.items[i];
+                htmlItems += '<tr>';
+                htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:center;">' + (item.quantity || 0) + '</td>';
+                htmlItems += '<td style="padding:0.3rem 0.5rem;">' + (item.name || 'Producto') + '</td>';
+                htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + (item.price || 0).toFixed(2) + '</td>';
+                htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + (item.subtotal || 0).toFixed(2) + '</td>';
+                htmlItems += '</tr>';
+            }
+        } else {
+            htmlItems = '<tr><td colspan="4" style="text-align:center; padding:1rem; color:#6b4f7a;">No hay productos en esta factura.</td></tr>';
         }
         tbody.innerHTML = htmlItems;
         document.getElementById('factura-total').textContent = '$' + (facturaData.total || 0).toFixed(2);
@@ -3306,7 +3591,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('factura-descargar-pdf')?.addEventListener('click', function() {
         const feedback = document.getElementById('factura-feedback');
         feedback.className = 'auth-success alert-message';
-        feedback.textContent = '📄 Descargando PDF (simulado)...';
+        feedback.textContent = '📄 Generando PDF (simulado)...';
         feedback.classList.remove('hidden');
         
         setTimeout(function() {
@@ -3318,7 +3603,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.getElementById('factura-imprimir-btn')?.addEventListener('click', function() {
-        window.print();
+        const feedback = document.getElementById('factura-feedback');
+        feedback.className = 'auth-success alert-message';
+        feedback.textContent = '🖨️ Enviando a impresión (simulado)...';
+        feedback.classList.remove('hidden');
+        
+        setTimeout(function() {
+            feedback.textContent = '✅ Impresión enviada correctamente (simulación)';
+            setTimeout(function() {
+                feedback.classList.add('hidden');
+            }, 2000);
+        }, 1500);
     });
 
     document.getElementById('factura-volver-btn')?.addEventListener('click', function() {
@@ -3326,7 +3621,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ============================================================
-    // HISTORIAL DE COMPRAS
+    // HISTORIAL DE COMPRAS (CORREGIDO)
     // ============================================================
 
     function guardarCompra(compra) {
@@ -3368,24 +3663,45 @@ document.addEventListener('DOMContentLoaded', function() {
                                (c.estado === 'en preparacion' ? 'status-warning' : 
                                (c.estado === 'pendiente' ? 'status-out-of-stock' : 'status-inactive'));
             
-            html += '<div class="compra-item" style="background:#faf8fc; border-radius:16px; padding:1rem; border:1px solid var(--border); transition:0.2s;">';
+            let estadoIcon = '';
+            if (c.estado === 'entregado') estadoIcon = '✅';
+            else if (c.estado === 'en preparacion') estadoIcon = '🔄';
+            else if (c.estado === 'pendiente') estadoIcon = '⏳';
+            
+            html += '<div class="compra-item" style="background:#faf8fc; border-radius:16px; padding:1rem; border:1px solid var(--border); transition:0.2s; margin-bottom:0.8rem;">';
             html += '<div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.5rem;">';
-            html += '<div>';
-            html += '<div style="font-weight:700; color:var(--text-primary);">' + (c.id || '') + '</div>';
-            html += '<div style="font-size:0.8rem; color:var(--text-secondary);"><i class="far fa-calendar-alt"></i> ' + (c.fecha || '') + '</div>';
-            html += '<div style="font-size:0.8rem; color:var(--text-secondary);">' + (c.items ? c.items.length : 0) + ' productos</div>';
+            html += '<div style="flex:1;">';
+            html += '<div style="font-weight:700; color:var(--text-primary); font-size:1rem;">' + (c.id || '') + '</div>';
+            html += '<div style="font-size:0.85rem; color:var(--text-secondary); margin-top:0.2rem;">';
+            html += '<i class="far fa-calendar-alt" style="margin-right:0.3rem;"></i> ' + (c.fecha || '');
             html += '</div>';
-            html += '<div style="text-align:right;">';
-            html += '<span class="status-badge ' + estadoClass + '" style="font-size:0.75rem;">' + (c.estado ? c.estado.charAt(0).toUpperCase() + c.estado.slice(1) : '') + '</span>';
-            html += '<div style="font-weight:700; color:var(--primary); font-size:1.1rem; margin-top:0.3rem;">$' + (c.total || 0).toFixed(2) + '</div>';
+            html += '<div style="font-size:0.85rem; color:var(--text-secondary);">';
+            html += '<i class="fas fa-credit-card" style="margin-right:0.3rem;"></i> ' + (c.metodo || '') + ' · ' + (c.items ? c.items.length : 0) + ' productos';
+            html += '</div>';
+            html += '<div style="margin-top:0.3rem; display:flex; flex-wrap:wrap; gap:0.3rem;">';
+            if (c.items && c.items.length > 0) {
+                var itemsMostrar = c.items.slice(0, 3);
+                for (var j = 0; j < itemsMostrar.length; j++) {
+                    html += '<span style="background:#ede6f5; padding:0.1rem 0.6rem; border-radius:12px; font-size:0.7rem; color:var(--text-secondary);">';
+                    html += itemsMostrar[j].quantity + 'x ' + itemsMostrar[j].name;
+                    html += '</span>';
+                }
+                if (c.items.length > 3) {
+                    html += '<span style="background:#ede6f5; padding:0.1rem 0.6rem; border-radius:12px; font-size:0.7rem; color:var(--text-secondary);">';
+                    html += '+' + (c.items.length - 3) + ' más';
+                    html += '</span>';
+                }
+            }
             html += '</div>';
             html += '</div>';
-            html += '<div style="display:flex; gap:0.5rem; margin-top:0.8rem; flex-wrap:wrap;">';
-            html += '<button class="btn-secondary compra-ver-detalle" data-index="' + i + '" style="padding:0.3rem 1rem; font-size:0.8rem; min-height:32px;">';
-            html += '<i class="fas fa-eye"></i> Ver detalle';
-            html += '</button>';
-            html += '<button class="btn-secondary compra-ver-factura" data-index="' + i + '" style="padding:0.3rem 1rem; font-size:0.8rem; min-height:32px;">';
-            html += '<i class="fas fa-file-invoice"></i> Factura';
+            html += '<div style="text-align:right; min-width:100px;">';
+            html += '<span class="status-badge ' + estadoClass + '" style="font-size:0.75rem;">' + estadoIcon + ' ' + (c.estado ? c.estado.charAt(0).toUpperCase() + c.estado.slice(1) : '') + '</span>';
+            html += '<div style="font-weight:700; color:var(--primary); font-size:1.2rem; margin-top:0.3rem;">$' + (c.total || 0).toFixed(2) + '</div>';
+            html += '</div>';
+            html += '</div>';
+            html += '<div style="display:flex; gap:0.5rem; margin-top:0.8rem; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:0.8rem;">';
+            html += '<button class="btn-secondary compra-ver-detalle" data-index="' + i + '" style="padding:0.4rem 1rem; font-size:0.85rem; min-height:36px; width:100%; justify-content:center;">';
+            html += '<i class="fas fa-eye"></i> Ver detalle / Factura';
             html += '</button>';
             html += '</div>';
             html += '</div>';
@@ -3395,71 +3711,13 @@ document.addEventListener('DOMContentLoaded', function() {
         container.querySelectorAll('.compra-ver-detalle').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 const idx = parseInt(this.getAttribute('data-index'));
-                mostrarDetalleCompra(idx);
-            });
-        });
-        
-        container.querySelectorAll('.compra-ver-factura').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                const idx = parseInt(this.getAttribute('data-index'));
                 const compra = historialCompras[idx];
                 if (compra) {
                     generarFactura(compra);
+                } else {
+                    console.error('Compra no encontrada:', idx);
                 }
             });
-        });
-    }
-
-    function mostrarDetalleCompra(index) {
-        const compra = historialCompras[index];
-        if (!compra) return;
-        
-        let html = '';
-        html += '<div style="background:var(--card-bg); border-radius:20px; padding:1.5rem; border:1px solid var(--border); max-width:500px; margin:0 auto;">';
-        html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">';
-        html += '<h3 style="font-size:1.1rem;">' + (compra.id || '') + '</h3>';
-        html += '<span class="status-badge ' + (compra.estado === 'entregado' ? 'status-available' : 'status-warning') + '">' + (compra.estado || '') + '</span>';
-        html += '</div>';
-        html += '<div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.8rem;">Fecha: ' + (compra.fecha || '') + '</div>';
-        html += '<div style="border-top:1px solid var(--border); padding-top:0.8rem; margin-bottom:0.8rem;">';
-        html += '<div style="font-weight:600; margin-bottom:0.3rem;">Productos:</div>';
-        if (compra.items) {
-            for (let i = 0; i < compra.items.length; i++) {
-                const item = compra.items[i];
-                html += '<div style="display:flex; justify-content:space-between; padding:0.2rem 0; font-size:0.9rem;">';
-                html += '<span>' + (item.quantity || 0) + ' x ' + (item.name || 'Producto') + '</span>';
-                html += '<span>$' + (item.subtotal || 0).toFixed(2) + '</span>';
-                html += '</div>';
-            }
-        }
-        html += '</div>';
-        html += '<div style="display:flex; justify-content:space-between; border-top:2px solid var(--border); padding-top:0.8rem; font-weight:700; font-size:1.1rem;">';
-        html += '<span>Total</span>';
-        html += '<span style="color:var(--primary);">$' + (compra.total || 0).toFixed(2) + '</span>';
-        html += '</div>';
-        html += '<div style="display:flex; gap:0.8rem; margin-top:1rem;">';
-        html += '<button class="btn-secondary" id="detalle-cerrar" style="flex:1; justify-content:center;">Cerrar</button>';
-        html += '<button class="btn-primary" id="detalle-factura" style="flex:1; justify-content:center;"><i class="fas fa-file-invoice"></i> Factura</button>';
-        html += '</div>';
-        html += '</div>';
-        
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay show';
-        modal.style.display = 'flex';
-        modal.innerHTML = '<div class="modal-box" style="max-width:550px; width:95%; padding:1.5rem; text-align:left;">' + html + '</div>';
-        document.body.appendChild(modal);
-        
-        modal.querySelector('#detalle-cerrar').addEventListener('click', function() {
-            modal.remove();
-        });
-        
-        modal.querySelector('#detalle-factura').addEventListener('click', function() {
-            modal.remove();
-            generarFactura(compra);
-        });
-        
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) modal.remove();
         });
     }
 
@@ -3471,10 +3729,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ============================================================
-    // EVENT LISTENER - PUBLICAR PRODUCTO (CORREGIDO)
+    // EVENT LISTENER - PUBLICAR PRODUCTO
     // ============================================================
 
-    // Este es el event listener que faltaba - asigna la función publicarProducto al botón
     var publicarBtn = document.getElementById('publicar-btn');
     if (publicarBtn) {
         publicarBtn.addEventListener('click', function(e) {
@@ -3484,7 +3741,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // También manejar el submit del formulario por si acaso
     var publicarForm = document.getElementById('publicar-form');
     if (publicarForm) {
         publicarForm.addEventListener('submit', function(e) {
@@ -3511,6 +3767,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateCartUI();
     updateNavVisibility();
     updateDashboardStats();
+    renderHistorialCompras();
     showPage('inicio');
 
 });

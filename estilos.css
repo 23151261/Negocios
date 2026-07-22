@@ -3781,39 +3781,3 @@ body.admin-mode .user-nav {
     margin-bottom: 0.3rem;
     font-size: 0.9rem;
 }
-
-/* ===== MODAL EDITAR COMENTARIO ===== */
-#edit-comment-modal .modal-box {
-    max-width: 500px;
-    text-align: left;
-}
-
-#edit-comment-modal .modal-box .modal-icon {
-    text-align: center;
-}
-
-#edit-comment-modal .modal-box textarea {
-    width: 100%;
-    padding: 0.7rem 0.9rem;
-    border-radius: 14px;
-    border: 1px solid var(--border);
-    background: #faf8fc;
-    font-size: 0.95rem;
-    resize: vertical;
-    min-height: 100px;
-    font-family: inherit;
-}
-
-#edit-comment-modal .modal-box textarea:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
-}
-
-#edit-comment-modal .modal-box label {
-    font-weight: 600;
-    color: var(--text-primary);
-    display: block;
-    margin-bottom: 0.3rem;
-    font-size: 0.9rem;
-}
