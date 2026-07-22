@@ -2522,7 +2522,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const feedback = document.getElementById('subasta-feedback-main');
             if (feedback) {
                 feedback.style.display = 'block';
-                feedback.textContent = '⚠️ Por favor ingresa una oferta válida mayor a 0.';
+                feedback.textContent = 'Por favor ingresa una oferta válida mayor a 0.';
                 feedback.className = 'subasta-feedback error';
             }
             return;
@@ -3513,9 +3513,197 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('checkout-continuar-btn')?.addEventListener('click', function() {
         showPage('perfil');
     });
+    
+    // ============================================================
+    // CHECKOUT - CONFIRMAR COMPRA (PASO 3)
+    // ============================================================
+
+    document.getElementById('confirmar-compra-btn')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // 1. Verificar que se hayan aceptado los términos
+        const terminosCheckbox = document.getElementById('aceptar-terminos');
+        const terminosError = document.getElementById('terminos-error');
+        
+        if (!terminosCheckbox || !terminosCheckbox.checked) {
+            if (terminosError) {
+                terminosError.style.display = 'block';
+                // Ocultar el error después de 3 segundos
+                setTimeout(function() {
+                    terminosError.style.display = 'none';
+                }, 3000);
+            }
+            return;
+        }
+        
+        // Ocultar error si existe
+        if (terminosError) {
+            terminosError.style.display = 'none';
+        }
+        
+        // 2. Preparar los datos del pedido
+        const total = checkoutData.total || calcularTotalCheckout();
+        const items = checkoutData.items || obtenerItemsCheckout();
+        const metodo = checkoutData.metodoPago || 'Tarjeta';
+        const direccion = checkoutData.direccion || {
+            nombre: currentUser.name || 'Juan Pérez',
+            email: currentUser.email || 'juan@email.com',
+            telefono: currentUser.phone || '55 1234 5678',
+            direccion: currentUser.address || 'Calle Principal 123, Colonia Centro',
+            ciudad: 'Ciudad de México',
+            cp: '12345'
+        };
+        
+        // 3. Crear el número de pedido
+        const numeroPedido = 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000);
+        const fecha = new Date().toLocaleString('es-ES');
+        
+        // 4. Guardar en el historial
+        const compra = {
+            id: numeroPedido,
+            fecha: fecha,
+            items: items,
+            total: total,
+            metodo: metodo,
+            estado: 'entregado',
+            direccion: direccion
+        };
+        
+        // 5. Guardar en el historial
+        historialCompras.unshift(compra);
+        saveHistorial();
+        
+        // 6. Vaciar el carrito
+        cart = [];
+        saveCart();
+        updateCartUI();
+        
+        // 7. Actualizar la interfaz del paso 3 - mostrar la sección de éxito
+        document.getElementById('confirmacion-terminos').style.display = 'none';
+        document.getElementById('confirmacion-exito').style.display = 'block';
+        
+        // 8. Actualizar los datos en la sección de éxito
+        document.getElementById('checkout-order-number').textContent = '#' + numeroPedido;
+        document.getElementById('checkout-order-date').textContent = fecha;
+        document.getElementById('checkout-payment-method').textContent = metodo.charAt(0).toUpperCase() + metodo.slice(1);
+        document.getElementById('checkout-total').textContent = '$' + total.toFixed(2);
+        
+        // 9. Generar resumen de items
+        const resumenContainer = document.getElementById('checkout-resumen-items');
+        if (resumenContainer) {
+            let htmlResumen = '';
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                htmlResumen += '<div style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid #ede6f5; font-size:0.9rem;">';
+                htmlResumen += '<span>' + (item.quantity || 1) + 'x ' + (item.name || 'Producto') + '</span>';
+                htmlResumen += '<span>$' + (item.subtotal || (item.price * item.quantity) || 0).toFixed(2) + '</span>';
+                htmlResumen += '</div>';
+            }
+            resumenContainer.innerHTML = htmlResumen;
+        }
+        
+        // 10. Guardar los datos de la compra para la factura
+        facturaData = {
+            folio: numeroPedido,
+            fecha: fecha.split(' ')[0] || new Date().toLocaleDateString('es-ES'),
+            hora: fecha.split(' ')[1] || new Date().toLocaleTimeString('es-ES'),
+            cliente: {
+                nombre: direccion.nombre || currentUser.name || 'Juan Pérez',
+                email: direccion.email || currentUser.email || 'juan@email.com',
+                direccion: direccion.direccion || currentUser.address || 'Calle Principal 123, Colonia Centro'
+            },
+            items: items,
+            total: total,
+            metodo: metodo
+        };
+        
+        console.log('✅ Compra confirmada:', facturaData);
+    });
 
     // ============================================================
-    // FACTURA - FUNCIONALIDAD (CORREGIDA PARA FUNCIONAR CON MIS COMPRAS)
+    // FUNCIONES DE APOYO PARA CHECKOUT
+    // ============================================================
+
+    function calcularTotalCheckout() {
+        let total = 0;
+        for (let i = 0; i < cart.length; i++) {
+            const product = products.find(function(p) { return p.id === cart[i].productId; });
+            if (product) {
+                total += product.price * cart[i].quantity;
+            } else if (cart[i].esMarketplace) {
+                total += (cart[i].precio || 0) * cart[i].quantity;
+            }
+        }
+        return total;
+    }
+
+    function obtenerItemsCheckout() {
+        const items = [];
+        for (let i = 0; i < cart.length; i++) {
+            const product = products.find(function(p) { return p.id === cart[i].productId; });
+            if (product) {
+                items.push({
+                    name: product.name,
+                    quantity: cart[i].quantity,
+                    price: product.price,
+                    subtotal: product.price * cart[i].quantity
+                });
+            } else if (cart[i].esMarketplace) {
+                items.push({
+                    name: cart[i].nombre || 'Producto marketplace',
+                    quantity: cart[i].quantity,
+                    price: cart[i].precio || 0,
+                    subtotal: (cart[i].precio || 0) * cart[i].quantity
+                });
+            }
+        }
+        return items;
+    }
+
+    // ============================================================
+    // BOTÓN "VER FACTURA" - REDIRIGE AL TICKET
+    // ============================================================
+
+    document.getElementById('checkout-generar-factura')?.addEventListener('click', function() {
+        // Verificar si hay datos del ticket
+        if (ticketData) {
+            // Mostrar el ticket directamente
+            document.getElementById('ticket-view').style.display = 'block';
+            document.getElementById('factura-fiscal-view').style.display = 'none';
+            document.getElementById('factura-generada-view').style.display = 'none';
+            showPage('factura');
+        } else {
+            // Si no hay datos, crear un ticket con los datos del checkout
+            const compra = {
+                id: 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000),
+                fecha: new Date().toLocaleString('es-ES'),
+                items: checkoutData.items || obtenerItemsCheckout(),
+                total: checkoutData.total || calcularTotalCheckout(),
+                metodo: checkoutData.metodoPago || 'Tarjeta',
+                estado: 'entregado',
+                direccion: checkoutData.direccion || {
+                    nombre: currentUser.name || 'Juan Pérez',
+                    email: currentUser.email || 'juan@email.com',
+                    telefono: currentUser.phone || '55 1234 5678',
+                    direccion: currentUser.address || 'Calle Principal 123, Colonia Centro',
+                    ciudad: 'Ciudad de México',
+                    cp: '12345'
+                }
+            };
+            mostrarTicket(compra);
+        }
+    });
+
+    // ============================================================
+    // BOTÓN "CONTINUAR" DEL PASO DE ÉXITO
+    // ============================================================
+
+    document.getElementById('checkout-continuar-btn')?.addEventListener('click', function() {
+        showPage('perfil');
+    });
+
+    // ============================================================
+    // FACTURA - FUNCIONALIDAD 
     // ============================================================
 
     let facturaData = null;
@@ -3583,10 +3771,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         showPage('factura');
     }
-
-    document.getElementById('checkout-generar-factura')?.addEventListener('click', function() {
-        generarFactura();
-    });
 
     document.getElementById('factura-descargar-pdf')?.addEventListener('click', function() {
         const feedback = document.getElementById('factura-feedback');
@@ -3701,7 +3885,7 @@ document.addEventListener('DOMContentLoaded', function() {
             html += '</div>';
             html += '<div style="display:flex; gap:0.5rem; margin-top:0.8rem; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:0.8rem;">';
             html += '<button class="btn-secondary compra-ver-detalle" data-index="' + i + '" style="padding:0.4rem 1rem; font-size:0.85rem; min-height:36px; width:100%; justify-content:center;">';
-            html += '<i class="fas fa-eye"></i> Ver detalle / Factura';
+            html += '<i class="fas fa-eye"></i> Ver detalle';
             html += '</button>';
             html += '</div>';
             html += '</div>';
@@ -3749,6 +3933,265 @@ document.addEventListener('DOMContentLoaded', function() {
             publicarProducto();
         });
     }
+
+    // ============================================================
+    // FACTURA - VARIABLES GLOBALES
+    // ============================================================
+
+    let ticketData = null;
+    let facturaFiscalData = null;
+
+    // ============================================================
+    // FUNCIÓN PARA MOSTRAR TICKET DESDE CHECKOUT
+    // ============================================================
+
+    function mostrarTicket(compra) {
+        // Si no hay compra, usar datos del checkout
+        if (!compra) {
+            compra = {
+                id: 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000),
+                fecha: new Date().toLocaleString('es-ES'),
+                items: checkoutData.items || obtenerItemsCheckout(),
+                total: checkoutData.total || calcularTotalCheckout(),
+                metodo: checkoutData.metodoPago || 'Tarjeta',
+                estado: 'entregado',
+                direccion: checkoutData.direccion || {
+                    nombre: currentUser.name || 'Juan Pérez',
+                    email: currentUser.email || 'juan@email.com',
+                    telefono: currentUser.phone || '55 1234 5678',
+                    direccion: currentUser.address || 'Calle Principal 123, Colonia Centro',
+                    ciudad: 'Ciudad de México',
+                    cp: '12345'
+                }
+            };
+        }
+
+        // Guardar datos del ticket
+        ticketData = {
+            folio: compra.id || 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000),
+            fecha: compra.fecha || new Date().toLocaleString('es-ES'),
+            hora: compra.fecha ? compra.fecha.split(' ')[1] || '12:00' : new Date().toLocaleTimeString('es-ES'),
+            cliente: {
+                nombre: compra.direccion?.nombre || currentUser.name || 'Juan Pérez',
+                email: compra.direccion?.email || currentUser.email || 'juan@email.com',
+                direccion: compra.direccion?.direccion || currentUser.address || 'Calle Principal 123, Colonia Centro'
+            },
+            items: compra.items || [],
+            total: compra.total || 0,
+            metodo: compra.metodo || 'Tarjeta'
+        };
+
+        // Actualizar ticket en DOM
+        document.getElementById('ticket-folio').textContent = ticketData.folio;
+        document.getElementById('ticket-fecha').textContent = ticketData.fecha;
+        document.getElementById('ticket-hora').textContent = ticketData.hora;
+        document.getElementById('ticket-cliente-nombre').textContent = ticketData.cliente.nombre;
+        document.getElementById('ticket-cliente-email').textContent = ticketData.cliente.email;
+        document.getElementById('ticket-cliente-direccion').textContent = ticketData.cliente.direccion;
+
+        // Productos
+        const tbody = document.getElementById('ticket-productos-body');
+        let htmlItems = '';
+        if (ticketData.items && ticketData.items.length > 0) {
+            for (let i = 0; i < ticketData.items.length; i++) {
+                const item = ticketData.items[i];
+                htmlItems += '<tr>';
+                htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:center;">' + (item.quantity || 0) + '</td>';
+                htmlItems += '<td style="padding:0.3rem 0.5rem;">' + (item.name || 'Producto') + '</td>';
+                htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + (item.price || 0).toFixed(2) + '</td>';
+                htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + (item.subtotal || (item.price * item.quantity) || 0).toFixed(2) + '</td>';
+                htmlItems += '</tr>';
+            }
+        } else {
+            htmlItems = '<tr><td colspan="4" style="text-align:center; padding:1rem; color:#6b4f7a;">No hay productos en este ticket.</td></tr>';
+        }
+        tbody.innerHTML = htmlItems;
+        document.getElementById('ticket-total').textContent = '$' + (ticketData.total || 0).toFixed(2);
+
+        // Ocultar feedback
+        const feedback = document.getElementById('ticket-feedback');
+        if (feedback) {
+            feedback.classList.add('hidden');
+            feedback.textContent = '';
+            feedback.className = 'hidden alert-message';
+        }
+
+        // Mostrar ticket, ocultar factura fiscal
+        document.getElementById('ticket-view').style.display = 'block';
+        document.getElementById('factura-fiscal-view').style.display = 'none';
+        document.getElementById('factura-generada-view').style.display = 'none';
+
+        showPage('factura');
+    }
+
+    // ============================================================
+    // FUNCIÓN PARA IR A FACTURA FISCAL DESDE TICKET
+    // ============================================================
+
+    function irAFacturaFiscal() {
+        // Cargar datos del ticket en la factura fiscal
+        document.getElementById('factura-folio-generada').textContent = ticketData.folio;
+        document.getElementById('factura-fecha-generada').textContent = ticketData.fecha;
+        document.getElementById('factura-hora-generada').textContent = ticketData.hora;
+        document.getElementById('factura-show-cliente-nombre').textContent = ticketData.cliente.nombre;
+        document.getElementById('factura-show-cliente-email').textContent = ticketData.cliente.email;
+        document.getElementById('factura-show-cliente-direccion').textContent = ticketData.cliente.direccion;
+
+        // Productos
+        const tbody = document.getElementById('factura-productos-body-generada');
+        let htmlItems = '';
+        if (ticketData.items && ticketData.items.length > 0) {
+            for (let i = 0; i < ticketData.items.length; i++) {
+                const item = ticketData.items[i];
+                htmlItems += '<tr>';
+                htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:center;">' + (item.quantity || 0) + '</td>';
+                htmlItems += '<td style="padding:0.3rem 0.5rem;">' + (item.name || 'Producto') + '</td>';
+                htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + (item.price || 0).toFixed(2) + '</td>';
+                htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + (item.subtotal || (item.price * item.quantity) || 0).toFixed(2) + '</td>';
+                htmlItems += '</tr>';
+            }
+        } else {
+            htmlItems = '<tr><td colspan="4" style="text-align:center; padding:1rem; color:#6b4f7a;">No hay productos en esta factura.</td></tr>';
+        }
+        tbody.innerHTML = htmlItems;
+        document.getElementById('factura-total-generada').textContent = '$' + (ticketData.total || 0).toFixed(2);
+
+        // Limpiar formulario
+        document.getElementById('factura-rfc').value = '';
+        document.getElementById('factura-razon-social').value = '';
+        document.getElementById('factura-regimen').value = 'Régimen General de Ley';
+        document.getElementById('factura-cp').value = '';
+        document.getElementById('factura-uso-cfdi').value = 'G01 - Adquisición de mercancias';
+        
+        const feedback = document.getElementById('factura-fiscal-feedback');
+        if (feedback) {
+            feedback.classList.add('hidden');
+            feedback.textContent = '';
+            feedback.className = 'hidden alert-message';
+        }
+
+        // Ocultar generada, mostrar formulario
+        document.getElementById('factura-generada-view').style.display = 'none';
+        document.getElementById('factura-fiscal-view').style.display = 'block';
+        document.getElementById('ticket-view').style.display = 'none';
+
+        // Scroll al inicio
+        document.querySelector('.factura-container').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ============================================================
+    // FUNCIÓN PARA GENERAR FACTURA (simulada)
+    // ============================================================
+
+    function generarFacturaFiscal() {
+        const rfc = document.getElementById('factura-rfc').value.trim().toUpperCase();
+        const razonSocial = document.getElementById('factura-razon-social').value.trim();
+        const regimen = document.getElementById('factura-regimen').value;
+        const cp = document.getElementById('factura-cp').value.trim();
+        const uso = document.getElementById('factura-uso-cfdi').value;
+        const feedback = document.getElementById('factura-fiscal-feedback');
+
+       
+        // Guardar datos fiscales
+        facturaFiscalData = {
+            rfc: rfc,
+            razonSocial: razonSocial,
+            regimen: regimen,
+            cp: cp || 'No especificado',
+            uso: uso
+        };
+
+        // Mostrar en la vista generada
+        document.getElementById('factura-show-rfc').textContent = rfc;
+        document.getElementById('factura-show-razon').textContent = razonSocial;
+        document.getElementById('factura-show-regimen').textContent = regimen;
+        document.getElementById('factura-show-cp').textContent = cp || 'No especificado';
+        document.getElementById('factura-show-uso').textContent = uso;
+
+        // Ocultar formulario, mostrar factura generada
+        document.getElementById('factura-fiscal-view').querySelector('form').style.display = 'none';
+        document.getElementById('factura-generada-view').style.display = 'block';
+
+        // Feedback de éxito
+        showFormMessage(feedback, '✅ Factura CFDI generada correctamente.', 'success');
+
+        // Scroll a la factura generada
+        document.getElementById('factura-generada-view').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ============================================================
+    // FUNCIÓN PARA DESCARGAR PDF (vincular a Factura.pdf)
+    // ============================================================
+
+    function descargarFacturaPDF() {
+        const feedback = document.getElementById('factura-generada-feedback');
+        
+        // Mostrar feedback de descarga
+        if (feedback) {
+            feedback.className = 'auth-success alert-message';
+            feedback.textContent = '📄 Descargando factura...';
+            feedback.classList.remove('hidden');
+        }
+
+        // Simular descarga - ABRIR EL ARCHIVO Factura.pdf
+        setTimeout(function() {
+            // Abrir el PDF en una nueva ventana/pestaña
+            window.open('Factura.pdf', '_blank');
+            
+            if (feedback) {
+                feedback.textContent = '✅ Factura descargada correctamente.';
+                feedback.className = 'auth-success alert-message';
+                setTimeout(function() {
+                    feedback.classList.add('hidden');
+                }, 3000);
+            }
+        }, 800);
+    }
+
+    // ============================================================
+    // EVENT LISTENERS - FACTURA
+    // ============================================================
+
+    // Botón "Descargar Factura Fiscal" desde el ticket
+    document.getElementById('ticket-facturar-btn')?.addEventListener('click', function() {
+        irAFacturaFiscal();
+    });
+
+    // Botón "Volver atrás" desde el ticket
+    document.getElementById('ticket-volver-btn')?.addEventListener('click', function() {
+        showPage('perfil');
+    });
+
+    // Botón "Generar Factura" desde el formulario
+    document.getElementById('factura-generar-btn')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        generarFacturaFiscal();
+    });
+
+    // Botón "Volver atrás" desde el formulario de factura
+    document.getElementById('factura-volver-ticket-btn')?.addEventListener('click', function() {
+        document.getElementById('factura-fiscal-view').style.display = 'none';
+        document.getElementById('ticket-view').style.display = 'block';
+        document.getElementById('factura-generada-view').style.display = 'none';
+        // Restaurar formulario
+        document.getElementById('factura-fiscal-view').querySelector('form').style.display = 'block';
+        const feedback = document.getElementById('factura-fiscal-feedback');
+        if (feedback) {
+            feedback.classList.add('hidden');
+            feedback.textContent = '';
+            feedback.className = 'hidden alert-message';
+        }
+    });
+
+    // Botón "Descargar PDF" desde la factura generada
+    document.getElementById('factura-descargar-pdf-btn')?.addEventListener('click', function() {
+        descargarFacturaPDF();
+    });
+
+    // Botón "Volver atrás" desde la factura generada
+    document.getElementById('factura-volver-final-btn')?.addEventListener('click', function() {
+        showPage('perfil');
+    });
 
     // ============================================================
     // INICIALIZACIÓN
