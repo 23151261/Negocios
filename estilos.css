@@ -3576,6 +3576,89 @@ body.admin-mode .user-nav {
     justify-content: center;
 }
 
+/* ===== FACTURA - VISTAS ===== */
+.factura-view {
+    animation: fadeIn 0.3s ease;
+}
+
+.factura-container .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 480px) {
+    .factura-container .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.factura-container .form-group {
+    margin-bottom: 1rem;
+}
+
+.factura-container .form-group label {
+    font-weight: 600;
+    color: var(--text-primary);
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.factura-container .form-group input,
+.factura-container .form-group select {
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: #faf8fc;
+    font-size: 0.95rem;
+    transition: 0.2s;
+    min-height: 44px;
+}
+
+.factura-container .form-group input:focus,
+.factura-container .form-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.factura-container .form-group small {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    display: block;
+    margin-top: 0.2rem;
+}
+
+.factura-container .factura-actions {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.factura-container .factura-actions button {
+    min-width: 140px;
+    justify-content: center;
+}
+
+/* ===== FACTURA - DATOS FISCALES ===== */
+.factura-datos-fiscales {
+    background: #faf8fc;
+    border-radius: 16px;
+    padding: 1.2rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border);
+}
+
+.factura-datos-fiscales h4 {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
 /* ===== MIS COMPRAS ===== */
 .compras-container {
     max-width: 800px;

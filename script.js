@@ -1181,6 +1181,109 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ============================================================
+    // FUNCIÓN CORREGIDA - showDetailFix
+    // ============================================================
+
+    function showDetailFix(id) {
+        console.log('🔍 showDetailFix llamado con id:', id);
+        
+        var product = null;
+        for (var i = 0; i < products.length; i++) {
+            if (products[i].id === id) {
+                product = products[i];
+                break;
+            }
+        }
+        
+        if (!product) {
+            console.error('❌ Producto no encontrado con id:', id);
+            alert('Producto no encontrado');
+            return;
+        }
+        
+        console.log('✅ Producto encontrado:', product);
+        
+        currentProductId = id;
+        currentQty = 1;
+        var qtyValue = document.getElementById('qty-value');
+        if (qtyValue) qtyValue.textContent = currentQty;
+
+        var feedback = document.getElementById('cart-feedback');
+        if (feedback) {
+            feedback.className = 'cart-feedback';
+            feedback.textContent = '';
+            feedback.style.display = 'none';
+        }
+
+        var title = document.getElementById('detail-title');
+        var price = document.getElementById('detail-price');
+        var desc = document.getElementById('detail-desc');
+        var detailImg = document.getElementById('detail-img');
+
+        if (title) title.textContent = product.name;
+        if (price) price.textContent = '$' + product.price.toFixed(2);
+        if (desc) desc.textContent = product.desc;
+
+        if (detailImg) {
+            detailImg.innerHTML = '<img src="' + product.image + '" alt="' + product.name + '" class="food-image" onerror="this.src=\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22%3E%3Crect fill=%22%23ede6f5%22 width=%22300%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%238b5cf6%22 font-family=%22sans-serif%22 font-size=%2220%22%3E' + product.name + '%3C/text%3E%3C/svg%3E\'"><div class="img-overlay" aria-hidden="true"></div>';
+        }
+
+        // Productos relacionados
+        var related = [];
+        for (var j = 0; j < products.length; j++) {
+            if (products[j].id !== id) related.push(products[j]);
+        }
+        if (selectedCategory !== 'todas') {
+            related = related.filter(function(p) { return p.category === selectedCategory; });
+        }
+        related = related.slice(0, 3);
+
+        var relatedGrid = document.getElementById('related-grid');
+        if (relatedGrid) {
+            if (related.length === 0) {
+                relatedGrid.innerHTML = '<p style="color:#6b4f7a; grid-column:1/-1; text-align:center;">No hay productos relacionados.</p>';
+            } else {
+                var html = '';
+                for (var k = 0; k < related.length; k++) {
+                    var p = related[k];
+                    html += '<div class="related-card" data-id="' + p.id + '" role="button" tabindex="0">';
+                    html += '<div class="product-img"><img src="' + p.image + '" alt="' + p.name + '" class="food-image" onerror="this.src=\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23ede6f5%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%238b5cf6%22 font-family=%22sans-serif%22 font-size=%2210%22%3E' + p.name + '%3C/text%3E%3C/svg%3E\'"></div>';
+                    html += '<h4>' + p.name + '</h4>';
+                    html += '<span class="product-price">$' + p.price.toFixed(2) + '</span>';
+                    html += '<button class="btn-secondary view-related-btn" data-id="' + p.id + '" aria-label="Ver detalle de ' + p.name + '">Ver</button>';
+                    html += '</div>';
+                }
+                relatedGrid.innerHTML = html;
+
+                relatedGrid.querySelectorAll('.view-related-btn').forEach(function(btn) {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        showDetailFix(parseInt(this.getAttribute('data-id')));
+                    });
+                });
+
+                relatedGrid.querySelectorAll('.related-card').forEach(function(card) {
+                    card.addEventListener('click', function() {
+                        showDetailFix(parseInt(this.getAttribute('data-id')));
+                    });
+                    card.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            showDetailFix(parseInt(this.getAttribute('data-id')));
+                        }
+                    });
+                });
+            }
+        }
+
+        showPage('detalle');
+    }
+
+    // ============================================================
+    // FUNCIÓN RENDER CATALOG CORREGIDA
+    // ============================================================
+
     function renderCatalog(category) {
         if (category === undefined) category = 'todas';
         var container = document.getElementById('catalog-container');
@@ -1221,98 +1324,10 @@ document.addEventListener('DOMContentLoaded', function() {
         container.querySelectorAll('.view-detail-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 var id = parseInt(this.getAttribute('data-id'));
-                showDetail(id);
+                console.log('🖱️ Click en "Ver detalle" para producto ID:', id);
+                showDetailFix(id);
             });
         });
-    }
-
-    // ============================================================
-    // FUNCIONES DE DETALLE DE PRODUCTO
-    // ============================================================
-
-    function showDetail(id) {
-        var product = null;
-        for (var i = 0; i < products.length; i++) {
-            if (products[i].id === id) {
-                product = products[i];
-                break;
-            }
-        }
-        if (!product) return;
-
-        currentProductId = id;
-        currentQty = 1;
-        var qtyValue = document.getElementById('qty-value');
-        if (qtyValue) qtyValue.textContent = currentQty;
-
-        var feedback = document.getElementById('cart-feedback');
-        if (feedback) {
-            feedback.className = 'cart-feedback';
-            feedback.textContent = '';
-            feedback.style.display = 'none';
-        }
-
-        var title = document.getElementById('detail-title');
-        var price = document.getElementById('detail-price');
-        var desc = document.getElementById('detail-desc');
-        var detailImg = document.getElementById('detail-img');
-
-        if (title) title.textContent = product.name;
-        if (price) price.textContent = '$' + product.price.toFixed(2);
-        if (desc) desc.textContent = product.desc;
-
-        if (detailImg) {
-            detailImg.innerHTML = '<img src="' + product.image + '" alt="' + product.name + '" class="food-image" onerror="this.src=\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22%3E%3Crect fill=%22%23ede6f5%22 width=%22300%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%238b5cf6%22 font-family=%22sans-serif%22 font-size=%2220%22%3E' + product.name + '%3C/text%3E%3C/svg%3E\'"><div class="img-overlay" aria-hidden="true"></div>';
-        }
-
-        var related = [];
-        for (var j = 0; j < products.length; j++) {
-            if (products[j].id !== id) related.push(products[j]);
-        }
-        if (selectedCategory !== 'todas') {
-            related = related.filter(function(p) { return p.category === selectedCategory; });
-        }
-        related = related.slice(0, 3);
-
-        var relatedGrid = document.getElementById('related-grid');
-        if (relatedGrid) {
-            if (related.length === 0) {
-                relatedGrid.innerHTML = '<p style="color:#6b4f7a; grid-column:1/-1; text-align:center;">No hay productos relacionados.</p>';
-            } else {
-                var html = '';
-                for (var k = 0; k < related.length; k++) {
-                    var p = related[k];
-                    html += '<div class="related-card" data-id="' + p.id + '" role="button" tabindex="0">';
-                    html += '<div class="product-img"><img src="' + p.image + '" alt="' + p.name + '" class="food-image" onerror="this.src=\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23ede6f5%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%238b5cf6%22 font-family=%22sans-serif%22 font-size=%2210%22%3E' + p.name + '%3C/text%3E%3C/svg%3E\'"></div>';
-                    html += '<h4>' + p.name + '</h4>';
-                    html += '<span class="product-price">$' + p.price.toFixed(2) + '</span>';
-                    html += '<button class="btn-secondary view-related-btn" data-id="' + p.id + '" aria-label="Ver detalle de ' + p.name + '">Ver</button>';
-                    html += '</div>';
-                }
-                relatedGrid.innerHTML = html;
-
-                relatedGrid.querySelectorAll('.view-related-btn').forEach(function(btn) {
-                    btn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        showDetail(parseInt(this.getAttribute('data-id')));
-                    });
-                });
-
-                relatedGrid.querySelectorAll('.related-card').forEach(function(card) {
-                    card.addEventListener('click', function() {
-                        showDetail(parseInt(this.getAttribute('data-id')));
-                    });
-                    card.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            showDetail(parseInt(this.getAttribute('data-id')));
-                        }
-                    });
-                });
-            }
-        }
-
-        showPage('detalle');
     }
 
     // ============================================================
@@ -3454,14 +3469,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 irAlPaso(3);
                 
-                guardarCompra({
+                // Guardar compra en el historial
+                const compra = {
                     id: numeroPedido,
                     fecha: new Date().toLocaleString('es-ES'),
                     items: checkoutData.items,
                     total: checkoutData.total,
                     metodo: checkoutData.metodoPago,
-                    estado: 'entregado'
-                });
+                    estado: 'entregado',
+                    direccion: checkoutData.direccion || {
+                        nombre: currentUser.name || 'Juan Pérez',
+                        email: currentUser.email || 'juan@email.com',
+                        telefono: currentUser.phone || '55 1234 5678',
+                        direccion: currentUser.address || 'Calle Principal 123, Colonia Centro',
+                        ciudad: 'Ciudad de México',
+                        cp: '12345'
+                    }
+                };
+                guardarCompra(compra);
+                
+                // Guardar datos para el ticket
+                ticketData = {
+                    folio: numeroPedido,
+                    fecha: compra.fecha,
+                    hora: new Date().toLocaleTimeString('es-ES'),
+                    cliente: {
+                        nombre: compra.direccion.nombre || currentUser.name || 'Juan Pérez',
+                        email: compra.direccion.email || currentUser.email || 'juan@email.com',
+                        direccion: compra.direccion.direccion || currentUser.address || 'Calle Principal 123, Colonia Centro'
+                    },
+                    items: checkoutData.items,
+                    total: checkoutData.total,
+                    metodo: checkoutData.metodoPago
+                };
                 
                 cart = [];
                 saveCart();
@@ -3510,10 +3550,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    document.getElementById('checkout-continuar-btn')?.addEventListener('click', function() {
-        showPage('perfil');
-    });
-    
     // ============================================================
     // CHECKOUT - CONFIRMAR COMPRA (PASO 3)
     // ============================================================
@@ -3528,7 +3564,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!terminosCheckbox || !terminosCheckbox.checked) {
             if (terminosError) {
                 terminosError.style.display = 'block';
-                // Ocultar el error después de 3 segundos
                 setTimeout(function() {
                     terminosError.style.display = 'none';
                 }, 3000);
@@ -3536,7 +3571,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Ocultar error si existe
         if (terminosError) {
             terminosError.style.display = 'none';
         }
@@ -3554,11 +3588,10 @@ document.addEventListener('DOMContentLoaded', function() {
             cp: '12345'
         };
         
-        // 3. Crear el número de pedido
         const numeroPedido = 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000);
         const fecha = new Date().toLocaleString('es-ES');
         
-        // 4. Guardar en el historial
+        // 3. Guardar en el historial
         const compra = {
             id: numeroPedido,
             fecha: fecha,
@@ -3568,45 +3601,19 @@ document.addEventListener('DOMContentLoaded', function() {
             estado: 'entregado',
             direccion: direccion
         };
-        
-        // 5. Guardar en el historial
         historialCompras.unshift(compra);
         saveHistorial();
         
-        // 6. Vaciar el carrito
+        // 4. Vaciar el carrito
         cart = [];
         saveCart();
         updateCartUI();
         
-        // 7. Actualizar la interfaz del paso 3 - mostrar la sección de éxito
-        document.getElementById('confirmacion-terminos').style.display = 'none';
-        document.getElementById('confirmacion-exito').style.display = 'block';
-        
-        // 8. Actualizar los datos en la sección de éxito
-        document.getElementById('checkout-order-number').textContent = '#' + numeroPedido;
-        document.getElementById('checkout-order-date').textContent = fecha;
-        document.getElementById('checkout-payment-method').textContent = metodo.charAt(0).toUpperCase() + metodo.slice(1);
-        document.getElementById('checkout-total').textContent = '$' + total.toFixed(2);
-        
-        // 9. Generar resumen de items
-        const resumenContainer = document.getElementById('checkout-resumen-items');
-        if (resumenContainer) {
-            let htmlResumen = '';
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i];
-                htmlResumen += '<div style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid #ede6f5; font-size:0.9rem;">';
-                htmlResumen += '<span>' + (item.quantity || 1) + 'x ' + (item.name || 'Producto') + '</span>';
-                htmlResumen += '<span>$' + (item.subtotal || (item.price * item.quantity) || 0).toFixed(2) + '</span>';
-                htmlResumen += '</div>';
-            }
-            resumenContainer.innerHTML = htmlResumen;
-        }
-        
-        // 10. Guardar los datos de la compra para la factura
-        facturaData = {
+        // 5. Guardar datos del ticket
+        ticketData = {
             folio: numeroPedido,
-            fecha: fecha.split(' ')[0] || new Date().toLocaleDateString('es-ES'),
-            hora: fecha.split(' ')[1] || new Date().toLocaleTimeString('es-ES'),
+            fecha: fecha,
+            hora: new Date().toLocaleTimeString('es-ES'),
             cliente: {
                 nombre: direccion.nombre || currentUser.name || 'Juan Pérez',
                 email: direccion.email || currentUser.email || 'juan@email.com',
@@ -3617,7 +3624,8 @@ document.addEventListener('DOMContentLoaded', function() {
             metodo: metodo
         };
         
-        console.log('✅ Compra confirmada:', facturaData);
+        // 6. Mostrar el ticket
+        mostrarTicket(compra);
     });
 
     // ============================================================
@@ -3665,12 +3673,38 @@ document.addEventListener('DOMContentLoaded', function() {
     // ============================================================
 
     document.getElementById('checkout-generar-factura')?.addEventListener('click', function() {
-        // Verificar si hay datos del ticket
         if (ticketData) {
             // Mostrar el ticket directamente
             document.getElementById('ticket-view').style.display = 'block';
             document.getElementById('factura-fiscal-view').style.display = 'none';
             document.getElementById('factura-generada-view').style.display = 'none';
+            
+            // Actualizar datos del ticket
+            document.getElementById('ticket-folio').textContent = ticketData.folio;
+            document.getElementById('ticket-fecha').textContent = ticketData.fecha;
+            document.getElementById('ticket-hora').textContent = ticketData.hora;
+            document.getElementById('ticket-cliente-nombre').textContent = ticketData.cliente.nombre;
+            document.getElementById('ticket-cliente-email').textContent = ticketData.cliente.email;
+            document.getElementById('ticket-cliente-direccion').textContent = ticketData.cliente.direccion;
+            
+            const tbody = document.getElementById('ticket-productos-body');
+            let htmlItems = '';
+            if (ticketData.items && ticketData.items.length > 0) {
+                for (let i = 0; i < ticketData.items.length; i++) {
+                    const item = ticketData.items[i];
+                    htmlItems += '<tr>';
+                    htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:center;">' + (item.quantity || 0) + '</td>';
+                    htmlItems += '<td style="padding:0.3rem 0.5rem;">' + (item.name || 'Producto') + '</td>';
+                    htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + (item.price || 0).toFixed(2) + '</td>';
+                    htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + (item.subtotal || (item.price * item.quantity) || 0).toFixed(2) + '</td>';
+                    htmlItems += '</tr>';
+                }
+            } else {
+                htmlItems = '<tr><td colspan="4" style="text-align:center; padding:1rem; color:#6b4f7a;">No hay productos en este ticket.</td></tr>';
+            }
+            tbody.innerHTML = htmlItems;
+            document.getElementById('ticket-total').textContent = '$' + (ticketData.total || 0).toFixed(2);
+            
             showPage('factura');
         } else {
             // Si no hay datos, crear un ticket con los datos del checkout
@@ -3703,13 +3737,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ============================================================
-    // FACTURA - FUNCIONALIDAD 
+    // FACTURA - FUNCIONALIDAD (SIN VALIDACIÓN)
     // ============================================================
 
     let facturaData = null;
 
     function generarFactura(compra) {
-        // Si no hay compra, usar datos por defecto
         if (!compra) {
             compra = {
                 id: 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000),
@@ -3743,7 +3776,6 @@ document.addEventListener('DOMContentLoaded', function() {
             metodo: compra.metodo || 'Tarjeta'
         };
         
-        // Actualizar la factura en el DOM
         document.getElementById('factura-folio').textContent = facturaData.folio;
         document.getElementById('factura-fecha').textContent = facturaData.fecha;
         document.getElementById('factura-hora').textContent = facturaData.hora;
@@ -3805,7 +3837,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ============================================================
-    // HISTORIAL DE COMPRAS (CORREGIDO)
+    // HISTORIAL DE COMPRAS - CORREGIDO
     // ============================================================
 
     function guardarCompra(compra) {
@@ -3835,10 +3867,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (filtrados.length === 0) {
             container.innerHTML = '';
-            vacio.classList.remove('hidden');
+            if (vacio) vacio.classList.remove('hidden');
             return;
         }
-        vacio.classList.add('hidden');
+        if (vacio) vacio.classList.add('hidden');
         
         let html = '';
         for (let i = 0; i < filtrados.length; i++) {
@@ -3884,7 +3916,7 @@ document.addEventListener('DOMContentLoaded', function() {
             html += '</div>';
             html += '</div>';
             html += '<div style="display:flex; gap:0.5rem; margin-top:0.8rem; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:0.8rem;">';
-            html += '<button class="btn-secondary compra-ver-detalle" data-index="' + i + '" style="padding:0.4rem 1rem; font-size:0.85rem; min-height:36px; width:100%; justify-content:center;">';
+            html += '<button class="btn-secondary compra-ver-detalle" data-id="' + i + '" style="padding:0.4rem 1rem; font-size:0.85rem; min-height:36px; width:100%; justify-content:center;">';
             html += '<i class="fas fa-eye"></i> Ver detalle';
             html += '</button>';
             html += '</div>';
@@ -3892,61 +3924,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         container.innerHTML = html;
         
+        // ✅ CORREGIDO: Event listener con las variables correctas
         container.querySelectorAll('.compra-ver-detalle').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                const idx = parseInt(this.getAttribute('data-index'));
-                const compra = historialCompras[idx];
+                const idx = parseInt(this.getAttribute('data-id'));
+                // ✅ Busca en la lista filtrada, no en la original
+                const compra = filtrados[idx];
                 if (compra) {
-                    generarFactura(compra);
-                } else {
-                    console.error('Compra no encontrada:', idx);
+                    mostrarDetalleCompra(compra);
                 }
             });
         });
     }
 
-    document.getElementById('compras-filtro-estado')?.addEventListener('change', renderHistorialCompras);
-    document.getElementById('compras-buscar')?.addEventListener('input', renderHistorialCompras);
-
-    document.getElementById('compras-ir-catalogo')?.addEventListener('click', function() {
-        showPage('catalogo');
-    });
-
     // ============================================================
-    // EVENT LISTENER - PUBLICAR PRODUCTO
+    // FUNCIÓN PARA MOSTRAR DETALLE DE COMPRA
     // ============================================================
 
-    var publicarBtn = document.getElementById('publicar-btn');
-    if (publicarBtn) {
-        publicarBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('🖱️ Botón "Publicar producto" clickeado');
-            publicarProducto();
-        });
-    }
-
-    var publicarForm = document.getElementById('publicar-form');
-    if (publicarForm) {
-        publicarForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            console.log('📝 Formulario de publicación enviado');
-            publicarProducto();
-        });
+    function mostrarDetalleCompra(compra) {
+        if (!compra) return;
+        // Mostrar el ticket con los datos de la compra
+        mostrarTicket(compra);
     }
 
     // ============================================================
-    // FACTURA - VARIABLES GLOBALES
-    // ============================================================
-
-    let ticketData = null;
-    let facturaFiscalData = null;
-
-    // ============================================================
-    // FUNCIÓN PARA MOSTRAR TICKET DESDE CHECKOUT
+    // FUNCIÓN MOSTRAR TICKET - CORREGIDA
     // ============================================================
 
     function mostrarTicket(compra) {
-        // Si no hay compra, usar datos del checkout
         if (!compra) {
             compra = {
                 id: 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000),
@@ -3966,7 +3971,6 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         }
 
-        // Guardar datos del ticket
         ticketData = {
             folio: compra.id || 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000),
             fecha: compra.fecha || new Date().toLocaleString('es-ES'),
@@ -3981,16 +3985,23 @@ document.addEventListener('DOMContentLoaded', function() {
             metodo: compra.metodo || 'Tarjeta'
         };
 
-        // Actualizar ticket en DOM
-        document.getElementById('ticket-folio').textContent = ticketData.folio;
-        document.getElementById('ticket-fecha').textContent = ticketData.fecha;
-        document.getElementById('ticket-hora').textContent = ticketData.hora;
-        document.getElementById('ticket-cliente-nombre').textContent = ticketData.cliente.nombre;
-        document.getElementById('ticket-cliente-email').textContent = ticketData.cliente.email;
-        document.getElementById('ticket-cliente-direccion').textContent = ticketData.cliente.direccion;
-
-        // Productos
+        // Actualizar el ticket en el DOM
+        const folioEl = document.getElementById('ticket-folio');
+        const fechaEl = document.getElementById('ticket-fecha');
+        const horaEl = document.getElementById('ticket-hora');
+        const clienteNombreEl = document.getElementById('ticket-cliente-nombre');
+        const clienteEmailEl = document.getElementById('ticket-cliente-email');
+        const clienteDireccionEl = document.getElementById('ticket-cliente-direccion');
         const tbody = document.getElementById('ticket-productos-body');
+        const totalEl = document.getElementById('ticket-total');
+
+        if (folioEl) folioEl.textContent = ticketData.folio;
+        if (fechaEl) fechaEl.textContent = ticketData.fecha;
+        if (horaEl) horaEl.textContent = ticketData.hora;
+        if (clienteNombreEl) clienteNombreEl.textContent = ticketData.cliente.nombre;
+        if (clienteEmailEl) clienteEmailEl.textContent = ticketData.cliente.email;
+        if (clienteDireccionEl) clienteDireccionEl.textContent = ticketData.cliente.direccion;
+
         let htmlItems = '';
         if (ticketData.items && ticketData.items.length > 0) {
             for (let i = 0; i < ticketData.items.length; i++) {
@@ -4005,8 +4016,17 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             htmlItems = '<tr><td colspan="4" style="text-align:center; padding:1rem; color:#6b4f7a;">No hay productos en este ticket.</td></tr>';
         }
-        tbody.innerHTML = htmlItems;
-        document.getElementById('ticket-total').textContent = '$' + (ticketData.total || 0).toFixed(2);
+        if (tbody) tbody.innerHTML = htmlItems;
+        if (totalEl) totalEl.textContent = '$' + (ticketData.total || 0).toFixed(2);
+
+        // Mostrar la vista del ticket
+        const ticketView = document.getElementById('ticket-view');
+        const facturaFiscalView = document.getElementById('factura-fiscal-view');
+        const facturaGeneradaView = document.getElementById('factura-generada-view');
+        
+        if (ticketView) ticketView.style.display = 'block';
+        if (facturaFiscalView) facturaFiscalView.style.display = 'none';
+        if (facturaGeneradaView) facturaGeneradaView.style.display = 'none';
 
         // Ocultar feedback
         const feedback = document.getElementById('ticket-feedback');
@@ -4016,20 +4036,42 @@ document.addEventListener('DOMContentLoaded', function() {
             feedback.className = 'hidden alert-message';
         }
 
-        // Mostrar ticket, ocultar factura fiscal
-        document.getElementById('ticket-view').style.display = 'block';
-        document.getElementById('factura-fiscal-view').style.display = 'none';
-        document.getElementById('factura-generada-view').style.display = 'none';
-
+        // Ir a la página de factura
         showPage('factura');
     }
+
+    // ============================================================
+    // EVENT LISTENER - PUBLICAR PRODUCTO
+    // ============================================================
+
+    var publicarBtn = document.getElementById('publicar-btn');
+    if (publicarBtn) {
+        publicarBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            publicarProducto();
+        });
+    }
+
+    var publicarForm = document.getElementById('publicar-form');
+    if (publicarForm) {
+        publicarForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            publicarProducto();
+        });
+    }
+
+    // ============================================================
+    // FACTURA - VARIABLES GLOBALES
+    // ============================================================
+
+    let ticketData = null;
+    let facturaFiscalData = null;
 
     // ============================================================
     // FUNCIÓN PARA IR A FACTURA FISCAL DESDE TICKET
     // ============================================================
 
     function irAFacturaFiscal() {
-        // Cargar datos del ticket en la factura fiscal
         document.getElementById('factura-folio-generada').textContent = ticketData.folio;
         document.getElementById('factura-fecha-generada').textContent = ticketData.fecha;
         document.getElementById('factura-hora-generada').textContent = ticketData.hora;
@@ -4037,7 +4079,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('factura-show-cliente-email').textContent = ticketData.cliente.email;
         document.getElementById('factura-show-cliente-direccion').textContent = ticketData.cliente.direccion;
 
-        // Productos
         const tbody = document.getElementById('factura-productos-body-generada');
         let htmlItems = '';
         if (ticketData.items && ticketData.items.length > 0) {
@@ -4056,7 +4097,6 @@ document.addEventListener('DOMContentLoaded', function() {
         tbody.innerHTML = htmlItems;
         document.getElementById('factura-total-generada').textContent = '$' + (ticketData.total || 0).toFixed(2);
 
-        // Limpiar formulario
         document.getElementById('factura-rfc').value = '';
         document.getElementById('factura-razon-social').value = '';
         document.getElementById('factura-regimen').value = 'Régimen General de Ley';
@@ -4070,29 +4110,26 @@ document.addEventListener('DOMContentLoaded', function() {
             feedback.className = 'hidden alert-message';
         }
 
-        // Ocultar generada, mostrar formulario
         document.getElementById('factura-generada-view').style.display = 'none';
         document.getElementById('factura-fiscal-view').style.display = 'block';
         document.getElementById('ticket-view').style.display = 'none';
 
-        // Scroll al inicio
         document.querySelector('.factura-container').scrollIntoView({ behavior: 'smooth' });
     }
 
     // ============================================================
-    // FUNCIÓN PARA GENERAR FACTURA (simulada)
+    // FUNCIÓN PARA GENERAR FACTURA FISCAL (SIN VALIDACIÓN)
     // ============================================================
 
     function generarFacturaFiscal() {
-        const rfc = document.getElementById('factura-rfc').value.trim().toUpperCase();
-        const razonSocial = document.getElementById('factura-razon-social').value.trim();
-        const regimen = document.getElementById('factura-regimen').value;
-        const cp = document.getElementById('factura-cp').value.trim();
-        const uso = document.getElementById('factura-uso-cfdi').value;
+        const rfc = document.getElementById('factura-rfc').value.trim().toUpperCase() || 'RFC NO ESPECIFICADO';
+        const razonSocial = document.getElementById('factura-razon-social').value.trim() || 'Sin razón social';
+        const regimen = document.getElementById('factura-regimen').value || 'Régimen General de Ley';
+        const cp = document.getElementById('factura-cp').value.trim() || 'No especificado';
+        const uso = document.getElementById('factura-uso-cfdi').value || 'G01 - Adquisición de mercancias';
         const feedback = document.getElementById('factura-fiscal-feedback');
 
-       
-        // Guardar datos fiscales
+        // Guardar datos fiscales (sin validación)
         facturaFiscalData = {
             rfc: rfc,
             razonSocial: razonSocial,
@@ -4120,22 +4157,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // FUNCIÓN PARA DESCARGAR PDF (vincular a Factura.pdf)
+    // FUNCIÓN PARA DESCARGAR PDF
     // ============================================================
 
     function descargarFacturaPDF() {
         const feedback = document.getElementById('factura-generada-feedback');
         
-        // Mostrar feedback de descarga
         if (feedback) {
             feedback.className = 'auth-success alert-message';
             feedback.textContent = '📄 Descargando factura...';
             feedback.classList.remove('hidden');
         }
 
-        // Simular descarga - ABRIR EL ARCHIVO Factura.pdf
         setTimeout(function() {
-            // Abrir el PDF en una nueva ventana/pestaña
             window.open('Factura.pdf', '_blank');
             
             if (feedback) {
@@ -4152,28 +4186,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // EVENT LISTENERS - FACTURA
     // ============================================================
 
-    // Botón "Descargar Factura Fiscal" desde el ticket
     document.getElementById('ticket-facturar-btn')?.addEventListener('click', function() {
         irAFacturaFiscal();
     });
 
-    // Botón "Volver atrás" desde el ticket
     document.getElementById('ticket-volver-btn')?.addEventListener('click', function() {
         showPage('perfil');
     });
 
-    // Botón "Generar Factura" desde el formulario
     document.getElementById('factura-generar-btn')?.addEventListener('click', function(e) {
         e.preventDefault();
         generarFacturaFiscal();
     });
 
-    // Botón "Volver atrás" desde el formulario de factura
     document.getElementById('factura-volver-ticket-btn')?.addEventListener('click', function() {
         document.getElementById('factura-fiscal-view').style.display = 'none';
         document.getElementById('ticket-view').style.display = 'block';
         document.getElementById('factura-generada-view').style.display = 'none';
-        // Restaurar formulario
         document.getElementById('factura-fiscal-view').querySelector('form').style.display = 'block';
         const feedback = document.getElementById('factura-fiscal-feedback');
         if (feedback) {
@@ -4183,12 +4212,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Botón "Descargar PDF" desde la factura generada
     document.getElementById('factura-descargar-pdf-btn')?.addEventListener('click', function() {
         descargarFacturaPDF();
     });
 
-    // Botón "Volver atrás" desde la factura generada
     document.getElementById('factura-volver-final-btn')?.addEventListener('click', function() {
         showPage('perfil');
     });
