@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeliciasResto - Administración</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body class="admin-page-shell">
+    <main class="app" id="main-content" role="main">
+        <header class="navbar">
+            <a href="cocina.html" class="logo-area" style="text-decoration:none;">
+                <div class="logo-icon" aria-hidden="true"><i class="fas fa-utensils"></i></div>
+                <div class="logo-text">Delicias<span>Resto</span></div>
+            </a>
+        </header>
+
+        <section id="page-login" class="page-section active" aria-labelledby="login-title">
+            <div class="auth-container">
+                <h2 id="login-title"><i class="fas fa-user-shield" style="color:#8b5cf6;" aria-hidden="true"></i> Acceso administrador</h2>
+                <div id="login-message" class="hidden"></div>
+                <form id="login-form" onsubmit="return false;">
+                    <div class="form-group">
+                        <label for="login-email"><i class="fas fa-envelope" aria-hidden="true"></i> Correo electrónico</label>
+                        <input type="email" id="login-email" placeholder="admin@deliciasresto.com" autocomplete="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password"><i class="fas fa-lock" aria-hidden="true"></i> Contraseña</label>
+                        <input type="password" id="login-password" placeholder="Ingresa tu contraseña" autocomplete="current-password" required>
+                    </div>
+                    <button type="submit" class="btn-primary" id="login-btn"><i class="fas fa-sign-in-alt" aria-hidden="true"></i> Iniciar sesión</button>
+                </form>
+            </div>
+        </section>
+
+        <section id="page-admin" class="page-section" aria-labelledby="admin-title">
+            <div class="admin-header-row">
+                <h2 id="admin-title" class="section-title"><i class="fas fa-tachometer-alt" aria-hidden="true"></i> Panel de Administración</h2>
+            </div>
+            <div class="admin-layout">
+                <aside class="admin-sidebar" aria-label="Menú de administración">
+                    <div class="admin-user"><div class="admin-avatar" aria-hidden="true">AD</div><div><div class="admin-name">Administrador</div><div class="admin-email">admin@deliciasresto.com</div></div></div>
+                    <ul class="sidebar-menu">
+                        <li><a href="#" class="active" data-admin-page="dashboard"><i class="fas fa-chart-pie" aria-hidden="true"></i> Dashboard</a></li>
+                        <li><a href="#" data-admin-page="productos"><i class="fas fa-box" aria-hidden="true"></i> Productos</a></li>
+                        <li><a href="#" data-admin-page="pedidos"><i class="fas fa-shopping-bag" aria-hidden="true"></i> Pedidos</a></li>
+                        <li><a href="#" data-admin-page="promociones"><i class="fas fa-tags" aria-hidden="true"></i> Promociones</a></li>
+                        <li><a href="#" data-admin-page="clientes"><i class="fas fa-users" aria-hidden="true"></i> Clientes</a></li>
+                        <li><a href="#" data-admin-page="usuarios"><i class="fas fa-user-cog" aria-hidden="true"></i> Usuarios</a></li>
+                        <li><a href="#" data-admin-page="reportes"><i class="fas fa-file-alt" aria-hidden="true"></i> Reportes</a></li>
+                    </ul>
+                </aside>
+                <div class="admin-content">
+                    <div id="admin-dashboard" class="admin-page active">
+                        <div class="admin-dashboard-grid">
+                            <div class="stat-card"><div class="stat-icon"><i class="fas fa-utensils"></i></div><div class="stat-number" id="stat-products">0</div><div class="stat-label">Productos publicados</div></div>
+                            <div class="stat-card"><div class="stat-icon"><i class="fas fa-clipboard-list"></i></div><div class="stat-number">5</div><div class="stat-label">Pedidos del día</div></div>
+                            <div class="stat-card"><div class="stat-icon"><i class="fas fa-dollar-sign"></i></div><div class="stat-number">$12,500</div><div class="stat-label">Ventas del mes</div></div>
+                            <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-friends"></i></div><div class="stat-number">38</div><div class="stat-label">Clientes registrados</div></div>
+                            <div class="stat-card"><div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div><div class="stat-number" id="stat-out-of-stock">0</div><div class="stat-label">Productos agotados</div></div>
+                        </div>
+                        <div class="admin-actions"><button class="btn-primary" id="admin-add-product-btn"><i class="fas fa-plus"></i> Agregar producto</button><button class="btn-secondary" id="admin-view-orders-btn"><i class="fas fa-eye"></i> Ver pedidos</button><button class="btn-success" id="admin-create-promo-btn"><i class="fas fa-tag"></i> Crear promoción</button></div>
+                    </div>
+                    <div id="admin-productos" class="admin-page hidden"><div class="product-table-container"><div class="table-header"><div class="search-box"><input type="text" id="product-search" placeholder="Buscar producto..."><select id="category-filter"><option value="todas">Todas las categorías</option><option>Pizzas</option><option>Hamburguesas</option><option>Pescados</option><option>Bebidas</option><option>Ensaladas</option></select><select id="status-filter"><option value="todos">Todos los estados</option><option value="disponible">Disponible</option><option value="agotado">Agotado</option><option value="inactivo">Inactivo</option></select></div><button class="btn-primary" id="admin-add-product-btn2"><i class="fas fa-plus"></i> Agregar producto</button></div><div style="overflow-x:auto;"><table class="product-table" id="product-table"><thead><tr><th>Imagen</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Existencia</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="product-table-body"></tbody></table></div></div></div>
+                    <div id="admin-product-form" class="admin-page hidden"><div class="product-form-container"><h3><i class="fas fa-plus-circle"></i> <span id="form-title">Agregar producto</span></h3><form id="product-form" onsubmit="return false;"><div class="form-group"><label for="form-product-name">Nombre</label><input id="form-product-name" required></div><div class="form-row"><div class="form-group"><label for="form-product-category">Categoría</label><select id="form-product-category"><option>Pizzas</option><option>Hamburguesas</option><option>Pescados</option><option>Bebidas</option><option>Ensaladas</option></select></div><div class="form-group"><label for="form-product-price">Precio</label><input type="number" step="0.01" id="form-product-price"></div></div><div class="form-group"><label for="form-product-desc">Descripción</label><textarea id="form-product-desc"></textarea></div><div class="form-row"><div class="form-group"><label for="form-product-stock">Existencia</label><input type="number" id="form-product-stock"></div><div class="form-group"><label for="form-product-status">Estado</label><select id="form-product-status"><option value="disponible">Activo</option><option value="inactivo">Inactivo</option></select></div></div><div class="form-group"><label for="form-product-image">Imagen</label><input id="form-product-image" placeholder="pizza.jpg"><div class="image-preview" id="form-image-preview"></div></div><div class="form-actions"><button type="submit" class="btn-primary"><i class="fas fa-save"></i> Guardar</button><button type="button" class="btn-secondary" id="form-cancel-btn">Cancelar</button></div><div id="form-message" class="hidden alert-message"></div></form></div></div>
+                    <div id="admin-pedidos" class="admin-page hidden"><div class="product-table-container"><h3>Pedidos recientes</h3><div style="overflow-x:auto;"><table class="product-table"><thead><tr><th>ID</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody id="orders-table-body"></tbody></table></div></div></div>
+                    <div id="admin-promociones" class="admin-page hidden"><div class="product-table-container"><div class="table-header"><h3>Promociones</h3><button class="btn-success" id="admin-create-promo-btn2"><i class="fas fa-plus"></i> Nueva promoción</button></div><table class="product-table"><thead><tr><th>Nombre</th><th>Descuento</th><th>Productos</th><th>Vigencia</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="promo-table-body-admin"></tbody></table></div></div>
+                    <div id="admin-promo-form" class="admin-page hidden"><div class="product-form-container"><h3>Nueva promoción</h3><form id="promo-form" onsubmit="return false;"><input type="hidden" id="promo-form-index"><input id="promo-form-name" placeholder="Nombre"><input id="promo-form-discount" placeholder="Descuento"><input id="promo-form-products" placeholder="Productos"><input id="promo-form-validity" placeholder="Vigencia"><select id="promo-form-status"><option>Activa</option><option>Vencida</option><option>Próxima</option></select><div class="form-actions"><button type="submit" class="btn-primary" id="promo-form-save-btn">Guardar</button><button type="button" class="btn-secondary" id="promo-form-cancel-btn">Cancelar</button></div><div id="promo-form-message" class="hidden alert-message"></div></form></div></div>
+                    <div id="admin-clientes" class="admin-page hidden"><div class="product-table-container"><div class="table-header"><h3>Clientes registrados</h3><button class="btn-primary" id="admin-add-client-btn">Agregar cliente</button></div><table class="product-table"><thead><tr><th>Cliente</th><th>Email</th><th>Teléfono</th><th>Pedidos</th><th>Total</th><th>Registro</th><th>Acciones</th></tr></thead><tbody id="clients-table-body"></tbody></table></div></div>
+                    <div id="admin-client-form" class="admin-page hidden"><div class="product-form-container"><h3>Agregar cliente</h3><form id="client-form" onsubmit="return false;"><input id="form-client-name" placeholder="Nombre"><input id="form-client-email" placeholder="Correo"><input id="form-client-phone" placeholder="Teléfono"><textarea id="form-client-address" placeholder="Dirección"></textarea><div class="form-actions"><button type="submit" class="btn-primary" id="form-client-save-btn">Guardar</button><button type="button" class="btn-secondary" id="form-client-cancel-btn">Cancelar</button></div><div id="client-form-message" class="hidden alert-message"></div></form></div></div>
+
+                    <!-- SECCIÓN DE USUARIOS (ADMINISTRADORES) -->
+                    <div id="admin-usuarios" class="admin-page hidden">
+                        <div class="product-table-container">
+                            <div class="table-header">
+                                <h3><i class="fas fa-user-cog"></i> Administradores</h3>
+                                <button class="btn-primary" id="admin-add-user-btn"><i class="fas fa-user-plus"></i> Agregar administrador</button>
+                            </div>
+                            <div style="overflow-x:auto;">
+                                <table class="product-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Correo</th>
+                                            <th>Rol</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="users-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FORMULARIO PARA AGREGAR ADMINISTRADOR -->
+                    <div id="admin-user-form" class="admin-page hidden">
+                        <div class="product-form-container">
+                            <h3><i class="fas fa-user-plus"></i> Agregar administrador</h3>
+                            <form id="user-form" onsubmit="return false;">
+                                <div class="form-group">
+                                    <label for="form-user-name">Nombre completo</label>
+                                    <input type="text" id="form-user-name" placeholder="Nombre del administrador">
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-user-email">Correo electrónico</label>
+                                    <input type="email" id="form-user-email" placeholder="admin@ejemplo.com">
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-user-password">Contraseña</label>
+                                    <input type="password" id="form-user-password" placeholder="Contraseña">
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-user-confirm-password">Confirmar contraseña</label>
+                                    <input type="password" id="form-user-confirm-password" placeholder="Confirmar contraseña">
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-user-role">Rol</label>
+                                    <select id="form-user-role">
+                                        <option value="administrador">Administrador</option>
+                                    </select>
+                                    <small style="color: #6b7280;">Solo existe la cuenta principal con rol "Super Administrador"</small>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary" id="form-user-save-btn"><i class="fas fa-save"></i> Guardar</button>
+                                    <button type="button" class="btn-secondary" id="form-user-cancel-btn">Cancelar</button>
+                                </div>
+                                <div id="user-form-message" class="hidden alert-message"></div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div id="admin-reportes" class="admin-page hidden"><div class="product-table-container"><h3>Reportes</h3><div class="admin-dashboard-grid"><div class="stat-card"><div class="stat-number">$12,500</div><div class="stat-label">Ventas del mes</div></div><div class="stat-card"><div class="stat-number">156</div><div class="stat-label">Pedidos este mes</div></div></div></div></div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script src="script.js"></script>
+
+    <script>
+        // ============================================================
+        // SIMULACIÓN DE DATOS Y FUNCIONALIDAD PARA USUARIOS (ADMINS)
+        // ============================================================
+
+        // Datos iniciales: solo existe la cuenta principal (Super Admin)
+        let users = [
+            {
+                id: 1,
+                name: "Administrador Principal",
+                email: "admin@deliciasresto.com",
+                password: "admin123",
+                role: "super_administrador",
+                status: "activo"
+            }
+        ];
+
+        // Referencias a elementos DOM
+        const usersTableBody = document.getElementById('users-table-body');
+        const userFormContainer = document.getElementById('admin-user-form');
+        const userForm = document.getElementById('user-form');
+        const formUserName = document.getElementById('form-user-name');
+        const formUserEmail = document.getElementById('form-user-email');
+        const formUserPassword = document.getElementById('form-user-password');
+        const formUserConfirmPassword = document.getElementById('form-user-confirm-password');
+        const formUserRole = document.getElementById('form-user-role');
+        const formUserSaveBtn = document.getElementById('form-user-save-btn');
+        const formUserCancelBtn = document.getElementById('form-user-cancel-btn');
+        const userFormMessage = document.getElementById('user-form-message');
+        const addUserBtn = document.getElementById('admin-add-user-btn');
+
+        // Variable para saber si estamos editando o agregando
+        let editingUserId = null;
+
+        // Función para renderizar la tabla de usuarios
+        function renderUsersTable() {
+            if (!usersTableBody) return;
+            usersTableBody.innerHTML = '';
+
+            users.forEach(user => {
+                const tr = document.createElement('tr');
+                const isSuperAdmin = user.role === 'super_administrador';
+
+                // Determinar si se puede eliminar (solo si no es el super admin)
+                const canDelete = !isSuperAdmin;
+
+                tr.innerHTML = `
+                    <td><strong>${user.name}</strong></td>
+                    <td>${user.email}</td>
+                    <td>
+                        <span style="background: ${isSuperAdmin ? '#8b5cf6' : '#3b82f6'}; color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem;">
+                            ${isSuperAdmin ? 'Super Administrador' : 'Administrador'}
+                        </span>
+                    </td>
+                    <td><span style="color: #10b981;">● ${user.status}</span></td>
+                    <td>
+                        ${canDelete ? `
+                            <button class="btn-danger" style="padding: 4px 10px; border-radius: 6px; border: none; cursor: pointer; background: #ef4444; color: white;" onclick="deleteUser(${user.id})">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        ` : `
+                            <span style="color: #6b7280; font-size: 0.8rem;">(Cuenta principal)</span>
+                        `}
+                    </td>
+                `;
+                usersTableBody.appendChild(tr);
+            });
+        }
+
+        // Función para eliminar un usuario (solo si no es el super admin)
+        window.deleteUser = function(userId) {
+            const userToDelete = users.find(u => u.id === userId);
+            if (!userToDelete) return;
+            if (userToDelete.role === 'super_administrador') {
+                alert('No se puede eliminar la cuenta principal de Super Administrador.');
+                return;
+            }
+            if (confirm(`¿Estás seguro de eliminar al administrador "${userToDelete.name}"?`)) {
+                users = users.filter(u => u.id !== userId);
+                renderUsersTable();
+                // También ocultar el formulario si estaba abierto
+                if (userFormContainer) {
+                    userFormContainer.classList.add('hidden');
+                    userFormContainer.classList.remove('active');
+                }
+                showUserFormMessage('Usuario eliminado correctamente.', 'success');
+            }
+        };
+
+        // Función para mostrar mensajes en el formulario de usuarios
+        function showUserFormMessage(message, type = 'success') {
+            if (!userFormMessage) return;
+            userFormMessage.textContent = message;
+            userFormMessage.className = 'alert-message';
+            userFormMessage.classList.remove('hidden');
+            if (type === 'success') {
+                userFormMessage.style.color = '#10b981';
+                userFormMessage.style.border = '1px solid #10b981';
+            } else {
+                userFormMessage.style.color = '#ef4444';
+                userFormMessage.style.border = '1px solid #ef4444';
+            }
+            setTimeout(() => {
+                userFormMessage.classList.add('hidden');
+            }, 4000);
+        }
+
+        // Función para resetear el formulario de usuarios
+        function resetUserForm() {
+            formUserName.value = '';
+            formUserEmail.value = '';
+            formUserPassword.value = '';
+            formUserConfirmPassword.value = '';
+            formUserRole.value = 'administrador';
+            editingUserId = null;
+            formUserSaveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar';
+            document.querySelector('#admin-user-form h3').innerHTML = '<i class="fas fa-user-plus"></i> Agregar administrador';
+            userFormMessage.classList.add('hidden');
+        }
+
+        // Función para mostrar el formulario de usuarios
+        function showUserForm() {
+            if (!userFormContainer) return;
+            resetUserForm();
+            // Ocultar todas las páginas de admin y mostrar solo el formulario
+            document.querySelectorAll('.admin-page').forEach(p => {
+                p.classList.add('hidden');
+                p.classList.remove('active');
+            });
+            userFormContainer.classList.remove('hidden');
+            userFormContainer.classList.add('active');
+        }
+
+        // Evento para abrir el formulario de agregar usuario
+        if (addUserBtn) {
+            addUserBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                showUserForm();
+            });
+        }
+
+        // Evento para cancelar el formulario de usuarios
+        if (formUserCancelBtn) {
+            formUserCancelBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                // Volver a la página de usuarios
+                document.querySelectorAll('.admin-page').forEach(p => {
+                    p.classList.add('hidden');
+                    p.classList.remove('active');
+                });
+                const usersPage = document.getElementById('admin-usuarios');
+                if (usersPage) {
+                    usersPage.classList.remove('hidden');
+                    usersPage.classList.add('active');
+                }
+                resetUserForm();
+            });
+        }
+
+        // Evento para guardar usuario (sin validaciones)
+        if (userForm) {
+            userForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const name = formUserName.value.trim();
+                const email = formUserEmail.value.trim();
+                const password = formUserPassword.value.trim();
+                const confirmPassword = formUserConfirmPassword.value.trim();
+                const role = formUserRole.value;
+
+                // Mostrar mensaje de éxito sin validaciones
+                if (editingUserId) {
+                    // Editar usuario existente
+                    const userIndex = users.findIndex(u => u.id === editingUserId);
+                    if (userIndex !== -1) {
+                        // No se permite editar al super admin
+                        if (users[userIndex].role === 'super_administrador') {
+                            showUserFormMessage('No se puede editar la cuenta principal.', 'error');
+                            return;
+                        }
+                        users[userIndex].name = name || users[userIndex].name;
+                        users[userIndex].email = email || users[userIndex].email;
+                        users[userIndex].password = password || users[userIndex].password;
+                        users[userIndex].role = role;
+                        showUserFormMessage('Usuario actualizado correctamente.', 'success');
+                    }
+                } else {
+                    // Agregar nuevo usuario sin validaciones
+                    const newUser = {
+                        id: users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1,
+                        name: name || 'Administrador',
+                        email: email || 'admin@ejemplo.com',
+                        password: password || '123456',
+                        role: role,
+                        status: 'activo'
+                    };
+                    users.push(newUser);
+                    showUserFormMessage('Administrador agregado correctamente.', 'success');
+                }
+
+                // Renderizar tabla y resetear formulario
+                renderUsersTable();
+                resetUserForm();
+
+                // Volver a la página de usuarios
+                document.querySelectorAll('.admin-page').forEach(p => {
+                    p.classList.add('hidden');
+                    p.classList.remove('active');
+                });
+                const usersPage = document.getElementById('admin-usuarios');
+                if (usersPage) {
+                    usersPage.classList.remove('hidden');
+                    usersPage.classList.add('active');
+                }
+            });
+        }
+
+        // Inicializar la tabla de usuarios al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            renderUsersTable();
+        });
+
+        // ============================================================
+        // INTEGRACIÓN CON EL SIDEBAR EXISTENTE
+        // ============================================================
+
+        // Agregar el manejador para el nuevo ítem "Usuarios" en el sidebar
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarLinks = document.querySelectorAll('.sidebar-menu a');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const page = this.getAttribute('data-admin-page');
+
+                    // Remover clase active de todos los enlaces
+                    sidebarLinks.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Ocultar todas las páginas de admin
+                    document.querySelectorAll('.admin-page').forEach(p => {
+                        p.classList.add('hidden');
+                        p.classList.remove('active');
+                    });
+
+                    // Mostrar la página correspondiente
+                    if (page === 'usuarios') {
+                        const usersPage = document.getElementById('admin-usuarios');
+                        if (usersPage) {
+                            usersPage.classList.remove('hidden');
+                            usersPage.classList.add('active');
+                            renderUsersTable();
+                        }
+                    } else {
+                        const targetPage = document.getElementById(`admin-${page}`);
+                        if (targetPage) {
+                            targetPage.classList.remove('hidden');
+                            targetPage.classList.add('active');
+                        }
+                    }
+
+                    // Si el formulario de usuarios está abierto, cerrarlo
+                    if (userFormContainer) {
+                        userFormContainer.classList.add('hidden');
+                        userFormContainer.classList.remove('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
