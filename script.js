@@ -3077,6 +3077,18 @@ document.addEventListener('DOMContentLoaded', function() {
         loginBtn.addEventListener('click', function(e) {
             e.preventDefault();
             var msg = document.getElementById('login-message');
+
+            if (document.body.classList.contains('admin-page-shell')) {
+                isLoggedIn = true;
+                isAdmin = true;
+                if (msg) showFormMessage(msg, 'Inicio de sesión exitoso.', 'success');
+                setTimeout(function() {
+                    updateNavVisibility();
+                    showPage('admin');
+                }, 800);
+                return;
+            }
+
             isLoggedIn = true;
             isAdmin = false;
             if (msg) showFormMessage(msg, 'Inicio de sesión exitoso.', 'success');
@@ -4224,8 +4236,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // INICIALIZACIÓN
     // ============================================================
 
-    buildCategoryMenu();
-    renderCatalog(selectedCategory);
+    if (!document.body.classList.contains('admin-page-shell')) {
+        buildCategoryMenu();
+        renderCatalog(selectedCategory);
+    }
     renderProductTable();
     renderClientsTable();
     renderOrdersTable();
@@ -4237,7 +4251,9 @@ document.addEventListener('DOMContentLoaded', function() {
     updateCartUI();
     updateNavVisibility();
     updateDashboardStats();
-    renderHistorialCompras();
-    showPage('inicio');
+    if (!document.body.classList.contains('admin-page-shell')) {
+        renderHistorialCompras();
+    }
+    showPage(document.body.classList.contains('admin-page-shell') ? 'login' : 'inicio');
 
 });

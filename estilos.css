@@ -2453,15 +2453,36 @@ body.admin-mode .user-nav {
 }
 
 /* ===== ADMIN ===== */
+.admin-page-shell .app {
+    max-width: 1600px;
+    padding: 2rem 3rem 3rem;
+}
+
+.admin-page-shell #page-admin {
+    padding: 1.5rem 0 3rem;
+}
+
+.admin-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.admin-header-row .section-title {
+    margin-bottom: 0;
+}
+
 .admin-layout {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
-    margin-top: 1rem;
+    gap: 2rem;
+    margin-top: 1.5rem;
 }
 
 @media (min-width: 1024px) {
-    .admin-layout { flex-direction: row; gap: 2rem; }
+    .admin-layout { flex-direction: row; gap: 3rem; }
 }
 
 .admin-sidebar {
@@ -2554,7 +2575,11 @@ body.admin-mode .user-nav {
     color: var(--primary);
 }
 
-.admin-content { flex: 1; min-width: 0; }
+.admin-content {
+    flex: 1;
+    min-width: 0;
+    padding-left: 0.5rem;
+}
 
 .admin-page { display: none; animation: fadeIn 0.25s ease; }
 .admin-page.active { display: block; }
@@ -2572,6 +2597,26 @@ body.admin-mode .user-nav {
 
 @media (min-width: 768px) {
     .admin-dashboard-grid { gap: 1.5rem; }
+}
+
+@media (max-width: 767px) {
+    .admin-page-shell .app {
+        padding: 1rem;
+    }
+
+    .admin-page-shell #page-admin {
+        padding-top: 1rem;
+    }
+
+    .admin-header-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+
+    .admin-content {
+        padding-left: 0;
+    }
 }
 
 .stat-card {

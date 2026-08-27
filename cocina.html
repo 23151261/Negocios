@@ -50,13 +50,6 @@
                     </ul>
                 </li>
                 
-                <!-- ===== BOTÓN ADMIN ===== -->
-                <li class="admin-nav">
-                    <button class="logout-btn-nav" id="nav-admin-logout">
-                        <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Cerrar sesión
-                    </button>
-                </li>
-                
                 <!-- ===== BOTÓN DE LOGIN ===== -->
                 <li class="user-nav" id="nav-login-li">
                     <a href="#" class="login-btn" id="nav-login-btn" data-page="login">
@@ -568,14 +561,6 @@
                     <a href="#" class="forgot-password-link" id="forgot-password-link">¿Olvidaste tu contraseña?</a>
                     <button type="submit" class="btn-primary" id="login-btn"><i class="fas fa-arrow-right" aria-hidden="true"></i> Entrar</button>
                 </form>
-                <div class="admin-access-divider">
-                    <span>Acceso administrador</span>
-                </div>
-                <button class="btn-admin" id="admin-login-btn">
-                    <i class="fas fa-user-shield" aria-hidden="true"></i> Administrar
-                </button>
-                <div class="auth-link">¿No tienes cuenta? <a data-page="registro">Regístrate aquí</a></div>
-            </div>
         </section>
 
         <!-- ===== PÁGINA PERFIL ===== -->
@@ -610,8 +595,9 @@
             </div>
         </section>
 
-        <!-- ===== PÁGINA ADMIN ===== -->
-        <section id="page-admin" class="page-section" aria-labelledby="admin-title">
+        <!-- El panel administrativo ahora vive en admin.html. -->
+        <!--
+        <section id="page-admin-legacy" class="page-section" aria-labelledby="admin-title">
             <h2 id="admin-title" class="section-title"><i class="fas fa-tachometer-alt" aria-hidden="true"></i> Panel de Administración</h2>
             <div class="admin-layout">
                 <aside class="admin-sidebar" aria-label="Menú de administración">
@@ -957,6 +943,7 @@
                 </div>
             </div>
         </section>
+        -->
 
         <!-- ===== PÁGINA ÉXITO ===== -->
         <section id="page-exito" class="page-section" aria-labelledby="exito-title">
