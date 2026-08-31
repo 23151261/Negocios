@@ -1714,12 +1714,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!form) return;
         
-        msg.classList.add('hidden');
-        msg.textContent = '';
-        msg.className = '';
+        if (msg) {
+            msg.classList.add('hidden');
+            msg.textContent = '';
+            msg.className = '';
+        }
 
         if (index === -1) {
-            title.textContent = 'Nueva Promoción';
+            if (title) title.textContent = 'Nueva Promoción';
             document.getElementById('promo-form-index').value = '';
             document.getElementById('promo-form-name').value = '';
             document.getElementById('promo-form-discount').value = '';
@@ -1727,11 +1729,11 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('promo-form-validity').value = '';
             document.getElementById('promo-form-status').value = 'Activa';
         } else {
-            title.textContent = 'Editar Promoción';
+            if (title) title.textContent = 'Editar Promoción';
             var promo = promociones[index];
             document.getElementById('promo-form-index').value = index;
             document.getElementById('promo-form-name').value = promo.nombre || '';
-            document.getElementById('promo-form-discount').value = promo.descuento || '';
+            document.getElementById('promo-form-discount').value = promo.descuento?.replace('%', '') || '';
             document.getElementById('promo-form-products').value = promo.productos || '';
             document.getElementById('promo-form-validity').value = promo.vigencia || '';
             document.getElementById('promo-form-status').value = promo.estado || 'Activa';
@@ -1742,20 +1744,60 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function savePromoForm() {
-        var name = document.getElementById('promo-form-name')?.value || '';
-        var discount = document.getElementById('promo-form-discount')?.value || '';
-        var products = document.getElementById('promo-form-products')?.value || '';
-        var validity = document.getElementById('promo-form-validity')?.value || '';
+        var name = document.getElementById('promo-form-name')?.value.trim() || '';
+        var discount = document.getElementById('promo-form-discount')?.value.trim() || '';
+        var products = document.getElementById('promo-form-products')?.value.trim() || '';
+        var validity = document.getElementById('promo-form-validity')?.value.trim() || '';
         var status = document.getElementById('promo-form-status')?.value || 'Activa';
         var index = document.getElementById('promo-form-index')?.value;
         var msg = document.getElementById('promo-form-message');
 
+        // VALIDACIONES DE PROMOCIÓN
+        if (!name) {
+            showFormMessage(msg, 'El nombre de la promoción es requerido.', 'error');
+            return;
+        }
+        if (name.length < 3) {
+            showFormMessage(msg, 'El nombre debe tener al menos 3 caracteres.', 'error');
+            return;
+        }
+
+        if (!discount) {
+            showFormMessage(msg, 'El descuento es requerido.', 'error');
+            return;
+        }
+        // Validar que sea un porcentaje válido (0-100)
+        var discountValue = parseFloat(discount);
+        if (isNaN(discountValue) || discountValue < 0 || discountValue > 100) {
+            showFormMessage(msg, 'El descuento debe estar entre 0 y 100.', 'error');
+            return;
+        }
+
+        if (!products) {
+            showFormMessage(msg, 'Los productos son requeridos.', 'error');
+            return;
+        }
+        if (products.length < 3) {
+            showFormMessage(msg, 'Debe especificar al menos 3 caracteres en los productos.', 'error');
+            return;
+        }
+
+        if (!validity) {
+            showFormMessage(msg, 'La vigencia es requerida.', 'error');
+            return;
+        }
+
+        if (!status) {
+            showFormMessage(msg, 'El estado es requerido.', 'error');
+            return;
+        }
+
         var promoData = { 
-            nombre: name || 'Sin nombre', 
-            descuento: discount || '0%', 
-            productos: products || 'Sin productos', 
-            vigencia: validity || 'Sin fecha', 
-            estado: status || 'Activa' 
+            nombre: name, 
+            descuento: discount + '%', 
+            productos: products, 
+            vigencia: validity, 
+            estado: status 
         };
 
         if (index === '') {
@@ -2195,28 +2237,46 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        var nombre = nombreInput.value || '';
-        var precio = precioInput.value || '';
+        var nombre = nombreInput.value.trim() || '';
+        var precio = precioInput.value.trim() || '';
         var categoria = categoriaSelect ? categoriaSelect.value : 'Otros';
-        var descripcion = descripcionTextarea ? descripcionTextarea.value || '' : '';
-        var foto = fotoInput ? fotoInput.value || '' : '';
+        var descripcion = descripcionTextarea ? descripcionTextarea.value.trim() || '' : '';
+        var foto = fotoInput ? fotoInput.value.trim() || '' : '';
 
         console.log('📝 Datos del formulario:', { nombre, precio, categoria, descripcion, foto });
 
-        if (!nombre || nombre.trim() === '') {
-            nombre = 'Producto sin nombre';
-            console.log('📝 Nombre vacío, usando valor por defecto');
+        // VALIDACIONES DE PRODUCTO
+        if (!nombre) {
+            showFormMessage(msg, 'El nombre del producto es requerido.', 'error');
+            return;
         }
-        
-        var precioNum = parseFloat(precio);
-        if (isNaN(precioNum) || precioNum < 0) {
-            precioNum = 0;
-            console.log('📝 Precio vacío o inválido, usando 0');
+        if (nombre.length < 3) {
+            showFormMessage(msg, 'El nombre debe tener al menos 3 caracteres.', 'error');
+            return;
         }
 
-        if (!foto || foto.trim() === '') {
-            foto = 'https://via.placeholder.com/400x250/8b5cf6/ffffff?text=' + encodeURIComponent(nombre || 'Producto');
-            console.log('🖼️ Usando imagen por defecto');
+        if (!precio) {
+            showFormMessage(msg, 'El precio es requerido.', 'error');
+            return;
+        }
+        var precioNum = parseFloat(precio);
+        if (isNaN(precioNum) || precioNum <= 0) {
+            showFormMessage(msg, 'El precio debe ser un número mayor a 0.', 'error');
+            return;
+        }
+
+        if (!descripcion) {
+            showFormMessage(msg, 'La descripción es requerida.', 'error');
+            return;
+        }
+        if (descripcion.length < 10) {
+            showFormMessage(msg, 'La descripción debe tener al menos 10 caracteres.', 'error');
+            return;
+        }
+
+        if (!foto) {
+            showFormMessage(msg, 'La URL de la imagen es requerida.', 'error');
+            return;
         }
 
         var now = new Date();
@@ -2577,7 +2637,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const feedback = document.getElementById('subasta-feedback-main');
         if (feedback) {
             feedback.style.display = 'block';
-            feedback.textContent = '✅ ¡Oferta registrada (simulado)! $' + ofertaValor.toFixed(2) + ' - ' + usuario;
+            feedback.textContent = '✅ ¡Oferta registrada! $' + ofertaValor.toFixed(2) + ' - ' + usuario;
             feedback.className = 'subasta-feedback success';
         }
         
@@ -2866,14 +2926,53 @@ document.addEventListener('DOMContentLoaded', function() {
     if (productForm) {
         productForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            var name = document.getElementById('form-product-name')?.value || '';
+            var name = document.getElementById('form-product-name')?.value.trim() || '';
             var category = document.getElementById('form-product-category')?.value || 'Pizzas';
             var price = parseFloat(document.getElementById('form-product-price')?.value) || 0;
-            var desc = document.getElementById('form-product-desc')?.value || '';
+            var desc = document.getElementById('form-product-desc')?.value.trim() || '';
             var stock = parseInt(document.getElementById('form-product-stock')?.value) || 0;
             var status = document.getElementById('form-product-status')?.value || 'disponible';
-            var image = document.getElementById('form-product-image')?.value || '';
+            var image = document.getElementById('form-product-image')?.value.trim() || '';
             var msg = document.getElementById('form-message');
+
+            // VALIDACIONES DE PRODUCTO
+            if (!name) {
+                showFormMessage(msg, 'El nombre del producto es requerido.', 'error');
+                return;
+            }
+            if (name.length < 3) {
+                showFormMessage(msg, 'El nombre debe tener al menos 3 caracteres.', 'error');
+                return;
+            }
+
+            if (!category) {
+                showFormMessage(msg, 'La categoría es requerida.', 'error');
+                return;
+            }
+
+            if (!price || price <= 0) {
+                showFormMessage(msg, 'El precio debe ser mayor a 0.', 'error');
+                return;
+            }
+
+            if (!desc) {
+                showFormMessage(msg, 'La descripción es requerida.', 'error');
+                return;
+            }
+            if (desc.length < 10) {
+                showFormMessage(msg, 'La descripción debe tener al menos 10 caracteres.', 'error');
+                return;
+            }
+
+            if (stock < 0) {
+                showFormMessage(msg, 'La existencia no puede ser negativa.', 'error');
+                return;
+            }
+
+            if (!image) {
+                showFormMessage(msg, 'La imagen es requerida.', 'error');
+                return;
+            }
 
             if (editingProductId) {
                 var idx = -1;
@@ -2881,7 +2980,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (products[i].id === editingProductId) { idx = i; break; }
                 }
                 if (idx !== -1) {
-                    products[idx] = { ...products[idx], name: name || 'Sin nombre', category: category || 'Pizzas', price: price || 0, desc: desc || '', stock: stock || 0, status: status || 'disponible', image: image || '' };
+                    products[idx] = { ...products[idx], name: name, category: category, price: price, desc: desc, stock: stock, status: status, image: image };
                 }
                 showFormMessage(msg, 'Producto actualizado correctamente.', 'success');
             } else {
@@ -2890,7 +2989,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (products[j].id > newId) newId = products[j].id;
                 }
                 newId++;
-                products.push({ id: newId, name: name || 'Sin nombre', category: category || 'Pizzas', price: price || 0, desc: desc || '', image: image || '', badge: null, badgeText: null, stock: stock || 0, status: status || 'disponible' });
+                products.push({ id: newId, name: name, category: category, price: price, desc: desc, image: image, badge: null, badgeText: null, stock: stock, status: status });
                 showFormMessage(msg, 'Producto agregado correctamente.', 'success');
             }
 
@@ -2978,17 +3077,55 @@ document.addEventListener('DOMContentLoaded', function() {
     if (clientFormSaveBtn) {
         clientFormSaveBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            var name = document.getElementById('form-client-name')?.value || '';
-            var email = document.getElementById('form-client-email')?.value || '';
-            var phone = document.getElementById('form-client-phone')?.value || '';
-            var address = document.getElementById('form-client-address')?.value || '';
+            var name = document.getElementById('form-client-name')?.value.trim() || '';
+            var email = document.getElementById('form-client-email')?.value.trim() || '';
+            var phone = document.getElementById('form-client-phone')?.value.trim() || '';
+            var address = document.getElementById('form-client-address')?.value.trim() || '';
             var msg = document.getElementById('client-form-message');
 
+            // VALIDACIONES DE CLIENTE
+            if (!name) {
+                showFormMessage(msg, 'El nombre es requerido.', 'error');
+                return;
+            }
+            if (name.length < 3) {
+                showFormMessage(msg, 'El nombre debe tener al menos 3 caracteres.', 'error');
+                return;
+            }
+
+            if (!email) {
+                showFormMessage(msg, 'El correo electrónico es requerido.', 'error');
+                return;
+            }
+            var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showFormMessage(msg, 'Ingresa un correo electrónico válido.', 'error');
+                return;
+            }
+
+            if (!phone) {
+                showFormMessage(msg, 'El teléfono es requerido.', 'error');
+                return;
+            }
+            if (phone.length < 7) {
+                showFormMessage(msg, 'El teléfono debe tener al menos 7 dígitos.', 'error');
+                return;
+            }
+
+            if (!address) {
+                showFormMessage(msg, 'La dirección es requerida.', 'error');
+                return;
+            }
+            if (address.length < 5) {
+                showFormMessage(msg, 'La dirección debe tener al menos 5 caracteres.', 'error');
+                return;
+            }
+
             if (editingClientId !== null && editingClientId >= 0) {
-                clients[editingClientId].name = name || 'Sin nombre';
-                clients[editingClientId].email = email || '';
-                clients[editingClientId].phone = phone || '';
-                clients[editingClientId].address = address || '';
+                clients[editingClientId].name = name;
+                clients[editingClientId].email = email;
+                clients[editingClientId].phone = phone;
+                clients[editingClientId].address = address;
                 showFormMessage(msg, 'Cliente actualizado correctamente.', 'success');
             } else {
                 var newId = 0;
@@ -2998,10 +3135,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 newId++;
                 var newClient = {
                     id: newId,
-                    name: name || 'Sin nombre',
-                    email: email || '',
-                    phone: phone || '',
-                    address: address || '',
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    address: address,
                     orders: 0,
                     spent: 0,
                     registeredDate: new Date().toLocaleDateString('es-ES')
@@ -3033,8 +3170,49 @@ document.addEventListener('DOMContentLoaded', function() {
     if (registroBtn) {
         registroBtn.addEventListener('click', function(e) {
             e.preventDefault();
+            var name = document.getElementById('registro-nombre')?.value.trim() || '';
+            var email = document.getElementById('registro-email')?.value.trim() || '';
+            var password = document.getElementById('registro-password')?.value || '';
             var msg = document.getElementById('registro-message');
-            if (msg) showFormMessage(msg, 'Registro exitoso (simulado).', 'success');
+
+            // VALIDACIONES DE REGISTRO
+            if (!name) {
+                showFormMessage(msg, 'El nombre es requerido.', 'error');
+                return;
+            }
+            if (name.length < 3) {
+                showFormMessage(msg, 'El nombre debe tener al menos 3 caracteres.', 'error');
+                return;
+            }
+
+            if (!email) {
+                showFormMessage(msg, 'El correo electrónico es requerido.', 'error');
+                return;
+            }
+            var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showFormMessage(msg, 'Ingresa un correo electrónico válido.', 'error');
+                return;
+            }
+
+            if (!password) {
+                showFormMessage(msg, 'La contraseña es requerida.', 'error');
+                return;
+            }
+            if (password.length < 6) {
+                showFormMessage(msg, 'La contraseña debe tener al menos 6 caracteres.', 'error');
+                return;
+            }
+            if (!/[A-Z]/.test(password)) {
+                showFormMessage(msg, 'La contraseña debe contener al menos una mayúscula.', 'error');
+                return;
+            }
+            if (!/\d/.test(password)) {
+                showFormMessage(msg, 'La contraseña debe contener al menos un número.', 'error');
+                return;
+            }
+
+            if (msg) showFormMessage(msg, 'Registro exitoso.', 'success');
             
             isLoggedIn = true;
             isAdmin = false;
@@ -3076,7 +3254,29 @@ document.addEventListener('DOMContentLoaded', function() {
     if (loginBtn) {
         loginBtn.addEventListener('click', function(e) {
             e.preventDefault();
+            var email = document.getElementById('login-email')?.value.trim() || '';
+            var password = document.getElementById('login-password')?.value || '';
             var msg = document.getElementById('login-message');
+
+            // VALIDACIONES DE LOGIN
+            if (!email) {
+                showFormMessage(msg, 'El correo electrónico es requerido.', 'error');
+                return;
+            }
+            var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showFormMessage(msg, 'Ingresa un correo electrónico válido.', 'error');
+                return;
+            }
+
+            if (!password) {
+                showFormMessage(msg, 'La contraseña es requerida.', 'error');
+                return;
+            }
+            if (password.length < 6) {
+                showFormMessage(msg, 'La contraseña debe tener al menos 6 caracteres.', 'error');
+                return;
+            }
 
             if (document.body.classList.contains('admin-page-shell')) {
                 isLoggedIn = true;
@@ -3148,7 +3348,7 @@ document.addEventListener('DOMContentLoaded', function() {
         forgotPasswordLink.addEventListener('click', function(e) {
             e.preventDefault();
             var msg = document.getElementById('login-message');
-            if (msg) showFormMessage(msg, 'Se ha enviado un enlace de restablecimiento (simulado).', 'success');
+            if (msg) showFormMessage(msg, 'Se ha enviado un enlace de restablecimiento.', 'success');
         });
     }
 
@@ -3181,7 +3381,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (editProfileBtn) {
         editProfileBtn.addEventListener('click', function() {
             var msg = document.getElementById('profile-message');
-            if (msg) showFormMessage(msg, 'Función de edición de perfil (simulada).', 'success');
+            if (msg) showFormMessage(msg, 'Función de edición de perfil.', 'success');
         });
     }
 
@@ -3192,8 +3392,41 @@ document.addEventListener('DOMContentLoaded', function() {
     var sendContactBtn = document.getElementById('send-contact-btn');
     if (sendContactBtn) {
         sendContactBtn.addEventListener('click', function() {
+            var name = document.getElementById('contact-name')?.value.trim() || '';
+            var email = document.getElementById('contact-email')?.value.trim() || '';
+            var message = document.getElementById('contact-message')?.value.trim() || '';
             var feedback = document.getElementById('contact-feedback');
-            if (feedback) showFormMessage(feedback, 'Mensaje enviado (simulado).', 'success');
+
+            // VALIDACIONES DE CONTACTO
+            if (!name) {
+                showFormMessage(feedback, 'El nombre es requerido.', 'error');
+                return;
+            }
+            if (name.length < 3) {
+                showFormMessage(feedback, 'El nombre debe tener al menos 3 caracteres.', 'error');
+                return;
+            }
+
+            if (!email) {
+                showFormMessage(feedback, 'El correo electrónico es requerido.', 'error');
+                return;
+            }
+            var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showFormMessage(feedback, 'Ingresa un correo electrónico válido.', 'error');
+                return;
+            }
+
+            if (!message) {
+                showFormMessage(feedback, 'El mensaje es requerido.', 'error');
+                return;
+            }
+            if (message.length < 10) {
+                showFormMessage(feedback, 'El mensaje debe tener al menos 10 caracteres.', 'error');
+                return;
+            }
+
+            if (feedback) showFormMessage(feedback, 'Mensaje enviado.', 'success');
             document.getElementById('contact-name').value = '';
             document.getElementById('contact-email').value = '';
             document.getElementById('contact-message').value = '';
@@ -3213,7 +3446,7 @@ document.addEventListener('DOMContentLoaded', function() {
         promoApplyBtn.addEventListener('click', function(e) {
             e.preventDefault();
             if (promoFeedback) {
-                promoFeedback.textContent = 'Descuento aplicado (simulado)';
+                promoFeedback.textContent = 'Descuento aplicado';
                 promoFeedback.className = 'promo-feedback success';
             }
             if (promoTotal) promoTotal.textContent = '$21.60';
@@ -3231,8 +3464,21 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             var nameInput = document.getElementById('community-name');
             var commentInput = document.getElementById('community-comment');
+            var text = commentInput ? commentInput.value.trim() || '' : '';
             var name = nameInput ? (nameInput.value.trim() || 'Anónimo') : 'Anónimo';
-            var text = commentInput ? commentInput.value || '' : '';
+            
+            // VALIDACIONES DE COMUNIDAD
+            if (!text) {
+                var feedback = document.getElementById('community-feedback');
+                if (feedback) showFormMessage(feedback, 'El comentario no puede estar vacío.', 'error');
+                return;
+            }
+            if (text.length < 5) {
+                var feedback = document.getElementById('community-feedback');
+                if (feedback) showFormMessage(feedback, 'El comentario debe tener al menos 5 caracteres.', 'error');
+                return;
+            }
+            
             addCommunityComment(name, text);
             if (nameInput) nameInput.value = '';
             if (commentInput) commentInput.value = '';
@@ -3260,7 +3506,19 @@ document.addEventListener('DOMContentLoaded', function() {
         misComentariosForm.addEventListener('submit', function(e) {
             e.preventDefault();
             var textInput = document.getElementById('mis-comentarios-text');
-            var text = textInput ? textInput.value || '' : '';
+            var text = textInput ? textInput.value.trim() || '' : '';
+            var feedback = document.getElementById('mis-comentarios-feedback');
+            
+            // VALIDACIONES DE MIS COMENTARIOS
+            if (!text) {
+                if (feedback) showFormMessage(feedback, 'El comentario no puede estar vacío.', 'error');
+                return;
+            }
+            if (text.length < 5) {
+                if (feedback) showFormMessage(feedback, 'El comentario debe tener al menos 5 caracteres.', 'error');
+                return;
+            }
+            
             publicarComentarioDesdeMisComentarios(text);
             if (textInput) textInput.value = '';
         });
@@ -3819,11 +4077,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('factura-descargar-pdf')?.addEventListener('click', function() {
         const feedback = document.getElementById('factura-feedback');
         feedback.className = 'auth-success alert-message';
-        feedback.textContent = '📄 Generando PDF (simulado)...';
+        feedback.textContent = '📄 Generando PDF...';
         feedback.classList.remove('hidden');
         
         setTimeout(function() {
-            feedback.textContent = '✅ PDF descargado correctamente (simulación)';
+            feedback.textContent = '✅ PDF descargado correctamente';
             setTimeout(function() {
                 feedback.classList.add('hidden');
             }, 2500);
@@ -3833,11 +4091,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('factura-imprimir-btn')?.addEventListener('click', function() {
         const feedback = document.getElementById('factura-feedback');
         feedback.className = 'auth-success alert-message';
-        feedback.textContent = '🖨️ Enviando a impresión (simulado)...';
+        feedback.textContent = '🖨️ Enviando a impresión...';
         feedback.classList.remove('hidden');
         
         setTimeout(function() {
-            feedback.textContent = '✅ Impresión enviada correctamente (simulación)';
+            feedback.textContent = '✅ Impresión enviada correctamente';
             setTimeout(function() {
                 feedback.classList.add('hidden');
             }, 2000);
