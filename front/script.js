@@ -116,6 +116,11 @@ document.addEventListener('DOMContentLoaded', function() {
         memberSince: '2024'
     };
 
+    try {
+        var savedUser = localStorage.getItem('delicias_current_user');
+        if (savedUser) currentUser = Object.assign(currentUser, JSON.parse(savedUser));
+    } catch (e) {}
+
     // ============================================================
     // COMENTARIOS DE LA COMUNIDAD
     // ============================================================
@@ -210,6 +215,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentProductId = null;
     let editingProductId = null;
     let editingClientId = null;
+    let previousClientView = 'clientes';
     let cartOpen = false;
     let editingCommentId = null;
 
@@ -356,6 +362,24 @@ document.addEventListener('DOMContentLoaded', function() {
         orders = savedOrders ? JSON.parse(savedOrders) : JSON.parse(JSON.stringify(defaultOrders));
     } catch (e) {
         orders = JSON.parse(JSON.stringify(defaultOrders));
+    }
+
+    function parseStoredDate(value) {
+        if (!value) return null;
+        var match = String(value).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (match) return new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+        var parsed = new Date(value);
+        return isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function getClientLastPurchaseDate(client) {
+        var latestDate = parseStoredDate(client.lastPurchaseDate || client.registeredDate);
+        for (var i = 0; i < orders.length; i++) {
+            if (orders[i].client !== client.name) continue;
+            var orderDate = parseStoredDate(orders[i].date);
+            if (orderDate && (!latestDate || orderDate > latestDate)) latestDate = orderDate;
+        }
+        return latestDate;
     }
 
     try {
@@ -574,10 +598,27 @@ document.addEventListener('DOMContentLoaded', function() {
         'promo-form': document.getElementById('admin-promo-form'),
         clientes: document.getElementById('admin-clientes'),
         'client-form': document.getElementById('admin-client-form'),
+        'client-detail': document.getElementById('admin-client-detail'),
         reportes: document.getElementById('admin-reportes')
     };
 
     function showPage(pageId) {
+        if (document.body.classList.contains('admin-page-shell')) {
+            var adminLoginPage = document.getElementById('page-login');
+            var adminMainPage = document.getElementById('page-admin');
+            if (adminLoginPage) adminLoginPage.classList.remove('active');
+            if (adminMainPage) adminMainPage.classList.remove('active');
+
+            if (pageId === 'login') {
+                if (adminLoginPage) adminLoginPage.classList.add('active');
+            } else if (pageId === 'admin') {
+                if (adminMainPage) adminMainPage.classList.add('active');
+                showAdminPage('dashboard');
+                updateDashboardStats();
+            }
+            return;
+        }
+
         for (var key in pages) {
             if (pages[key]) pages[key].classList.remove('active');
         }
@@ -686,15 +727,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateDashboardStats() {
-        var total = products.length;
-        var outOfStock = 0;
-        for (var i = 0; i < products.length; i++) {
-            if (products[i].status === 'agotado') outOfStock++;
+        var activeClients = 0;
+        var inactiveClients = 0;
+        var atRiskClients = 0;
+        var oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        var twoMonthsAgo = new Date();
+        twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+
+        for (var j = 0; j < clients.length; j++) {
+            var lastPurchase = getClientLastPurchaseDate(clients[j]);
+            if (!lastPurchase || lastPurchase >= oneMonthAgo) {
+                activeClients++;
+            } else if (lastPurchase >= twoMonthsAgo) {
+                inactiveClients++;
+            } else {
+                atRiskClients++;
+            }
         }
-        var statProducts = document.getElementById('stat-products');
-        var statOutOfStock = document.getElementById('stat-out-of-stock');
-        if (statProducts) statProducts.textContent = total;
-        if (statOutOfStock) statOutOfStock.textContent = outOfStock;
+
+        var statActiveClients = document.getElementById('stat-active-clients');
+        var statInactiveClients = document.getElementById('stat-inactive-clients');
+        var statAtRiskClients = document.getElementById('stat-at-risk-clients');
+        if (statActiveClients) statActiveClients.textContent = activeClients;
+        if (statInactiveClients) statInactiveClients.textContent = inactiveClients;
+        if (statAtRiskClients) statAtRiskClients.textContent = atRiskClients;
     }
 
     function mostrarMensajeLoginRequerido() {
@@ -1355,6 +1412,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (profileAddress) profileAddress.textContent = currentUser.address || 'Calle Principal 123, Colonia Centro';
     }
 
+    function openProfileEditor() {
+        var modal = document.getElementById('edit-profile-modal');
+        if (!modal) return;
+        document.getElementById('edit-profile-name').value = currentUser.name || '';
+        document.getElementById('edit-profile-email').value = currentUser.email || '';
+        document.getElementById('edit-profile-phone').value = currentUser.phone || '';
+        document.getElementById('edit-profile-address').value = currentUser.address || '';
+        document.getElementById('edit-profile-feedback').classList.add('hidden');
+        modal.style.display = 'flex';
+    }
+
     // ============================================================
     // FUNCIONES DE ADMIN - PRODUCTOS
     // ============================================================
@@ -1512,6 +1580,167 @@ document.addEventListener('DOMContentLoaded', function() {
     // FUNCIONES DE ADMIN - CLIENTES
     // ============================================================
 
+    function openClientDetail(idx) {
+        if (idx === undefined || idx === null || !clients[idx]) return;
+
+        var c = clients[idx];
+        var content = document.getElementById('client-detail-content');
+        if (!content) return;
+
+        content.innerHTML = `
+            <div class="client-detail-shell">
+                <div class="client-detail-header-card">
+                    <div class="client-detail-identity">
+                        <div class="client-detail-avatar">${(c.name || 'Sin nombre').split(' ').map(function(part) { return part.charAt(0).toUpperCase(); }).slice(0,2).join('')}</div>
+                        <div>
+                            <div class="client-detail-badge">Cliente activo</div>
+                            <h4>${(c.name || 'Sin nombre')}</h4>
+                            <p>${(c.email || 'No registrado')}</p>
+                        </div>
+                    </div>
+                    <div class="client-detail-header-actions">
+                        <button class="btn-secondary" data-client-index="${idx}" id="client-detail-note-btn"><i class="fas fa-comment"></i> Agregar nota</button>
+                        <button class="btn-primary" data-client-index="${idx}" id="client-detail-edit-btn"><i class="fas fa-edit"></i> Editar cliente</button>
+                    </div>
+                </div>
+
+                <div class="client-detail-summary">
+                    <div class="client-detail-metric">
+                        <span>Pedidos</span>
+                        <strong>${(c.orders || 0)}</strong>
+                    </div>
+                    <div class="client-detail-metric">
+                        <span>Gastado</span>
+                        <strong>$${(c.spent || 0).toFixed(2)}</strong>
+                    </div>
+                    <div class="client-detail-metric">
+                        <span>Teléfono</span>
+                        <strong>${(c.phone || 'No registrado')}</strong>
+                    </div>
+                    <div class="client-detail-metric">
+                        <span>Estado</span>
+                        <strong>Activo</strong>
+                    </div>
+                </div>
+
+                <div class="client-detail-layout">
+                    <div class="client-detail-main-col">
+                        <div class="client-detail-card">
+                            <div class="client-detail-card-header">
+                                <h5><i class="fas fa-address-card"></i> Información personal</h5>
+                            </div>
+                            <div class="client-detail-info-list">
+                                <div class="info-row"><span>Correo</span><strong>${(c.email || 'No registrado')}</strong></div>
+                                <div class="info-row"><span>Teléfono</span><strong>${(c.phone || 'No registrado')}</strong></div>
+                                <div class="info-row"><span>Dirección</span><strong>${(c.address || 'No registrada')}</strong></div>
+                                <div class="info-row"><span>Registro</span><strong>${(c.registeredDate || 'Sin fecha')}</strong></div>
+                            </div>
+                        </div>
+
+                        <div class="client-detail-card">
+                            <div class="client-detail-card-header">
+                                <h5><i class="fas fa-history"></i> Historial de interacciones</h5>
+                            </div>
+                            <div class="client-detail-timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-dot green"></div>
+                                    <div class="timeline-content">
+                                        <strong>Compra completada</strong>
+                                        <p>Se realizó una compra por $${(c.spent || 0).toFixed(2)} con entrega confirmada.</p>
+                                        <small>12/05/2026</small>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-dot purple"></div>
+                                    <div class="timeline-content">
+                                        <strong>Seguimiento por correo</strong>
+                                        <p>Se envió recordatorio sobre el estado del pedido y próxima entrega.</p>
+                                        <small>10/05/2026</small>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-dot amber"></div>
+                                    <div class="timeline-content">
+                                        <strong>Contacto inicial</strong>
+                                        <p>El cliente se registró y confirmó datos de contacto.</p>
+                                        <small>${(c.registeredDate || 'Sin fecha')}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="client-detail-side-col">
+                        <div class="client-detail-card">
+                            <div class="client-detail-card-header">
+                                <h5><i class="fas fa-bolt"></i> Acciones rápidas</h5>
+                            </div>
+                            <div class="action-stack">
+                                <button class="btn-primary alt" data-client-index="${idx}" id="client-detail-edit-inline-btn"><i class="fas fa-edit"></i> Editar</button>
+                                <button class="btn-secondary" data-client-index="${idx}" id="client-detail-followup-btn"><i class="fas fa-calendar-check"></i> Programar seguimiento</button>
+                                <button class="btn-danger" data-client-index="${idx}" id="client-detail-delete-btn"><i class="fas fa-trash"></i> Eliminar</button>
+                            </div>
+                        </div>
+
+                        <div class="client-detail-card">
+                            <div class="client-detail-card-header">
+                                <h5><i class="fas fa-star"></i> Segmentación</h5>
+                            </div>
+                            <div class="segment-box">
+                                <span class="segment-pill">VIP</span>
+                                <p>Cliente frecuente con buena tasa de recompra.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        var editBtn = document.getElementById('client-detail-edit-btn');
+        var editInlineBtn = document.getElementById('client-detail-edit-inline-btn');
+        var noteBtn = document.getElementById('client-detail-note-btn');
+        var followUpBtn = document.getElementById('client-detail-followup-btn');
+
+        [editBtn, editInlineBtn].forEach(function(btn) {
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    var index = parseInt(this.getAttribute('data-client-index'));
+                    openClientForm(index);
+                });
+            }
+        });
+
+        if (noteBtn) {
+            noteBtn.addEventListener('click', function() {
+                alert('Aquí podrías agregar una nota del cliente.');
+            });
+        }
+
+        if (followUpBtn) {
+            followUpBtn.addEventListener('click', function() {
+                alert('Aquí podrías programar un seguimiento del cliente.');
+            });
+        }
+
+        var deleteBtn = document.getElementById('client-detail-delete-btn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', function() {
+                var index = parseInt(this.getAttribute('data-client-index'));
+                var clientName = (clients[index] && clients[index].name && clients[index].name !== 'Sin nombre') ? clients[index].name : 'este cliente';
+                showConfirmModal('Eliminar a ' + clientName + '?', function(confirmed) {
+                    if (confirmed) {
+                        clients.splice(index, 1);
+                        saveClients();
+                        showAdminPage('clientes');
+                        renderClientsTable();
+                    }
+                });
+            });
+        }
+
+        showAdminPage('client-detail');
+    }
+
     function renderClientsTable() {
         var tbody = document.getElementById('clients-table-body');
         if (!tbody) return;
@@ -1531,16 +1760,17 @@ document.addEventListener('DOMContentLoaded', function() {
             html += '<td>$' + (c.spent || 0).toFixed(2) + '</td>';
             html += '<td>' + (c.registeredDate || '') + '</td>';
             html += '<td><div class="table-actions">';
-            html += '<button class="btn-edit" data-index="' + i + '" aria-label="Editar ' + (c.name || 'cliente') + '"><i class="fas fa-edit"></i></button>';
+            html += '<button class="btn-view" data-index="' + i + '" aria-label="Ver detalle de ' + (c.name || 'cliente') + '"><i class="fas fa-eye"></i></button>';
             html += '<button class="btn-delete" data-index="' + i + '" aria-label="Eliminar ' + (c.name || 'cliente') + '"><i class="fas fa-trash"></i></button>';
             html += '</div></td></tr>';
         }
         tbody.innerHTML = html;
 
-        tbody.querySelectorAll('.btn-edit').forEach(function(btn) {
-            btn.addEventListener('click', function() {
+        tbody.querySelectorAll('.btn-view').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
                 var idx = parseInt(this.getAttribute('data-index'));
-                openClientForm(idx);
+                openClientDetail(idx);
             });
         });
 
@@ -1562,6 +1792,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function openClientForm(idx) {
         if (idx === undefined) idx = null;
         editingClientId = idx;
+        previousClientView = (adminPages && adminPages['client-detail'] && adminPages['client-detail'].classList.contains('active')) ? 'client-detail' : 'clientes';
         var title = document.getElementById('client-form-title');
         var nameInput = document.getElementById('form-client-name');
         var emailInput = document.getElementById('form-client-email');
@@ -3156,8 +3387,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     var clientFormCancelBtn = document.getElementById('form-client-cancel-btn');
+    var adminViewClientsBtn = document.getElementById('admin-view-clients-btn');
+    var adminAddClientQuickBtn = document.getElementById('admin-add-client-quick-btn');
+    if (adminViewClientsBtn) {
+        adminViewClientsBtn.addEventListener('click', function() {
+            showAdminPage('clientes');
+        });
+    }
+    if (adminAddClientQuickBtn) {
+        adminAddClientQuickBtn.addEventListener('click', function() {
+            openClientForm();
+        });
+    }
     if (clientFormCancelBtn) {
         clientFormCancelBtn.addEventListener('click', function() {
+            showAdminPage(previousClientView || 'clientes');
+        });
+    }
+
+    var clientDetailBackBtn = document.getElementById('client-detail-back-btn');
+    if (clientDetailBackBtn) {
+        clientDetailBackBtn.addEventListener('click', function() {
             showAdminPage('clientes');
         });
     }
@@ -3284,7 +3534,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (msg) showFormMessage(msg, 'Inicio de sesión exitoso.', 'success');
                 setTimeout(function() {
                     updateNavVisibility();
-                    showPage('admin');
+                    var adminLoginPage = document.getElementById('page-login');
+                    var adminMainPage = document.getElementById('page-admin');
+                    if (adminLoginPage) adminLoginPage.classList.remove('active');
+                    if (adminMainPage) adminMainPage.classList.add('active');
+                    showAdminPage('dashboard');
+                    updateDashboardStats();
                 }, 800);
                 return;
             }
@@ -3338,7 +3593,12 @@ document.addEventListener('DOMContentLoaded', function() {
             sessionStorage.removeItem('cart_before_login');
             setTimeout(function() {
                 updateNavVisibility();
-                showPage('admin');
+                var adminLoginPage = document.getElementById('page-login');
+                var adminMainPage = document.getElementById('page-admin');
+                if (adminLoginPage) adminLoginPage.classList.remove('active');
+                if (adminMainPage) adminMainPage.classList.add('active');
+                showAdminPage('dashboard');
+                updateDashboardStats();
             }, 1500);
         });
     }
@@ -3380,8 +3640,49 @@ document.addEventListener('DOMContentLoaded', function() {
     var editProfileBtn = document.getElementById('edit-profile-btn');
     if (editProfileBtn) {
         editProfileBtn.addEventListener('click', function() {
-            var msg = document.getElementById('profile-message');
-            if (msg) showFormMessage(msg, 'Función de edición de perfil.', 'success');
+            openProfileEditor();
+        });
+    }
+
+    var editProfileForm = document.getElementById('edit-profile-form');
+    if (editProfileForm) {
+        editProfileForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var name = document.getElementById('edit-profile-name').value.trim();
+            var email = document.getElementById('edit-profile-email').value.trim();
+            var phone = document.getElementById('edit-profile-phone').value.trim();
+            var address = document.getElementById('edit-profile-address').value.trim();
+            var feedback = document.getElementById('edit-profile-feedback');
+
+            if (name.length < 3) {
+                showFormMessage(feedback, 'El nombre debe tener al menos 3 caracteres.', 'error');
+                return;
+            }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showFormMessage(feedback, 'Ingresa un correo electrónico válido.', 'error');
+                return;
+            }
+            if (phone.length < 7 || address.length < 5) {
+                showFormMessage(feedback, 'Completa un teléfono y una dirección válidos.', 'error');
+                return;
+            }
+
+            currentUser.name = name;
+            currentUser.email = email;
+            currentUser.phone = phone;
+            currentUser.address = address;
+            try { localStorage.setItem('delicias_current_user', JSON.stringify(currentUser)); } catch (error) {}
+            updateProfileUI();
+            updateNavVisibility();
+            document.getElementById('edit-profile-modal').style.display = 'none';
+            showFormMessage(document.getElementById('profile-message'), 'Perfil actualizado correctamente.', 'success');
+        });
+    }
+
+    var editProfileCancelBtn = document.getElementById('edit-profile-cancel-btn');
+    if (editProfileCancelBtn) {
+        editProfileCancelBtn.addEventListener('click', function() {
+            document.getElementById('edit-profile-modal').style.display = 'none';
         });
     }
 

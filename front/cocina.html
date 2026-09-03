@@ -135,6 +135,28 @@
             </div>
         </div>
 
+        <div class="modal-overlay" id="edit-profile-modal" style="display: none;">
+            <div class="modal-box" style="max-width: 500px; text-align: left;">
+                <div class="modal-icon" aria-hidden="true"><i class="fas fa-user-edit"></i></div>
+                <h2 style="text-align: center;">Editar perfil</h2>
+                <form id="edit-profile-form" style="margin-top: 1rem;">
+                    <label for="edit-profile-name">Nombre completo</label>
+                    <input type="text" id="edit-profile-name" required>
+                    <label for="edit-profile-email">Correo electrónico</label>
+                    <input type="email" id="edit-profile-email" required>
+                    <label for="edit-profile-phone">Teléfono</label>
+                    <input type="tel" id="edit-profile-phone" required>
+                    <label for="edit-profile-address">Dirección</label>
+                    <input type="text" id="edit-profile-address" required>
+                    <div style="display:flex; gap:0.8rem; justify-content:center; flex-wrap:wrap; margin-top:1.5rem;">
+                        <button type="submit" class="btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Guardar</button>
+                        <button type="button" class="btn-secondary" id="edit-profile-cancel-btn"><i class="fas fa-times" aria-hidden="true"></i> Cancelar</button>
+                    </div>
+                    <div id="edit-profile-feedback" class="hidden alert-message" style="margin-top:1rem; width:100%; text-align:center;"></div>
+                </form>
+            </div>
+        </div>
+
         <!-- ===== PÁGINA INICIO ===== -->
         <section id="page-inicio" class="page-section active" aria-labelledby="hero-title">
             <div class="hero">
