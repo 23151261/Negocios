@@ -42,6 +42,7 @@
                     <ul class="profile-dropdown-menu" id="profile-dropdown-menu" role="menu">
                         <li><a href="#" data-page="perfil" role="menuitem"><i class="fas fa-user" aria-hidden="true"></i> Mi Perfil</a></li>
                         <li><a href="#" data-page="mis-compras" role="menuitem"><i class="fas fa-shopping-bag" aria-hidden="true"></i> Mis Compras</a></li>
+                        <li><a href="#" data-page="mi-actividad" role="menuitem"><i class="fas fa-history" aria-hidden="true"></i> Mi actividad</a></li>
                         <li><a href="#" data-page="mis-publicaciones" role="menuitem"><i class="fas fa-boxes" aria-hidden="true"></i> Mis Publicaciones</a></li>
                         <li><a href="#" data-page="publicar-producto" role="menuitem"><i class="fas fa-plus-circle" aria-hidden="true"></i> Publicar Producto</a></li>
                         <li><a href="#" data-page="mis-comentarios" role="menuitem"><i class="fas fa-comments" aria-hidden="true"></i> Mis Comentarios</a></li>
@@ -885,6 +886,7 @@
                                 </h3>
                                 <button class="btn-primary" id="admin-add-client-btn"><i class="fas fa-plus" aria-hidden="true"></i> Agregar cliente</button>
                             </div>
+                            <div class="crm-client-filters"><label for="client-search">Buscar cliente</label><input type="search" id="client-search" placeholder="Nombre, correo o teléfono"><label for="client-status-filter">Estado</label><select id="client-status-filter"><option value="todos">Todos los estados</option><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select><label for="client-stage-filter">Etapa CRM</label><select id="client-stage-filter"><option value="todas">Todas las etapas</option><option value="prospecto">Prospecto</option><option value="activo">Activo</option><option value="frecuente">Frecuente</option><option value="inactivo">Inactivo</option></select></div>
                             <div style="overflow-x:auto;">
                                 <table class="product-table" id="clients-table">
                                     <thead>
@@ -918,6 +920,14 @@
                                 <div class="form-group">
                                     <label for="form-client-address">Dirección</label>
                                     <textarea id="form-client-address" placeholder="Dirección del cliente..."></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-client-stage">Etapa CRM</label>
+                                    <select id="form-client-stage"><option value="prospecto">Prospecto</option><option value="activo">Activo</option><option value="frecuente">Frecuente</option><option value="inactivo">Inactivo</option></select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-client-status">Estado</label>
+                                    <select id="form-client-status"><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select>
                                 </div>
                                 <div class="form-actions">
                                     <button type="submit" class="btn-primary" id="form-client-save-btn"><i class="fas fa-save" aria-hidden="true"></i> Guardar</button>
@@ -1428,6 +1438,17 @@
                     </div>
                 </div>
                 
+            </div>
+        </section>
+
+        <!-- ===== PÁGINA MIS COMPRAS ===== -->
+        <section id="page-mi-actividad" class="page-section" aria-labelledby="mi-actividad-title">
+            <h2 id="mi-actividad-title" class="section-title"><i class="fas fa-history" aria-hidden="true"></i> Mi actividad</h2>
+            <div class="activity-page-container">
+                <p class="activity-page-intro">Interacciones registradas por tu usuario.</p>
+                <div class="activity-table-wrapper">
+                    <table class="product-table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Tipo</th><th>Descripción</th><th>Responsable</th></tr></thead><tbody id="normal-activity-table-body"></tbody></table>
+                </div>
             </div>
         </section>
 

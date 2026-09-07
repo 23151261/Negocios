@@ -47,6 +47,7 @@
                         <li><a href="#" data-admin-page="pedidos"><i class="fas fa-shopping-bag" aria-hidden="true"></i> Pedidos</a></li>
                         <li><a href="#" data-admin-page="promociones"><i class="fas fa-tags" aria-hidden="true"></i> Promociones</a></li>
                         <li><a href="#" data-admin-page="clientes"><i class="fas fa-users" aria-hidden="true"></i> Clientes</a></li>
+                        <li><a href="#" data-admin-page="mi-actividad"><i class="fas fa-history" aria-hidden="true"></i> Mi actividad</a></li>
                         <li><a href="#" data-admin-page="usuarios"><i class="fas fa-user-cog" aria-hidden="true"></i> Usuarios</a></li>
                         <li><a href="#" data-admin-page="reportes"><i class="fas fa-file-alt" aria-hidden="true"></i> Reportes</a></li>
                     </ul>
@@ -58,6 +59,21 @@
                             <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-friends"></i></div><div class="stat-number" id="stat-active-clients">0</div><div class="stat-label">Clientes activos</div></div>
                             <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-clock"></i></div><div class="stat-number" id="stat-inactive-clients">0</div><div class="stat-label">Clientes inactivos</div></div>
                             <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-times"></i></div><div class="stat-number" id="stat-at-risk-clients">0</div><div class="stat-label">En riesgo de desaparecer</div></div>
+                            <div class="stat-card"><div class="stat-icon"><i class="fas fa-comments"></i></div><div class="stat-number" id="stat-interactions-per-client">0</div><div class="stat-label">Interacciones por cliente</div></div>
+                        </div>
+                        <div class="crm-summary">
+                            <div class="crm-panel">
+                                <div class="crm-panel-header"><h3><i class="fas fa-funnel-dollar"></i> Etapas CRM</h3></div>
+                                <div class="stage-pills" id="crm-stage-summary"></div>
+                            </div>
+                            <div class="crm-panel">
+                                <div class="crm-panel-header"><h3><i class="fas fa-exclamation-triangle"></i> Clientes en riesgo</h3></div>
+                                <ul class="crm-risk-list" id="crm-risk-list"></ul>
+                            </div>
+                            <div class="crm-panel crm-stage-chart-panel">
+                                <div class="crm-panel-header"><h3><i class="fas fa-chart-bar"></i> Distribución por etapa</h3></div>
+                                <div id="crm-stage-chart" class="crm-stage-chart" role="img" aria-label="Distribución de clientes por etapa CRM"></div>
+                            </div>
                         </div>
                         <div class="admin-actions">
                             <button class="btn-primary" id="admin-view-clients-btn"><i class="fas fa-users"></i> Ver clientes</button>
@@ -70,8 +86,8 @@
                     <div id="admin-pedidos" class="admin-page hidden"><div class="product-table-container"><h3>Pedidos recientes</h3><div style="overflow-x:auto;"><table class="product-table"><thead><tr><th>ID</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody id="orders-table-body"></tbody></table></div></div></div>
                     <div id="admin-promociones" class="admin-page hidden"><div class="product-table-container"><div class="table-header"><h3>Promociones</h3><button class="btn-success" id="admin-create-promo-btn2"><i class="fas fa-plus"></i> Nueva promoción</button></div><table class="product-table"><thead><tr><th>Nombre</th><th>Descuento</th><th>Productos</th><th>Vigencia</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="promo-table-body-admin"></tbody></table></div></div>
                     <div id="admin-promo-form" class="admin-page hidden"><div class="product-form-container"><h3 id="promo-form-title">Nueva promoción</h3><form id="promo-form" onsubmit="return false;"><input type="hidden" id="promo-form-index"><input id="promo-form-name" placeholder="Nombre" required><input id="promo-form-discount" placeholder="Descuento" required><input id="promo-form-products" placeholder="Productos" required><input id="promo-form-validity" placeholder="Vigencia" required><select id="promo-form-status"><option>Activa</option><option>Vencida</option><option>Próxima</option></select><div class="form-actions"><button type="submit" class="btn-primary" id="promo-form-save-btn">Guardar</button><button type="button" class="btn-secondary" id="promo-form-cancel-btn">Cancelar</button></div><div id="promo-form-message" class="hidden alert-message"></div></form></div></div>
-                    <div id="admin-clientes" class="admin-page hidden"><div class="product-table-container"><div class="table-header"><h3>Clientes registrados</h3><button class="btn-primary" id="admin-add-client-btn">Agregar cliente</button></div><table class="product-table"><thead><tr><th>Cliente</th><th>Email</th><th>Teléfono</th><th>Pedidos</th><th>Total</th><th>Registro</th><th>Acciones</th></tr></thead><tbody id="clients-table-body"></tbody></table></div></div>
-                    <div id="admin-client-form" class="admin-page hidden"><div class="product-form-container"><h3>Agregar cliente</h3><form id="client-form" onsubmit="return false;"><input id="form-client-name" placeholder="Nombre"><input id="form-client-email" placeholder="Correo"><input id="form-client-phone" placeholder="Teléfono"><textarea id="form-client-address" placeholder="Dirección"></textarea><div class="form-actions"><button type="submit" class="btn-primary" id="form-client-save-btn">Guardar</button><button type="button" class="btn-secondary" id="form-client-cancel-btn">Cancelar</button></div><div id="client-form-message" class="hidden alert-message"></div></form></div></div>
+                    <div id="admin-clientes" class="admin-page hidden"><div class="product-table-container"><div class="table-header"><h3>Clientes registrados</h3><button class="btn-primary" id="admin-add-client-btn">Agregar cliente</button></div><div class="crm-client-filters"><label for="client-search">Buscar cliente</label><input type="search" id="client-search" placeholder="Nombre, correo o teléfono"><label for="client-status-filter">Estado</label><select id="client-status-filter"><option value="todos">Todos los estados</option><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select><label for="client-stage-filter">Etapa CRM</label><select id="client-stage-filter"><option value="todas">Todas las etapas</option><option value="prospecto">Prospecto</option><option value="activo">Activo</option><option value="frecuente">Frecuente</option><option value="inactivo">Inactivo</option></select></div><table class="product-table"><thead><tr><th>Cliente</th><th>Email</th><th>Teléfono</th><th>Pedidos</th><th>Total</th><th>Registro</th><th>Acciones</th></tr></thead><tbody id="clients-table-body"></tbody></table></div></div>
+                    <div id="admin-client-form" class="admin-page hidden"><div class="product-form-container"><h3 id="client-form-title">Agregar cliente</h3><form id="client-form" onsubmit="return false;"><div class="form-group"><label for="form-client-name">Nombre</label><input id="form-client-name" placeholder="Nombre"></div><div class="form-group"><label for="form-client-email">Correo</label><input id="form-client-email" placeholder="Correo"></div><div class="form-group"><label for="form-client-phone">Teléfono</label><input id="form-client-phone" placeholder="Teléfono"></div><div class="form-row"><div class="form-group"><label for="form-client-status">Estado</label><select id="form-client-status"><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select></div><div class="form-group"><label for="form-client-stage">Etapa CRM</label><select id="form-client-stage"><option value="prospecto">Prospecto</option><option value="activo">Activo</option><option value="frecuente">Frecuente</option><option value="inactivo">Inactivo</option></select></div></div><div class="form-group"><label for="form-client-address">Dirección</label><textarea id="form-client-address" placeholder="Dirección"></textarea></div><div class="form-actions"><button type="submit" class="btn-primary" id="form-client-save-btn">Guardar</button><button type="button" class="btn-secondary" id="form-client-cancel-btn">Cancelar</button></div><div id="client-form-message" class="hidden alert-message"></div></form></div></div>
 
                     <div id="admin-client-detail" class="admin-page hidden">
                         <div class="product-table-container client-detail-screen">
@@ -82,6 +98,13 @@
                                 <h3><i class="fas fa-user-circle"></i> Detalle del cliente</h3>
                             </div>
                             <div id="client-detail-content" class="client-detail-content"></div>
+                        </div>
+                    </div>
+
+                    <div id="admin-mi-actividad" class="admin-page hidden">
+                        <div class="product-table-container">
+                            <div class="table-header"><h3><i class="fas fa-history"></i> Mi actividad</h3></div>
+                            <div style="overflow-x:auto;"><table class="product-table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Tipo</th><th>Descripción</th><th>Responsable</th></tr></thead><tbody id="my-activity-table-body"></tbody></table></div>
                         </div>
                     </div>
 

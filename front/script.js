@@ -335,11 +335,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const defaultClients = [
-        { id: 1, name: 'María García', email: 'maria@email.com', phone: '55 1234 5678', address: 'Av. Principal 123', orders: 8, spent: 340.50, registeredDate: '10/01/2024' },
-        { id: 2, name: 'Carlos López', email: 'carlos@email.com', phone: '55 2345 6789', address: 'Calle Centro 456', orders: 5, spent: 210.80, registeredDate: '15/03/2024' },
-        { id: 3, name: 'Ana Martínez', email: 'ana@email.com', phone: '55 3456 7890', address: 'Boulevard Sur 789', orders: 12, spent: 520.30, registeredDate: '02/06/2024' },
-        { id: 4, name: 'Pedro Ramírez', email: 'pedro@email.com', phone: '55 4567 8901', address: 'Paseo Norte 321', orders: 3, spent: 95.20, registeredDate: '20/08/2024' },
-        { id: 5, name: 'Laura Fernández', email: 'laura@email.com', phone: '55 5678 9012', address: 'Avenida Este 654', orders: 6, spent: 280.00, registeredDate: '05/10/2024' }
+        { id: 1, name: 'María García', email: 'maria@email.com', phone: '55 1234 5678', address: 'Av. Principal 123', orders: 8, spent: 340.50, registeredDate: '10/01/2024', stage: 'frecuente', lastInteractionDate: '2026-05-12', interactions: [
+            { type: 'Compra', date: '2026-05-12', note: 'Compra completada por $340.50 y entrega confirmada.' },
+            { type: 'Correo', date: '2026-05-10', note: 'Se envió recordatorio sobre la entrega y próxima promoción.' },
+            { type: 'Registro', date: '2024-01-10', note: 'El cliente se registró y confirmó datos de contacto.' }
+        ] },
+        { id: 2, name: 'Carlos López', email: 'carlos@email.com', phone: '55 2345 6789', address: 'Calle Centro 456', orders: 5, spent: 210.80, registeredDate: '15/03/2024', stage: 'activo', lastInteractionDate: '2026-04-18', interactions: [
+            { type: 'Llamada', date: '2026-04-18', note: 'Confirmó interés por el combo familiar.' },
+            { type: 'Pedido', date: '2026-04-12', note: 'Pedido entregado con buena calificación.' },
+            { type: 'Registro', date: '2024-03-15', note: 'Registro inicial del cliente.' }
+        ] },
+        { id: 3, name: 'Ana Martínez', email: 'ana@email.com', phone: '55 3456 7890', address: 'Boulevard Sur 789', orders: 12, spent: 520.30, registeredDate: '02/06/2024', stage: 'frecuente', lastInteractionDate: '2026-05-16', interactions: [
+            { type: 'Compra', date: '2026-05-16', note: 'Pedido con entrega en horario solicitado.' },
+            { type: 'Reunión', date: '2026-05-05', note: 'Se coordinó una visita para ofrecer un descuento por volumen.' },
+            { type: 'Registro', date: '2024-06-02', note: 'Registro de cliente frecuente.' }
+        ] },
+        { id: 4, name: 'Pedro Ramírez', email: 'pedro@email.com', phone: '55 4567 8901', address: 'Paseo Norte 321', orders: 3, spent: 95.20, registeredDate: '20/08/2024', stage: 'prospecto', lastInteractionDate: '2026-01-20', interactions: [
+            { type: 'Correo', date: '2026-01-20', note: 'Se le compartió una promoción del mes.' },
+            { type: 'Llamada', date: '2025-11-12', note: 'Mostró interés pero no volvió a comprar.' },
+            { type: 'Registro', date: '2024-08-20', note: 'Registro inicial con perfil de posible cliente.' }
+        ] },
+        { id: 5, name: 'Laura Fernández', email: 'laura@email.com', phone: '55 5678 9012', address: 'Avenida Este 654', orders: 6, spent: 280.00, registeredDate: '05/10/2024', stage: 'inactivo', lastInteractionDate: '2025-09-18', interactions: [
+            { type: 'Correo', date: '2025-09-18', note: 'Se envió campaña de reactivación.' },
+            { type: 'Compra', date: '2025-08-11', note: 'Se registró la última compra del cliente.' },
+            { type: 'Registro', date: '2024-10-05', note: 'Cliente activo en su momento, ahora requiere seguimiento.' }
+        ] }
     ];
 
     const defaultOrders = [
@@ -586,6 +606,7 @@ document.addEventListener('DOMContentLoaded', function() {
         checkout: document.getElementById('page-checkout'),
         factura: document.getElementById('page-factura'),
         'mis-compras': document.getElementById('page-mis-compras'),
+        'mi-actividad': document.getElementById('page-mi-actividad'),
         'mis-comentarios': document.getElementById('page-mis-comentarios')
     };
 
@@ -599,6 +620,7 @@ document.addEventListener('DOMContentLoaded', function() {
         clientes: document.getElementById('admin-clientes'),
         'client-form': document.getElementById('admin-client-form'),
         'client-detail': document.getElementById('admin-client-detail'),
+        'mi-actividad': document.getElementById('admin-mi-actividad'),
         reportes: document.getElementById('admin-reportes')
     };
 
@@ -693,6 +715,10 @@ document.addEventListener('DOMContentLoaded', function() {
             renderHistorialCompras();
         }
 
+        if (pageId === 'mi-actividad') {
+            renderNormalActivity();
+        }
+
         if (pageId === 'mis-comentarios') {
             renderMisComentarios();
         }
@@ -724,6 +750,163 @@ document.addEventListener('DOMContentLoaded', function() {
         if (pageId === 'pedidos') renderOrdersTable();
         if (pageId === 'dashboard') updateDashboardStats();
         if (pageId === 'promociones') renderPromotionsAdmin();
+        if (pageId === 'mi-actividad') renderMyActivity();
+    }
+
+    function renderMyActivity() {
+        var tbody = document.getElementById('my-activity-table-body');
+        if (!tbody) return;
+        var activity = [];
+        clients.forEach(function(client) {
+            normalizeClientInteractions(client);
+            (client.interactions || []).forEach(function(interaction) {
+                if (activityBelongsToCurrentUser(interaction)) {
+                    activity.push({ client: client.name || 'Sin nombre', type: interaction.type || 'Interacción', note: interaction.note || 'Sin detalle', date: interaction.date || 'Sin fecha', user: interaction.user || getActivityUserLabel() });
+                }
+            });
+        });
+        activity.sort(function(first, second) { return String(second.date).localeCompare(String(first.date)); });
+        if (!activity.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem; color:#6b4f7a;">Aún no hay actividad registrada.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = activity.map(function(item) {
+            return '<tr><td>' + item.date + '</td><td><strong>' + item.client + '</strong></td><td>' + item.type + '</td><td>' + item.note + '</td><td>' + item.user + '</td></tr>';
+        }).join('');
+    }
+
+    function getActivityUserIdentity() {
+        var adminEmail = sessionStorage.getItem('admin_email');
+        return (adminEmail || currentUser.email || currentUser.name || '').toLowerCase();
+    }
+
+    function getActivityUserLabel() {
+        return sessionStorage.getItem('admin_email') || currentUser.name || 'Usuario actual';
+    }
+
+    function activityBelongsToCurrentUser(interaction) {
+        var owner = String(interaction.user || '').toLowerCase();
+        var currentIdentity = getActivityUserIdentity();
+        return owner === currentIdentity || owner === String(currentUser.name || '').toLowerCase() || owner === String(currentUser.email || '').toLowerCase();
+    }
+
+    function renderNormalActivity() {
+        var tbody = document.getElementById('normal-activity-table-body');
+        if (!tbody) return;
+        var activity = [];
+        clients.forEach(function(client) {
+            normalizeClientInteractions(client);
+            (client.interactions || []).forEach(function(interaction) {
+                if (activityBelongsToCurrentUser(interaction)) {
+                    activity.push({ client: client.name || 'Sin nombre', type: interaction.type || 'Interacción', note: interaction.note || 'Sin detalle', date: interaction.date || 'Sin fecha', user: interaction.user || getActivityUserLabel() });
+                }
+            });
+        });
+        activity.sort(function(first, second) { return String(second.date).localeCompare(String(first.date)); });
+        if (!activity.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem; color:#6b4f7a;">No hay actividad registrada para el usuario actual.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = activity.map(function(item) {
+            return '<tr><td>' + item.date + '</td><td><strong>' + item.client + '</strong></td><td>' + item.type + '</td><td>' + item.note + '</td><td>' + item.user + '</td></tr>';
+        }).join('');
+    }
+
+    function getClientStageLabel(stage) {
+        var stages = {
+            prospecto: 'Prospecto',
+            activo: 'Activo',
+            frecuente: 'Frecuente',
+            inactivo: 'Inactivo'
+        };
+        return stages[stage] || 'Prospecto';
+    }
+
+    function getClientRiskStatus(client) {
+        var lastPurchase = getClientLastPurchaseDate(client);
+        var lastInteraction = client.lastInteractionDate ? new Date(client.lastInteractionDate) : null;
+        if (lastPurchase && lastInteraction && lastInteraction > lastPurchase) {
+            lastPurchase = lastInteraction;
+        }
+        if (!lastPurchase) return 'at-risk';
+
+        var today = new Date();
+        var ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(today.getDate() - 90);
+
+        if (lastPurchase >= ninetyDaysAgo) return 'active';
+        if (lastPurchase >= new Date(today.getFullYear(), today.getMonth() - 2, today.getDate())) return 'inactive';
+        return 'at-risk';
+    }
+
+    function normalizeClientInteractions(client) {
+        if (!client.interactions || !Array.isArray(client.interactions)) {
+            client.interactions = [
+                { type: 'Registro', date: client.registeredDate || new Date().toISOString().slice(0, 10), note: 'Cliente registrado en la base de datos.' }
+            ];
+        }
+        if (!client.lastInteractionDate && client.interactions.length) {
+            client.lastInteractionDate = client.interactions[0].date;
+        }
+        if (!client.stage) client.stage = 'prospecto';
+        if (!client.status) client.status = client.stage === 'inactivo' ? 'inactivo' : 'activo';
+        return client;
+    }
+
+    function renderCrmStageSummary() {
+        var stageSummary = document.getElementById('crm-stage-summary');
+        if (!stageSummary) return;
+
+        var summary = {
+            prospecto: 0,
+            activo: 0,
+            frecuente: 0,
+            inactivo: 0
+        };
+
+        clients.forEach(function(client) {
+            normalizeClientInteractions(client);
+            var stage = client.stage || 'prospecto';
+            summary[stage] = (summary[stage] || 0) + 1;
+        });
+
+        var html = '';
+        ['prospecto', 'activo', 'frecuente', 'inactivo'].forEach(function(stage) {
+            html += '<span class="stage-pill"><span>' + getClientStageLabel(stage) + '</span><span class="count">' + (summary[stage] || 0) + '</span></span>';
+        });
+        stageSummary.innerHTML = html;
+        renderCrmStageChart(summary);
+    }
+
+    function renderCrmStageChart(summary) {
+        var chart = document.getElementById('crm-stage-chart');
+        if (!chart) return;
+        var stages = ['prospecto', 'activo', 'frecuente', 'inactivo'];
+        var max = Math.max.apply(null, stages.map(function(stage) { return summary[stage] || 0; }).concat([1]));
+        chart.innerHTML = stages.map(function(stage) {
+            var count = summary[stage] || 0;
+            var height = Math.max((count / max) * 100, count ? 12 : 4);
+            return '<div class="crm-chart-column"><span class="crm-chart-value">' + count + '</span><div class="crm-chart-bar" style="height:' + height + '%"></div><span class="crm-chart-label">' + getClientStageLabel(stage) + '</span></div>';
+        }).join('');
+    }
+
+    function renderRiskList() {
+        var riskList = document.getElementById('crm-risk-list');
+        if (!riskList) return;
+
+        var riskClients = clients.filter(function(client) {
+            normalizeClientInteractions(client);
+            return getClientRiskStatus(client) !== 'active';
+        }).slice(0, 4);
+
+        if (!riskClients.length) {
+            riskList.innerHTML = '<li><span>No hay clientes en riesgo</span><span>OK</span></li>';
+            return;
+        }
+
+        riskList.innerHTML = riskClients.map(function(client) {
+            return '<li><span>' + (client.name || 'Cliente') + '</span><span>' + getClientStageLabel(client.stage || 'prospecto') + '</span></li>';
+        }).join('');
     }
 
     function updateDashboardStats() {
@@ -749,9 +932,18 @@ document.addEventListener('DOMContentLoaded', function() {
         var statActiveClients = document.getElementById('stat-active-clients');
         var statInactiveClients = document.getElementById('stat-inactive-clients');
         var statAtRiskClients = document.getElementById('stat-at-risk-clients');
+        var statInteractionsPerClient = document.getElementById('stat-interactions-per-client');
         if (statActiveClients) statActiveClients.textContent = activeClients;
         if (statInactiveClients) statInactiveClients.textContent = inactiveClients;
         if (statAtRiskClients) statAtRiskClients.textContent = atRiskClients;
+        var totalInteractions = clients.reduce(function(total, client) {
+            normalizeClientInteractions(client);
+            return total + client.interactions.length;
+        }, 0);
+        if (statInteractionsPerClient) statInteractionsPerClient.textContent = clients.length ? (totalInteractions / clients.length).toFixed(1) : '0';
+
+        renderCrmStageSummary();
+        renderRiskList();
     }
 
     function mostrarMensajeLoginRequerido() {
@@ -1583,9 +1775,20 @@ document.addEventListener('DOMContentLoaded', function() {
     function openClientDetail(idx) {
         if (idx === undefined || idx === null || !clients[idx]) return;
 
-        var c = clients[idx];
+        var c = normalizeClientInteractions(clients[idx]);
         var content = document.getElementById('client-detail-content');
         if (!content) return;
+
+        var interactions = (c.interactions || []).slice(0, 5);
+        var timelineHtml = interactions.map(function(item, interactionIndex) {
+            var colors = ['green', 'purple', 'amber', 'blue', 'rose'];
+            var date = item.date || c.registeredDate || 'Sin fecha';
+            return '<div class="timeline-item"><div class="timeline-dot ' + colors[interactionIndex % colors.length] + '"></div><div class="timeline-content"><strong>' + (item.type || 'Interacción') + '</strong><p>' + (item.note || 'Sin detalle.') + '</p><small>' + date + '</small></div></div>';
+        }).join('');
+
+        if (!timelineHtml) {
+            timelineHtml = '<div class="timeline-item"><div class="timeline-dot amber"></div><div class="timeline-content"><strong>Sin interacciones</strong><p>Aún no hay contacto registrado para este cliente.</p><small>' + (c.registeredDate || 'Sin fecha') + '</small></div></div>';
+        }
 
         content.innerHTML = `
             <div class="client-detail-shell">
@@ -1593,7 +1796,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="client-detail-identity">
                         <div class="client-detail-avatar">${(c.name || 'Sin nombre').split(' ').map(function(part) { return part.charAt(0).toUpperCase(); }).slice(0,2).join('')}</div>
                         <div>
-                            <div class="client-detail-badge">Cliente activo</div>
+                            <div class="client-detail-badge">${getClientStageLabel(c.stage || 'prospecto')}</div>
                             <h4>${(c.name || 'Sin nombre')}</h4>
                             <p>${(c.email || 'No registrado')}</p>
                         </div>
@@ -1618,8 +1821,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <strong>${(c.phone || 'No registrado')}</strong>
                     </div>
                     <div class="client-detail-metric">
-                        <span>Estado</span>
-                        <strong>Activo</strong>
+                        <span>Etapa</span>
+                        <strong>${getClientStageLabel(c.stage || 'prospecto')}</strong>
                     </div>
                 </div>
 
@@ -1641,32 +1844,25 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="client-detail-card-header">
                                 <h5><i class="fas fa-history"></i> Historial de interacciones</h5>
                             </div>
-                            <div class="client-detail-timeline">
-                                <div class="timeline-item">
-                                    <div class="timeline-dot green"></div>
-                                    <div class="timeline-content">
-                                        <strong>Compra completada</strong>
-                                        <p>Se realizó una compra por $${(c.spent || 0).toFixed(2)} con entrega confirmada.</p>
-                                        <small>12/05/2026</small>
+                            <form id="client-interaction-form" class="interaction-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="interaction-type">Tipo</label>
+                                        <select id="interaction-type" required><option value="llamada">Llamada</option><option value="correo">Correo</option><option value="reunion">Reunión</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="interaction-date">Fecha</label>
+                                        <input type="date" id="interaction-date" required value="${new Date().toISOString().slice(0, 10)}">
                                     </div>
                                 </div>
-                                <div class="timeline-item">
-                                    <div class="timeline-dot purple"></div>
-                                    <div class="timeline-content">
-                                        <strong>Seguimiento por correo</strong>
-                                        <p>Se envió recordatorio sobre el estado del pedido y próxima entrega.</p>
-                                        <small>10/05/2026</small>
-                                    </div>
+                                <div class="form-group">
+                                    <label for="interaction-description">Descripción</label>
+                                    <textarea id="interaction-description" rows="3" required placeholder="Describe el contacto y el siguiente paso..."></textarea>
                                 </div>
-                                <div class="timeline-item">
-                                    <div class="timeline-dot amber"></div>
-                                    <div class="timeline-content">
-                                        <strong>Contacto inicial</strong>
-                                        <p>El cliente se registró y confirmó datos de contacto.</p>
-                                        <small>${(c.registeredDate || 'Sin fecha')}</small>
-                                    </div>
-                                </div>
-                            </div>
+                                <button type="submit" class="btn-primary"><i class="fas fa-plus"></i> Registrar interacción</button>
+                                <div id="interaction-form-message" class="hidden alert-message"></div>
+                            </form>
+                            <div class="client-detail-timeline">${timelineHtml}</div>
                         </div>
                     </div>
 
@@ -1687,8 +1883,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <h5><i class="fas fa-star"></i> Segmentación</h5>
                             </div>
                             <div class="segment-box">
-                                <span class="segment-pill">VIP</span>
-                                <p>Cliente frecuente con buena tasa de recompra.</p>
+                                <span class="segment-pill">${getClientStageLabel(c.stage || 'prospecto')}</span>
+                                <p>${getClientRiskStatus(c) === 'active' ? 'Cliente reciente con buena actividad.' : getClientRiskStatus(c) === 'inactive' ? 'Cliente con actividad moderada; requiere seguimiento.' : 'Cliente sin interacción reciente; necesita reactivación.'}</p>
                             </div>
                         </div>
                     </div>
@@ -1700,6 +1896,33 @@ document.addEventListener('DOMContentLoaded', function() {
         var editInlineBtn = document.getElementById('client-detail-edit-inline-btn');
         var noteBtn = document.getElementById('client-detail-note-btn');
         var followUpBtn = document.getElementById('client-detail-followup-btn');
+        var interactionForm = document.getElementById('client-interaction-form');
+
+        if (interactionForm) {
+            interactionForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                var type = document.getElementById('interaction-type').value;
+                var date = document.getElementById('interaction-date').value;
+                var description = document.getElementById('interaction-description').value.trim();
+                var message = document.getElementById('interaction-form-message');
+                if (!description || !date) {
+                    showFormMessage(message, 'Completa la fecha y la descripción.', 'error');
+                    return;
+                }
+                clients[idx].interactions = clients[idx].interactions || [];
+                clients[idx].interactions.unshift({
+                    type: type.charAt(0).toUpperCase() + type.slice(1),
+                    date: date,
+                    note: description,
+                    user: sessionStorage.getItem('admin_email') || 'Administrador'
+                });
+                clients[idx].lastInteractionDate = date;
+                saveClients();
+                openClientDetail(idx);
+                updateDashboardStats();
+                renderClientsTable();
+            });
+        }
 
         [editBtn, editInlineBtn].forEach(function(btn) {
             if (btn) {
@@ -1712,13 +1935,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (noteBtn) {
             noteBtn.addEventListener('click', function() {
-                alert('Aquí podrías agregar una nota del cliente.');
+                var interactionText = window.prompt('Describe la nueva interacción con este cliente:', 'Llamada de seguimiento');
+                if (!interactionText || !interactionText.trim()) return;
+                clients[idx].interactions = clients[idx].interactions || [];
+                clients[idx].interactions.unshift({
+                    type: 'Nota',
+                    date: new Date().toISOString().slice(0, 10),
+                    note: interactionText.trim()
+                });
+                clients[idx].lastInteractionDate = new Date().toISOString().slice(0, 10);
+                saveClients();
+                openClientDetail(idx);
+                updateDashboardStats();
+                renderClientsTable();
             });
         }
 
         if (followUpBtn) {
             followUpBtn.addEventListener('click', function() {
-                alert('Aquí podrías programar un seguimiento del cliente.');
+                var followUpText = window.prompt('Agenda un seguimiento para este cliente:', 'Enviar recordatorio de reactivación');
+                if (!followUpText || !followUpText.trim()) return;
+                clients[idx].interactions = clients[idx].interactions || [];
+                clients[idx].interactions.unshift({
+                    type: 'Seguimiento',
+                    date: new Date().toISOString().slice(0, 10),
+                    note: followUpText.trim()
+                });
+                clients[idx].lastInteractionDate = new Date().toISOString().slice(0, 10);
+                saveClients();
+                openClientDetail(idx);
+                updateDashboardStats();
+                renderClientsTable();
             });
         }
 
@@ -1745,23 +1992,36 @@ document.addEventListener('DOMContentLoaded', function() {
         var tbody = document.getElementById('clients-table-body');
         if (!tbody) return;
 
-        if (clients.length === 0) {
+        var search = (document.getElementById('client-search')?.value || '').trim().toLowerCase();
+        var statusFilter = document.getElementById('client-status-filter')?.value || 'todos';
+        var stageFilter = document.getElementById('client-stage-filter')?.value || 'todas';
+        var filteredClients = clients.map(normalizeClientInteractions).filter(function(client) {
+            var searchable = [client.name, client.email, client.phone].join(' ').toLowerCase();
+            var status = client.status || 'activo';
+            return (!search || searchable.indexOf(search) !== -1) &&
+                (statusFilter === 'todos' || status === statusFilter) &&
+                (stageFilter === 'todas' || client.stage === stageFilter);
+        });
+
+        if (filteredClients.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:#6b4f7a;">No hay clientes registrados</td></tr>';
             return;
         }
 
         var html = '';
-        for (var i = 0; i < clients.length; i++) {
-            var c = clients[i];
-            html += '<tr><td><strong>' + (c.name || 'Sin nombre') + '</strong></td>';
+        for (var i = 0; i < filteredClients.length; i++) {
+            var c = filteredClients[i];
+            var originalIndex = clients.indexOf(c);
+            var stageBadge = '<span class="status-badge ' + (c.stage === 'frecuente' ? 'status-available' : c.stage === 'inactivo' ? 'status-inactive' : c.stage === 'activo' ? 'status-warning' : 'status-out-of-stock') + '">' + getClientStageLabel(c.stage || 'prospecto') + '</span>';
+            html += '<tr><td><div style="display:flex; flex-direction:column; gap:0.3rem;"><strong>' + (c.name || 'Sin nombre') + '</strong>' + stageBadge + '</div></td>';
             html += '<td>' + (c.email || '') + '</td>';
             html += '<td>' + (c.phone || '') + '</td>';
             html += '<td>' + (c.orders || 0) + '</td>';
             html += '<td>$' + (c.spent || 0).toFixed(2) + '</td>';
             html += '<td>' + (c.registeredDate || '') + '</td>';
             html += '<td><div class="table-actions">';
-            html += '<button class="btn-view" data-index="' + i + '" aria-label="Ver detalle de ' + (c.name || 'cliente') + '"><i class="fas fa-eye"></i></button>';
-            html += '<button class="btn-delete" data-index="' + i + '" aria-label="Eliminar ' + (c.name || 'cliente') + '"><i class="fas fa-trash"></i></button>';
+            html += '<button class="btn-view" data-index="' + originalIndex + '" aria-label="Ver detalle de ' + (c.name || 'cliente') + '"><i class="fas fa-eye"></i></button>';
+            html += '<button class="btn-delete" data-index="' + originalIndex + '" aria-label="Eliminar ' + (c.name || 'cliente') + '"><i class="fas fa-trash"></i></button>';
             html += '</div></td></tr>';
         }
         tbody.innerHTML = html;
@@ -1798,6 +2058,8 @@ document.addEventListener('DOMContentLoaded', function() {
         var emailInput = document.getElementById('form-client-email');
         var phoneInput = document.getElementById('form-client-phone');
         var addressInput = document.getElementById('form-client-address');
+        var stageInput = document.getElementById('form-client-stage');
+        var statusInput = document.getElementById('form-client-status');
         var msg = document.getElementById('client-form-message');
 
         if (!nameInput) return;
@@ -1815,12 +2077,16 @@ document.addEventListener('DOMContentLoaded', function() {
             if (emailInput) emailInput.value = c.email || '';
             if (phoneInput) phoneInput.value = c.phone || '';
             if (addressInput) addressInput.value = c.address || '';
+            if (stageInput) stageInput.value = c.stage || 'prospecto';
+            if (statusInput) statusInput.value = c.status || 'activo';
         } else {
             if (title) title.textContent = 'Agregar cliente';
             nameInput.value = '';
             if (emailInput) emailInput.value = '';
             if (phoneInput) phoneInput.value = '';
             if (addressInput) addressInput.value = '';
+            if (stageInput) stageInput.value = 'prospecto';
+            if (statusInput) statusInput.value = 'activo';
         }
 
         showAdminPage('client-form');
@@ -3312,6 +3578,8 @@ document.addEventListener('DOMContentLoaded', function() {
             var email = document.getElementById('form-client-email')?.value.trim() || '';
             var phone = document.getElementById('form-client-phone')?.value.trim() || '';
             var address = document.getElementById('form-client-address')?.value.trim() || '';
+            var stage = document.getElementById('form-client-stage')?.value || 'prospecto';
+            var status = document.getElementById('form-client-status')?.value || 'activo';
             var msg = document.getElementById('client-form-message');
 
             // VALIDACIONES DE CLIENTE
@@ -3357,6 +3625,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 clients[editingClientId].email = email;
                 clients[editingClientId].phone = phone;
                 clients[editingClientId].address = address;
+                clients[editingClientId].stage = stage;
+                clients[editingClientId].status = status;
+                clients[editingClientId].interactions = clients[editingClientId].interactions || [];
+                if (!clients[editingClientId].interactions.length) {
+                    clients[editingClientId].interactions.push({ type: 'Registro', date: new Date().toISOString().slice(0, 10), note: 'Se actualizó la información del cliente.' });
+                }
+                clients[editingClientId].lastInteractionDate = clients[editingClientId].lastInteractionDate || new Date().toISOString().slice(0, 10);
                 showFormMessage(msg, 'Cliente actualizado correctamente.', 'success');
             } else {
                 var newId = 0;
@@ -3372,13 +3647,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     address: address,
                     orders: 0,
                     spent: 0,
-                    registeredDate: new Date().toLocaleDateString('es-ES')
+                    registeredDate: new Date().toLocaleDateString('es-ES'),
+                    stage: stage,
+                    status: status,
+                    lastInteractionDate: new Date().toISOString().slice(0, 10),
+                    interactions: [{
+                        type: 'Registro',
+                        date: new Date().toISOString().slice(0, 10),
+                        note: 'Cliente agregado desde el formulario principal.'
+                    }]
                 };
                 clients.push(newClient);
                 showFormMessage(msg, 'Cliente creado correctamente.', 'success');
             }
 
             saveClients();
+            updateDashboardStats();
             setTimeout(function() {
                 showAdminPage('clientes');
                 renderClientsTable();
@@ -3389,6 +3673,13 @@ document.addEventListener('DOMContentLoaded', function() {
     var clientFormCancelBtn = document.getElementById('form-client-cancel-btn');
     var adminViewClientsBtn = document.getElementById('admin-view-clients-btn');
     var adminAddClientQuickBtn = document.getElementById('admin-add-client-quick-btn');
+    var clientSearchInput = document.getElementById('client-search');
+    var clientStatusFilter = document.getElementById('client-status-filter');
+    var clientStageFilter = document.getElementById('client-stage-filter');
+    [clientSearchInput, clientStatusFilter, clientStageFilter].forEach(function(filter) {
+        if (filter) filter.addEventListener('input', renderClientsTable);
+        if (filter && filter.tagName === 'SELECT') filter.addEventListener('change', renderClientsTable);
+    });
     if (adminViewClientsBtn) {
         adminViewClientsBtn.addEventListener('click', function() {
             showAdminPage('clientes');
@@ -3466,6 +3757,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             isLoggedIn = true;
             isAdmin = false;
+            currentUser.name = name;
+            currentUser.email = email;
+            localStorage.setItem('delicias_current_user', JSON.stringify(currentUser));
             
             document.getElementById('registro-nombre').value = '';
             document.getElementById('registro-email').value = '';
@@ -3531,6 +3825,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (document.body.classList.contains('admin-page-shell')) {
                 isLoggedIn = true;
                 isAdmin = true;
+                sessionStorage.setItem('admin_email', email);
                 if (msg) showFormMessage(msg, 'Inicio de sesión exitoso.', 'success');
                 setTimeout(function() {
                     updateNavVisibility();
@@ -3546,6 +3841,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             isLoggedIn = true;
             isAdmin = false;
+            currentUser.email = email;
+            localStorage.setItem('delicias_current_user', JSON.stringify(currentUser));
             if (msg) showFormMessage(msg, 'Inicio de sesión exitoso.', 'success');
             document.getElementById('login-email').value = '';
             document.getElementById('login-password').value = '';
@@ -3586,6 +3883,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var msg = document.getElementById('login-message');
             isLoggedIn = true;
             isAdmin = true;
+            sessionStorage.setItem('admin_email', document.getElementById('login-email')?.value.trim() || 'Administrador');
             if (msg) showFormMessage(msg, 'Acceso de administrador concedido.', 'success');
             document.getElementById('login-email').value = '';
             document.getElementById('login-password').value = '';
@@ -3617,6 +3915,7 @@ document.addEventListener('DOMContentLoaded', function() {
         logoutBtn.addEventListener('click', function() {
             isLoggedIn = false;
             isAdmin = false;
+            sessionStorage.removeItem('admin_email');
             var msg = document.getElementById('profile-message');
             if (msg) showFormMessage(msg, 'Has cerrado sesión exitosamente.', 'success');
             updateNavVisibility();
@@ -3632,6 +3931,7 @@ document.addEventListener('DOMContentLoaded', function() {
         adminLogoutBtn.addEventListener('click', function() {
             isLoggedIn = false;
             isAdmin = false;
+            sessionStorage.removeItem('admin_email');
             updateNavVisibility();
             showPage('inicio');
         });
