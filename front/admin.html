@@ -40,6 +40,7 @@
             </div>
             <div class="admin-layout">
                 <aside class="admin-sidebar" aria-label="Menú de administración">
+                    <div class="admin-user"><div class="admin-avatar" aria-hidden="true">AD</div><div><div class="admin-name">Administrador</div><div class="admin-email">admin@deliciasresto.com</div></div></div>
                     <ul class="sidebar-menu">
                         <li><a href="#" class="active" data-admin-page="dashboard"><i class="fas fa-chart-pie" aria-hidden="true"></i> Dashboard</a></li>
                         <li><a href="#" data-admin-page="productos"><i class="fas fa-box" aria-hidden="true"></i> Productos</a></li>
@@ -86,8 +87,61 @@
                     <div id="admin-promociones" class="admin-page hidden"><div class="product-table-container"><div class="table-header"><h3>Promociones</h3><button class="btn-success" id="admin-create-promo-btn2"><i class="fas fa-plus"></i> Nueva promoción</button></div><table class="product-table"><thead><tr><th>Nombre</th><th>Descuento</th><th>Productos</th><th>Vigencia</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="promo-table-body-admin"></tbody></table></div></div>
                     <div id="admin-promo-form" class="admin-page hidden"><div class="product-form-container"><h3 id="promo-form-title">Nueva promoción</h3><form id="promo-form" onsubmit="return false;"><input type="hidden" id="promo-form-index"><input id="promo-form-name" placeholder="Nombre" required><input id="promo-form-discount" placeholder="Descuento" required><input id="promo-form-products" placeholder="Productos" required><input id="promo-form-validity" placeholder="Vigencia" required><select id="promo-form-status"><option>Activa</option><option>Vencida</option><option>Próxima</option></select><div class="form-actions"><button type="submit" class="btn-primary" id="promo-form-save-btn">Guardar</button><button type="button" class="btn-secondary" id="promo-form-cancel-btn">Cancelar</button></div><div id="promo-form-message" class="hidden alert-message"></div></form></div></div>
                     <div id="admin-clientes" class="admin-page hidden"><div class="product-table-container"><div class="table-header"><h3>Clientes registrados</h3><button class="btn-primary" id="admin-add-client-btn">Agregar cliente</button></div><div class="crm-client-filters"><label for="client-search">Buscar cliente</label><input type="search" id="client-search" placeholder="Nombre, correo o teléfono"><label for="client-status-filter">Estado</label><select id="client-status-filter"><option value="todos">Todos los estados</option><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select><label for="client-stage-filter">Etapa CRM</label><select id="client-stage-filter"><option value="todas">Todas las etapas</option><option value="prospecto">Prospecto</option><option value="activo">Activo</option><option value="frecuente">Frecuente</option><option value="inactivo">Inactivo</option></select></div><table class="product-table"><thead><tr><th>Cliente</th><th>Email</th><th>Teléfono</th><th>Pedidos</th><th>Total</th><th>Registro</th><th>Acciones</th></tr></thead><tbody id="clients-table-body"></tbody></table></div></div>
-                    <div id="admin-client-form" class="admin-page hidden"><div class="product-form-container"><h3 id="client-form-title">Agregar cliente</h3><form id="client-form" onsubmit="return false;"><div class="form-group"><label for="form-client-name">Nombre</label><input id="form-client-name" placeholder="Nombre"></div><div class="form-group"><label for="form-client-email">Correo</label><input id="form-client-email" placeholder="Correo"></div><div class="form-group"><label for="form-client-phone">Teléfono</label><input id="form-client-phone" placeholder="Teléfono"></div><div class="form-row"><div class="form-group"><label for="form-client-status">Estado</label><select id="form-client-status"><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select></div><div class="form-group"><label for="form-client-stage">Etapa CRM</label><select id="form-client-stage"><option value="prospecto">Prospecto</option><option value="activo">Activo</option><option value="frecuente">Frecuente</option><option value="inactivo">Inactivo</option></select></div></div><div class="form-group"><label for="form-client-address">Dirección</label><textarea id="form-client-address" placeholder="Dirección"></textarea></div><div class="form-actions"><button type="submit" class="btn-primary" id="form-client-save-btn">Guardar</button><button type="button" class="btn-secondary" id="form-client-cancel-btn">Cancelar</button></div><div id="client-form-message" class="hidden alert-message"></div></form></div></div>
-
+<div id="admin-client-form" class="admin-page hidden">
+    <div class="product-form-container">
+        <h3 id="client-form-title">Agregar cliente</h3>
+        <form id="client-form" onsubmit="return false;">
+            <div class="form-group">
+                <label for="form-client-name">Nombre</label>
+                <input id="form-client-name" placeholder="Nombre">
+            </div>
+            <div class="form-group">
+                <label for="form-client-email">Correo</label>
+                <input id="form-client-email" placeholder="Correo">
+            </div>
+            <div class="form-group">
+                <label for="form-client-phone">Teléfono</label>
+                <input id="form-client-phone" placeholder="Teléfono">
+            </div>
+            <div class="form-group">
+                <label for="form-client-password">Contraseña <span style="color:#e53935;">*</span></label>
+                <input type="password" id="form-client-password" placeholder="Contraseña (mínimo 6 caracteres)">
+                <small style="color: #6b7280; display: block; margin-top: 4px;">La contraseña debe tener al menos 6 caracteres, una mayúscula y un número</small>
+            </div>
+            <div class="form-group">
+                <label for="form-client-password-confirm">Confirmar contraseña <span style="color:#e53935;">*</span></label>
+                <input type="password" id="form-client-password-confirm" placeholder="Confirmar contraseña">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="form-client-status">Estado</label>
+                    <select id="form-client-status">
+                        <option value="activo">Activo</option>
+                        <option value="inactivo">Inactivo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="form-client-stage">Etapa CRM</label>
+                    <select id="form-client-stage">
+                        <option value="prospecto">Prospecto</option>
+                        <option value="activo">Activo</option>
+                        <option value="frecuente">Frecuente</option>
+                        <option value="inactivo">Inactivo</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="form-client-address">Dirección</label>
+                <textarea id="form-client-address" placeholder="Dirección"></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-primary" id="form-client-save-btn">Guardar</button>
+                <button type="button" class="btn-secondary" id="form-client-cancel-btn">Cancelar</button>
+            </div>
+            <div id="client-form-message" class="hidden alert-message"></div>
+        </form>
+    </div>
+</div>
                     <div id="admin-client-detail" class="admin-page hidden">
                         <div class="product-table-container client-detail-screen">
                             <div class="table-header client-detail-header">
@@ -107,6 +161,7 @@
                         </div>
                     </div>
 
+                    <!-- SECCIÓN DE USUARIOS (ADMINISTRADORES) -->
                     <div id="admin-usuarios" class="admin-page hidden">
                         <div class="product-table-container">
                             <div class="table-header">
@@ -115,13 +170,21 @@
                             </div>
                             <div style="overflow-x:auto;">
                                 <table class="product-table">
-                                    <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Correo</th>
+                                            <th>Rol</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
                                     <tbody id="users-table-body"></tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- FORMULARIO PARA AGREGAR ADMINISTRADOR -->
                     <div id="admin-user-form" class="admin-page hidden">
                         <div class="product-form-container">
@@ -166,79 +229,6 @@
     </main>
     <script src="script.js"></script>
 
-    <!-- ===== MODAL PROGRAMAR SEGUIMIENTO ===== -->
-<div class="modal-overlay" id="seguimiento-modal" style="display: none;">
-    <div class="modal-box" style="max-width: 550px; text-align: left;">
-        <div class="modal-icon" aria-hidden="true">
-            <i class="fas fa-calendar-plus" style="color: #8b5cf6;"></i>
-        </div>
-        <h2 style="text-align: center;">📅 Programar seguimiento</h2>
-        <p style="text-align: center; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
-            Cliente: <strong id="seguimiento-cliente-nombre">---</strong>
-        </p>
-        
-        <form id="seguimiento-form" onsubmit="return false;">
-            <div class="form-group">
-                <label for="seguimiento-titulo"><i class="fas fa-tag"></i> Título de la reunión</label>
-                <input type="text" id="seguimiento-titulo" placeholder="Ej: Reunión de seguimiento" required>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="seguimiento-fecha"><i class="fas fa-calendar-day"></i> Fecha</label>
-                    <input type="date" id="seguimiento-fecha" required>
-                </div>
-                <div class="form-group">
-                    <label for="seguimiento-hora"><i class="fas fa-clock"></i> Hora</label>
-                    <input type="time" id="seguimiento-hora" required>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="seguimiento-duracion"><i class="fas fa-hourglass-half"></i> Duración</label>
-                <select id="seguimiento-duracion">
-                    <option value="15 min">15 minutos</option>
-                    <option value="30 min" selected>30 minutos</option>
-                    <option value="45 min">45 minutos</option>
-                    <option value="1 hora">1 hora</option>
-                    <option value="1.5 horas">1.5 horas</option>
-                    <option value="2 horas">2 horas</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="seguimiento-tipo"><i class="fas fa-video"></i> Tipo de reunión</label>
-                <select id="seguimiento-tipo">
-                    <option value="Presencial">Presencial</option>
-                    <option value="Virtual (Zoom)" selected>Virtual (Zoom)</option>
-                    <option value="Virtual (Meet)">Virtual (Google Meet)</option>
-                    <option value="Telefónica">Telefónica</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="seguimiento-descripcion"><i class="fas fa-align-left"></i> Notas / Agenda</label>
-                <textarea id="seguimiento-descripcion" rows="3" placeholder="Describe los temas a tratar..."></textarea>
-            </div>
-            
-            <div class="form-group">
-                <label for="seguimiento-enlace"><i class="fas fa-link"></i> Enlace de la reunión (opcional)</label>
-                <input type="url" id="seguimiento-enlace" placeholder="https://zoom.us/j/123456789">
-            </div>
-            
-            <div class="form-actions" style="margin-top: 1rem;">
-                <button type="submit" class="btn-primary" id="seguimiento-guardar-btn" style="flex:1;">
-                    <i class="fas fa-save"></i> Guardar seguimiento
-                </button>
-                <button type="button" class="btn-secondary" id="seguimiento-cancelar-btn">
-                    <i class="fas fa-times"></i> Cancelar
-                </button>
-            </div>
-            <div id="seguimiento-message" class="hidden alert-message" style="margin-top:1rem; text-align:center;"></div>
-        </form>
-    </div>
-</div>
-
     <script>
         // ============================================================
         // FUNCIONALIDAD PARA USUARIOS ADMINISTRADORES
@@ -277,6 +267,7 @@
                 showUserFormMessage(error.message, 'error');
             }
         }
+
         // Función para renderizar la tabla de usuarios
         function renderUsersTable() {
             if (!usersTableBody) return;
@@ -569,9 +560,6 @@
                     e.preventDefault();
                     const page = this.getAttribute('data-admin-page');
 
-                    // El flujo principal de Admin controla todas las secciones salvo Usuarios.
-                    if (page !== 'usuarios') return;
-
                     // Remover clase active de todos los enlaces
                     sidebarLinks.forEach(l => l.classList.remove('active'));
                     this.classList.add('active');
@@ -607,5 +595,238 @@
             });
         });
     </script>
+
+<script>
+    // ============================================================
+    // ADMIN - CLIENTES CON CONTRASEÑA
+    // ============================================================
+
+    function openClientForm(idx) {
+        if (idx === undefined) idx = null;
+        editingClientId = idx;
+        previousClientView = (adminPages && adminPages['client-detail'] && adminPages['client-detail'].classList.contains('active')) ? 'client-detail' : 'clientes';
+        
+        var title = document.getElementById('client-form-title');
+        var nameInput = document.getElementById('form-client-name');
+        var emailInput = document.getElementById('form-client-email');
+        var phoneInput = document.getElementById('form-client-phone');
+        var addressInput = document.getElementById('form-client-address');
+        var stageInput = document.getElementById('form-client-stage');
+        var statusInput = document.getElementById('form-client-status');
+        var passwordInput = document.getElementById('form-client-password');
+        var passwordConfirmInput = document.getElementById('form-client-password-confirm');
+        var msg = document.getElementById('client-form-message');
+
+        if (!nameInput) return;
+        
+        if (msg) {
+            msg.classList.add('hidden');
+            msg.textContent = '';
+            msg.className = '';
+        }
+
+        if (idx !== null && idx >= 0) {
+            var c = clients[idx];
+            if (title) title.textContent = 'Editar cliente';
+            nameInput.value = c.name || '';
+            if (emailInput) emailInput.value = c.email || '';
+            if (phoneInput) phoneInput.value = c.phone || '';
+            if (addressInput) addressInput.value = c.address || '';
+            if (stageInput) stageInput.value = c.stage || 'prospecto';
+            if (statusInput) statusInput.value = c.status || 'activo';
+            if (passwordInput) passwordInput.value = '';
+            if (passwordConfirmInput) passwordConfirmInput.value = '';
+            var label = document.querySelector('label[for="form-client-password"]');
+            if (label) label.innerHTML = 'Contraseña <span style="color:#6b7280;font-weight:400;">(opcional)</span>';
+        } else {
+            if (title) title.textContent = 'Agregar cliente';
+            nameInput.value = '';
+            if (emailInput) emailInput.value = '';
+            if (phoneInput) phoneInput.value = '';
+            if (addressInput) addressInput.value = '';
+            if (stageInput) stageInput.value = 'prospecto';
+            if (statusInput) statusInput.value = 'activo';
+            if (passwordInput) passwordInput.value = '';
+            if (passwordConfirmInput) passwordConfirmInput.value = '';
+            var label2 = document.querySelector('label[for="form-client-password"]');
+            if (label2) label2.innerHTML = 'Contraseña <span style="color:#e53935;">*</span>';
+        }
+
+        showAdminPage('client-form');
+    }
+
+    // ============================================================
+    // ADMIN - GUARDAR CLIENTE CON CONTRASEÑA
+    // ============================================================
+
+    var clientFormSaveBtn = document.getElementById('form-client-save-btn');
+    if (clientFormSaveBtn) {
+        clientFormSaveBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            var name = document.getElementById('form-client-name')?.value.trim() || '';
+            var email = document.getElementById('form-client-email')?.value.trim() || '';
+            var phone = document.getElementById('form-client-phone')?.value.trim() || '';
+            var address = document.getElementById('form-client-address')?.value.trim() || '';
+            var stage = document.getElementById('form-client-stage')?.value || 'prospecto';
+            var status = document.getElementById('form-client-status')?.value || 'activo';
+            var password = document.getElementById('form-client-password')?.value || '';
+            var passwordConfirm = document.getElementById('form-client-password-confirm')?.value || '';
+            var msg = document.getElementById('client-form-message');
+
+            // VALIDAR NOMBRE
+            if (!name) {
+                showFormMessage(msg, 'El nombre es requerido.', 'error');
+                return;
+            }
+            if (name.length < 3) {
+                showFormMessage(msg, 'El nombre debe tener al menos 3 caracteres.', 'error');
+                return;
+            }
+
+            // VALIDAR EMAIL
+            if (!email) {
+                showFormMessage(msg, 'El correo electrónico es requerido.', 'error');
+                return;
+            }
+            var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showFormMessage(msg, 'Ingresa un correo electrónico válido.', 'error');
+                return;
+            }
+
+            // VALIDAR TELÉFONO
+            if (!phone) {
+                showFormMessage(msg, 'El teléfono es requerido.', 'error');
+                return;
+            }
+            if (phone.length < 7) {
+                showFormMessage(msg, 'El teléfono debe tener al menos 7 dígitos.', 'error');
+                return;
+            }
+
+            // VALIDAR DIRECCIÓN
+            if (!address) {
+                showFormMessage(msg, 'La dirección es requerida.', 'error');
+                return;
+            }
+            if (address.length < 5) {
+                showFormMessage(msg, 'La dirección debe tener al menos 5 caracteres.', 'error');
+                return;
+            }
+
+            // VALIDAR CONTRASEÑA
+            if (editingClientId === null || editingClientId === undefined) {
+                // NUEVO cliente - contraseña OBLIGATORIA
+                if (!password) {
+                    showFormMessage(msg, 'La contraseña es requerida.', 'error');
+                    return;
+                }
+                if (password.length < 6) {
+                    showFormMessage(msg, 'La contraseña debe tener al menos 6 caracteres.', 'error');
+                    return;
+                }
+                if (!/[A-Z]/.test(password)) {
+                    showFormMessage(msg, 'La contraseña debe contener al menos una mayúscula.', 'error');
+                    return;
+                }
+                if (!/\d/.test(password)) {
+                    showFormMessage(msg, 'La contraseña debe contener al menos un número.', 'error');
+                    return;
+                }
+                if (!passwordConfirm) {
+                    showFormMessage(msg, 'Debes confirmar la contraseña.', 'error');
+                    return;
+                }
+                if (password !== passwordConfirm) {
+                    showFormMessage(msg, 'Las contraseñas no coinciden.', 'error');
+                    return;
+                }
+            } else {
+                // EDITANDO cliente - contraseña OPCIONAL
+                if (password) {
+                    if (password.length < 6) {
+                        showFormMessage(msg, 'La contraseña debe tener al menos 6 caracteres.', 'error');
+                        return;
+                    }
+                    if (!/[A-Z]/.test(password)) {
+                        showFormMessage(msg, 'La contraseña debe contener al menos una mayúscula.', 'error');
+                        return;
+                    }
+                    if (!/\d/.test(password)) {
+                        showFormMessage(msg, 'La contraseña debe contener al menos un número.', 'error');
+                        return;
+                    }
+                    if (password !== passwordConfirm) {
+                        showFormMessage(msg, 'Las contraseñas no coinciden.', 'error');
+                        return;
+                    }
+                }
+            }
+
+            // GUARDAR CLIENTE
+            if (editingClientId !== null && editingClientId >= 0) {
+                // Editar cliente existente
+                clients[editingClientId].name = name;
+                clients[editingClientId].email = email;
+                clients[editingClientId].phone = phone;
+                clients[editingClientId].address = address;
+                clients[editingClientId].stage = stage;
+                clients[editingClientId].status = status;
+                if (password) {
+                    clients[editingClientId].password = password;
+                }
+                clients[editingClientId].interactions = clients[editingClientId].interactions || [];
+                if (!clients[editingClientId].interactions.length) {
+                    clients[editingClientId].interactions.push({ 
+                        type: 'Registro', 
+                        date: new Date().toISOString().slice(0, 10), 
+                        note: 'Se actualizó la información del cliente.' 
+                    });
+                }
+                clients[editingClientId].lastInteractionDate = clients[editingClientId].lastInteractionDate || new Date().toISOString().slice(0, 10);
+                showFormMessage(msg, 'Cliente actualizado correctamente.', 'success');
+            } else {
+                // Nuevo cliente
+                var newId = 0;
+                for (var i = 0; i < clients.length; i++) {
+                    if (clients[i].id > newId) newId = clients[i].id;
+                }
+                newId++;
+                
+                var newClient = {
+                    id: newId,
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    address: address,
+                    password: password,
+                    orders: 0,
+                    spent: 0,
+                    registeredDate: new Date().toLocaleDateString('es-ES'),
+                    stage: stage,
+                    status: status,
+                    lastInteractionDate: new Date().toISOString().slice(0, 10),
+                    interactions: [{
+                        type: 'Registro',
+                        date: new Date().toISOString().slice(0, 10),
+                        note: 'Cliente agregado desde el formulario principal.'
+                    }]
+                };
+                clients.push(newClient);
+                showFormMessage(msg, 'Cliente creado correctamente.', 'success');
+            }
+
+            saveClients();
+            updateDashboardStats();
+            
+            setTimeout(function() {
+                showAdminPage('clientes');
+                renderClientsTable();
+            }, 1500);
+        });
+    }
+</script>
+
 </body>
 </html>
