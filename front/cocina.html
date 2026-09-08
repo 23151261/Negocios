@@ -214,26 +214,7 @@
         <!-- ===== PÁGINA PROMOCIONES ===== -->
         <section id="page-promociones" class="page-section" aria-labelledby="promociones-title">
             <h2 id="promociones-title" class="section-title"><i class="fas fa-tags" aria-hidden="true"></i> Promociones</h2>
-            <div class="promo-grid">
-                <article class="promo-card featured">
-                    <div class="promo-badge">2x1</div>
-                    <h3>Pizza Night</h3>
-                    <p>Disfruta 2 pizzas por el precio de 1 en pedidos de viernes a domingo.</p>
-                    <div class="promo-meta">
-                        <span><i class="fas fa-clock" aria-hidden="true"></i> Válida hoy</span>
-                        <span><i class="fas fa-utensils" aria-hidden="true"></i> Pizzas</span>
-                    </div>
-                </article>
-                <article class="promo-card">
-                    <div class="promo-badge">10% off</div>
-                    <h3>Combo familiar</h3>
-                    <p>Obtén un 10% de descuento en tus pedidos de combo para compartir.</p>
-                    <div class="promo-meta">
-                        <span><i class="fas fa-clock" aria-hidden="true"></i> Hoy y mañana</span>
-                        <span><i class="fas fa-users" aria-hidden="true"></i> Para 4+</span>
-                    </div>
-                </article>
-            </div>
+            <div class="promo-grid"></div>
             <div class="promo-code-card">
                 <div class="promo-code-header">
                     <div>
@@ -584,6 +565,7 @@
                     <a href="#" class="forgot-password-link" id="forgot-password-link">¿Olvidaste tu contraseña?</a>
                     <button type="submit" class="btn-primary" id="login-btn"><i class="fas fa-arrow-right" aria-hidden="true"></i> Entrar</button>
                 </form>
+                <div class="auth-link">¿No tienes cuenta? <a href="#" data-page="registro">Crea una aquí</a></div>
         </section>
 
         <!-- ===== PÁGINA PERFIL ===== -->
@@ -591,21 +573,21 @@
             <h2 id="perfil-title" class="section-title"><i class="fas fa-user-circle" aria-hidden="true"></i> Mi Perfil</h2>
             <div class="profile-container">
                 <div class="profile-header">
-                    <div class="profile-avatar" aria-hidden="true" id="profile-avatar-text">JP</div>
+                    <div class="profile-avatar" aria-hidden="true" id="profile-avatar-text">?</div>
                     <div class="profile-user-info">
-                        <h3 id="profile-name">Juan Pérez</h3>
-                        <p><i class="fas fa-envelope" style="color:#8b5cf6;" aria-hidden="true"></i> <span id="profile-email">juan.perez@email.com</span></p>
-                        <p><i class="fas fa-calendar-alt" style="color:#8b5cf6;" aria-hidden="true"></i> Miembro desde 2024</p>
+                        <h3 id="profile-name">Sin usuario</h3>
+                        <p><i class="fas fa-envelope" style="color:#8b5cf6;" aria-hidden="true"></i> <span id="profile-email">Sin correo</span></p>
+                        <p><i class="fas fa-calendar-alt" style="color:#8b5cf6;" aria-hidden="true"></i> Sin fecha de registro</p>
                     </div>
                 </div>
                 
                 <!-- ===== DATOS DEL USUARIO ===== -->
                 <div class="profile-section">
                     <h4><i class="fas fa-id-card" aria-hidden="true"></i> Mis datos</h4>
-                    <div class="profile-field"><span class="label">Nombre completo</span><span class="value" id="profile-fullname">Juan Pérez</span></div>
-                    <div class="profile-field"><span class="label">Correo electrónico</span><span class="value" id="profile-user-email">juan.perez@email.com</span></div>
-                    <div class="profile-field"><span class="label">Teléfono</span><span class="value" id="profile-phone">+52 55 1234 5678</span></div>
-                    <div class="profile-field"><span class="label">Dirección</span><span class="value" id="profile-address">Calle Principal 123, Colonia Centro</span></div>
+                    <div class="profile-field"><span class="label">Nombre completo</span><span class="value" id="profile-fullname">Sin datos</span></div>
+                    <div class="profile-field"><span class="label">Correo electrónico</span><span class="value" id="profile-user-email">Sin datos</span></div>
+                    <div class="profile-field"><span class="label">Teléfono</span><span class="value" id="profile-phone">Sin datos</span></div>
+                    <div class="profile-field"><span class="label">Dirección</span><span class="value" id="profile-address">Sin datos</span></div>
                 </div>
                 
                 <!-- ===== BOTONES DE ACCIÓN ===== -->

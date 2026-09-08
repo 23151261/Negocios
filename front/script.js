@@ -1,11 +1,47 @@
 document.addEventListener('DOMContentLoaded', function() {
 
+    const API_BASE = 'http://localhost:5000/api';
+    let apiReady = false;
+    let authToken = '';
+    let redirectAfterLogin = null;
+    let cartBeforeLogin = null;
+    let adminEmail = '';
+
+    async function apiGet(key) {
+        const response = await fetch(API_BASE + '/data/' + key);
+        if (!response.ok) throw new Error('No se pudo cargar ' + key);
+        return response.json();
+    }
+
+    function apiSave(key, value) {
+        fetch(API_BASE + '/data/' + key, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(value)
+        }).catch(function(error) {
+            console.error('No se pudo guardar ' + key + ' en SQL:', error);
+        });
+    }
+
+    async function apiAuth(path, payload) {
+        const response = await fetch(API_BASE + '/auth/' + path, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'No se pudo autenticar');
+        authToken = data.token || '';
+        window.deliciasAuthToken = authToken;
+        return data;
+    }
+
     // ============================================================
     // PRODUCTOS
     // ============================================================
     
     let products = [];
-    const defaultProducts = [
+    const defaultProducts = []; /*
         { 
             id: 1, 
             name: 'Pizza Margarita', 
@@ -102,106 +138,33 @@ document.addEventListener('DOMContentLoaded', function() {
             stock: 0, 
             status: 'agotado' 
         }
-    ];
+    ]; */
 
     // ============================================================
     // USUARIO ACTUAL
     // ============================================================
     
     let currentUser = {
-        name: 'Juan Pérez',
-        email: 'juan.perez@email.com',
-        phone: '+52 55 1234 5678',
-        address: 'Calle Principal 123, Colonia Centro',
-        memberSince: '2024'
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        memberSince: ''
     };
-
-    try {
-        var savedUser = localStorage.getItem('delicias_current_user');
-        if (savedUser) currentUser = Object.assign(currentUser, JSON.parse(savedUser));
-    } catch (e) {}
 
     // ============================================================
     // COMENTARIOS DE LA COMUNIDAD
     // ============================================================
     
-    let communityComments = [
-        { 
-            id: 1, 
-            name: 'María García', 
-            text: '¡La pizza Margarita es espectacular! La masa crujiente y los ingredientes frescos hacen una combinación perfecta.', 
-            date: '15/01/2025 14:30',
-            edited: false 
-        },
-        { 
-            id: 2, 
-            name: 'Carlos López', 
-            text: 'Muy buena atención y la comida llegó caliente. La hamburguesa BBQ estaba deliciosa.', 
-            date: '14/01/2025 18:45',
-            edited: false 
-        },
-        { 
-            id: 3, 
-            name: 'Ana Martínez', 
-            text: 'El ceviche de camarón es el mejor que he probado. Fresco, bien sazonado y con una presentación impecable.', 
-            date: '13/01/2025 12:20',
-            edited: false 
-        },
-        { 
-            id: 4, 
-            name: 'Pedro Ramírez', 
-            text: 'Buena comida pero el tiempo de entrega fue un poco largo. La ensalada César estaba rica.', 
-            date: '12/01/2025 20:10',
-            edited: false 
-        },
-        { 
-            id: 5, 
-            name: 'Juan Pérez', 
-            text: 'Excelente servicio, la pizza llegó caliente y muy sabrosa. ¡La recomiendo al 100%!', 
-            date: '16/01/2025 19:30',
-            edited: false 
-        },
-        { 
-            id: 6, 
-            name: 'Juan Pérez', 
-            text: 'El salmón a la plancha estaba en su punto, jugoso y con un sabor increíble. Volveré a pedir.', 
-            date: '17/01/2025 13:15',
-            edited: false 
-        }
-    ];
-
-    let nextCommentId = 7;
+    let communityComments = [];
+    let nextCommentId = 1;
 
     // ============================================================
     // C2C - PUBLICACIONES DE USUARIOS
     // ============================================================
     
-    let userPublications = [
-        { 
-            id: 1, 
-            nombre: 'Pizza Hawaiana Casera', 
-            precio: 8.50, 
-            categoria: 'Pizzas', 
-            descripcion: 'Deliciosa pizza hawaiana hecha en casa con piña natural y jamón de primera calidad.', 
-            foto: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300&h=200&fit=crop',
-            fecha: '18/01/2025',
-            usuario: 'Juan Pérez',
-            compras: 3
-        },
-        { 
-            id: 2, 
-            nombre: 'Hamburguesa Gourmet', 
-            precio: 12.00, 
-            categoria: 'Hamburguesas', 
-            descripcion: 'Hamburguesa con carne Angus, queso cheddar, cebolla caramelizada y salsa especial.', 
-            foto: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=300&h=200&fit=crop',
-            fecha: '17/01/2025',
-            usuario: 'Juan Pérez',
-            compras: 1
-        }
-    ];
-    
-    let nextPublicationId = 3;
+    let userPublications = [];
+    let nextPublicationId = 1;
     let editingPublicationId = null;
 
     // ============================================================
@@ -224,6 +187,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let orders = [];
     let promociones = [];
     let historialCompras = [];
+    let contactMessages = [];
+    let invoices = [];
 
     // ============================================================
     // CHECKOUT - VARIABLES
@@ -241,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // HISTORIAL DE COMPRAS (PEDIDOS SIMULADOS CON TODOS LOS DATOS)
     // ============================================================
 
-    const defaultHistorialCompras = [
+    const defaultHistorialCompras = []; /*
         {
             id: 'DEL-2026-1001',
             fecha: '15/01/2026 14:30',
@@ -281,60 +246,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 cp: '12345'
             }
         }
-    ];
+    ]; */
 
     // ============================================================
-    // CARGA DE DATOS DESDE LOCALSTORAGE
+    // ESTADO INICIAL: LOS DATOS LLEGAN DESDE SQL
     // ============================================================
 
-    try {
-        const savedProducts = localStorage.getItem('delicias_products');
-        products = savedProducts ? JSON.parse(savedProducts) : JSON.parse(JSON.stringify(defaultProducts));
-    } catch (e) {}
+    products = [];
+    cart = [];
+    historialCompras = [];
 
-    try {
-        const savedCart = localStorage.getItem('delicias_cart');
-        cart = savedCart ? JSON.parse(savedCart) : [];
-    } catch (e) {}
-
-    try {
-        const savedComments = localStorage.getItem('delicias_comments');
-        if (savedComments) {
-            communityComments = JSON.parse(savedComments);
-            let maxId = 0;
-            communityComments.forEach(function(c) {
-                if (c.id > maxId) maxId = c.id;
-            });
-            nextCommentId = maxId + 1;
-        }
-    } catch (e) {}
-
-    try {
-        const savedPublications = localStorage.getItem('delicias_publications');
-        if (savedPublications) {
-            userPublications = JSON.parse(savedPublications);
-            let maxId = 0;
-            userPublications.forEach(function(p) {
-                if (p.id > maxId) maxId = p.id;
-            });
-            nextPublicationId = maxId + 1;
-        }
-    } catch (e) {}
-
-    try {
-        const savedHistorial = localStorage.getItem('delicias_historial');
-        if (savedHistorial) {
-            historialCompras = JSON.parse(savedHistorial);
-        } else {
-            historialCompras = JSON.parse(JSON.stringify(defaultHistorialCompras));
-            saveHistorial();
-        }
-    } catch (e) {
-        historialCompras = JSON.parse(JSON.stringify(defaultHistorialCompras));
-        saveHistorial();
-    }
-
-    const defaultClients = [
+    const defaultClients = []; /*
         { id: 1, name: 'María García', email: 'maria@email.com', phone: '55 1234 5678', address: 'Av. Principal 123', orders: 8, spent: 340.50, registeredDate: '10/01/2024', stage: 'frecuente', lastInteractionDate: '2026-05-12', interactions: [
             { type: 'Compra', date: '2026-05-12', note: 'Compra completada por $340.50 y entrega confirmada.' },
             { type: 'Correo', date: '2026-05-10', note: 'Se envió recordatorio sobre la entrega y próxima promoción.' },
@@ -360,29 +282,9 @@ document.addEventListener('DOMContentLoaded', function() {
             { type: 'Compra', date: '2025-08-11', note: 'Se registró la última compra del cliente.' },
             { type: 'Registro', date: '2024-10-05', note: 'Cliente activo en su momento, ahora requiere seguimiento.' }
         ] }
-    ];
-
-    const defaultOrders = [
-        { id: 125, client: 'María García', products: 'Pizza Margarita (2)', total: 25.00, status: 'entregado', date: '15/01/2025 14:30' },
-        { id: 124, client: 'Carlos López', products: 'Hamburguesa Clásica (1)', total: 10.90, status: 'entregado', date: '15/01/2025 13:15' },
-        { id: 123, client: 'Ana Martínez', products: 'Salmón a la plancha (1)', total: 18.40, status: 'en preparacion', date: '15/01/2025 12:45' },
-        { id: 122, client: 'Pedro Ramírez', products: 'Ceviche de camarón (2)', total: 30.40, status: 'pendiente', date: '15/01/2025 12:00' },
-        { id: 121, client: 'Laura Fernández', products: 'Ensalada César (1)', total: 11.80, status: 'entregado', date: '15/01/2025 11:20' }
-    ];
-
-    try {
-        const savedClients = localStorage.getItem('delicias_clients');
-        clients = savedClients ? JSON.parse(savedClients) : JSON.parse(JSON.stringify(defaultClients));
-    } catch (e) {
-        clients = JSON.parse(JSON.stringify(defaultClients));
-    }
-
-    try {
-        const savedOrders = localStorage.getItem('delicias_orders');
-        orders = savedOrders ? JSON.parse(savedOrders) : JSON.parse(JSON.stringify(defaultOrders));
-    } catch (e) {
-        orders = JSON.parse(JSON.stringify(defaultOrders));
-    }
+    ]; */
+    clients = [];
+    orders = [];
 
     function parseStoredDate(value) {
         if (!value) return null;
@@ -402,67 +304,107 @@ document.addEventListener('DOMContentLoaded', function() {
         return latestDate;
     }
 
-    try {
-        const savedPromos = localStorage.getItem('delicias_promociones');
-        promociones = savedPromos ? JSON.parse(savedPromos) : [
-            { nombre: 'Oferta de fin de semana', descuento: '20%', productos: 'Pizza Pepperoni, Hamburguesa BBQ', vigencia: '18-20 Ene', estado: 'Activa' },
-            { nombre: 'Combo Familiar', descuento: '15%', productos: 'Pizza Margarita + Ensalada César', vigencia: '15-31 Ene', estado: 'Activa' },
-            { nombre: '2x1 en bebidas', descuento: '50%', productos: 'Café de especialidad', vigencia: '10-20 Ene', estado: 'Vencida' }
-        ];
-    } catch (e) {}
+    promociones = [];
 
     // ============================================================
     // FUNCIONES DE GUARDADO
     // ============================================================
 
     function saveProducts() {
-        try {
-            localStorage.setItem('delicias_products', JSON.stringify(products));
-        } catch (e) {}
+        apiSave('products', products);
     }
 
     function saveCart() {
-        try {
-            localStorage.setItem('delicias_cart', JSON.stringify(cart));
-        } catch (e) {}
+        apiSave('cart', cart);
     }
 
     function saveComments() {
-        try {
-            localStorage.setItem('delicias_comments', JSON.stringify(communityComments));
-        } catch (e) {}
+        apiSave('comments', communityComments);
     }
 
     function saveClients() {
-        try {
-            localStorage.setItem('delicias_clients', JSON.stringify(clients));
-        } catch (e) {}
+        apiSave('clients', clients);
     }
 
     function saveOrders() {
-        try {
-            localStorage.setItem('delicias_orders', JSON.stringify(orders));
-        } catch (e) {}
+        apiSave('orders', orders);
     }
 
     function savePromociones() {
-        try {
-            localStorage.setItem('delicias_promociones', JSON.stringify(promociones));
-        } catch (e) {}
+        apiSave('promociones', promociones);
     }
 
     function savePublications() {
-        try {
-            localStorage.setItem('delicias_publications', JSON.stringify(userPublications));
-        } catch (e) {
-            console.log('Error guardando publicaciones:', e);
-        }
+        apiSave('publications', userPublications);
     }
 
     function saveHistorial() {
+        apiSave('historial', historialCompras);
+    }
+
+    function saveCurrentUser() {
+        return currentUser;
+    }
+
+    function saveAuction() {
+        apiSave('auction', { ofertas: subastaOfertas, ofertaActual: subastaOfertaActual });
+    }
+
+    function saveContactMessages() {
+        apiSave('contactMessages', contactMessages);
+    }
+
+    function saveInvoices() {
+        apiSave('invoices', invoices);
+    }
+
+    async function loadApiData() {
+        const keys = ['products', 'cart', 'comments', 'clients', 'orders', 'promociones', 'publications', 'historial', 'auction', 'contactMessages', 'invoices'];
         try {
-            localStorage.setItem('delicias_historial', JSON.stringify(historialCompras));
-        } catch (e) {}
+            const values = await Promise.all(keys.map(apiGet));
+            const data = {};
+            keys.forEach(function(key, index) { data[key] = values[index]; });
+
+            if (data.products !== null) products = data.products;
+            else apiSave('products', products);
+            if (data.cart !== null) cart = data.cart;
+            else apiSave('cart', cart);
+            if (data.comments !== null) communityComments = data.comments;
+            else apiSave('comments', communityComments);
+            if (data.clients !== null) clients = data.clients;
+            else apiSave('clients', clients);
+            if (data.orders !== null) orders = data.orders;
+            else apiSave('orders', orders);
+            if (data.promociones !== null) promociones = data.promociones;
+            else apiSave('promociones', promociones);
+            if (data.publications !== null) userPublications = data.publications;
+            else apiSave('publications', userPublications);
+            if (data.historial !== null) historialCompras = data.historial;
+            else apiSave('historial', historialCompras);
+            if (data.auction !== null) {
+                subastaOfertas = data.auction.ofertas || [];
+                subastaOfertaActual = data.auction.ofertaActual || 6;
+            } else apiSave('auction', { ofertas: [], ofertaActual: 6 });
+            if (data.contactMessages !== null) contactMessages = data.contactMessages;
+            else apiSave('contactMessages', contactMessages);
+            if (data.invoices !== null) invoices = data.invoices;
+            else apiSave('invoices', invoices);
+
+            apiReady = true;
+            renderCatalog(selectedCategory);
+            renderCommunityComments();
+            renderMarketplace();
+            renderMisPublicaciones();
+            renderHistorialCompras();
+            renderProductTable();
+            renderClientsTable();
+            renderOrdersTable();
+            renderPromotionsAdmin();
+            updateCartUI();
+            updateProfileUI();
+        } catch (error) {
+            console.error('API SQL no disponible; se mantienen los datos de respaldo:', error);
+        }
     }
 
     // ============================================================
@@ -542,8 +484,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function verificarLoginAntesDeCheckout() {
         if (!isLoggedIn) {
-            sessionStorage.setItem('redirect_after_login', 'checkout');
-            sessionStorage.setItem('cart_before_login', JSON.stringify(cart));
+            redirectAfterLogin = 'checkout';
+            cartBeforeLogin = cart;
             
             var feedback = document.getElementById('cart-feedback');
             if (feedback) {
@@ -562,21 +504,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function restaurarCarritoDespuesDeLogin() {
-        var redirectTo = sessionStorage.getItem('redirect_after_login');
-        var savedCart = sessionStorage.getItem('cart_before_login');
+        var redirectTo = redirectAfterLogin;
+        var savedCart = cartBeforeLogin;
         
         if (redirectTo === 'checkout' && savedCart) {
             try {
-                var parsedCart = JSON.parse(savedCart);
-                if (parsedCart && parsedCart.length > 0) {
-                    cart = parsedCart;
+                if (savedCart && savedCart.length > 0) {
+                    cart = savedCart;
                     saveCart();
                     updateCartUI();
                 }
             } catch (e) {}
             
-            sessionStorage.removeItem('redirect_after_login');
-            sessionStorage.removeItem('cart_before_login');
+            redirectAfterLogin = null;
+            cartBeforeLogin = null;
             return true;
         }
         return false;
@@ -776,12 +717,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function getActivityUserIdentity() {
-        var adminEmail = sessionStorage.getItem('admin_email');
         return (adminEmail || currentUser.email || currentUser.name || '').toLowerCase();
     }
 
     function getActivityUserLabel() {
-        return sessionStorage.getItem('admin_email') || currentUser.name || 'Usuario actual';
+        return adminEmail || currentUser.name || 'Usuario actual';
     }
 
     function activityBelongsToCurrentUser(interaction) {
@@ -913,10 +853,13 @@ document.addEventListener('DOMContentLoaded', function() {
         var activeClients = 0;
         var inactiveClients = 0;
         var atRiskClients = 0;
+        var monthlySales = 0;
+        var monthlyOrders = 0;
         var oneMonthAgo = new Date();
         oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
         var twoMonthsAgo = new Date();
         twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+        var now = new Date();
 
         for (var j = 0; j < clients.length; j++) {
             var lastPurchase = getClientLastPurchaseDate(clients[j]);
@@ -928,6 +871,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 atRiskClients++;
             }
         }
+
+        orders.forEach(function(order) {
+            var orderDate = parseStoredDate(order.date);
+            if (orderDate && orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()) {
+                monthlyOrders++;
+                monthlySales += Number(order.total) || 0;
+            }
+        });
 
         var statActiveClients = document.getElementById('stat-active-clients');
         var statInactiveClients = document.getElementById('stat-inactive-clients');
@@ -941,13 +892,19 @@ document.addEventListener('DOMContentLoaded', function() {
             return total + client.interactions.length;
         }, 0);
         if (statInteractionsPerClient) statInteractionsPerClient.textContent = clients.length ? (totalInteractions / clients.length).toFixed(1) : '0';
+        var statSalesMonth = document.getElementById('stat-sales-month');
+        var reportSalesMonth = document.getElementById('report-sales-month');
+        var reportOrdersMonth = document.getElementById('report-orders-month');
+        if (statSalesMonth) statSalesMonth.textContent = '$' + monthlySales.toFixed(2);
+        if (reportSalesMonth) reportSalesMonth.textContent = '$' + monthlySales.toFixed(2);
+        if (reportOrdersMonth) reportOrdersMonth.textContent = monthlyOrders;
 
         renderCrmStageSummary();
         renderRiskList();
     }
 
     function mostrarMensajeLoginRequerido() {
-        var redirectTo = sessionStorage.getItem('redirect_after_login');
+        var redirectTo = redirectAfterLogin;
         var mensajeRequerido = document.getElementById('login-requerido');
         
         if (redirectTo === 'checkout' && mensajeRequerido) {
@@ -1265,8 +1222,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (cart.length === 0) return;
         
         if (!isLoggedIn) {
-            sessionStorage.setItem('redirect_after_login', 'checkout');
-            sessionStorage.setItem('cart_before_login', JSON.stringify(cart));
+            redirectAfterLogin = 'checkout';
+            cartBeforeLogin = cart;
             
             var feedback = document.getElementById('cart-feedback');
             if (feedback) {
@@ -1600,8 +1557,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (profileEmail) profileEmail.textContent = currentUser.email;
         if (profileFullname) profileFullname.textContent = currentUser.name;
         if (profileUserEmail) profileUserEmail.textContent = currentUser.email;
-        if (profilePhone) profilePhone.textContent = currentUser.phone || '+52 55 1234 5678';
-        if (profileAddress) profileAddress.textContent = currentUser.address || 'Calle Principal 123, Colonia Centro';
+        if (profilePhone) profilePhone.textContent = currentUser.phone || 'Sin datos';
+        if (profileAddress) profileAddress.textContent = currentUser.address || 'Sin datos';
     }
 
     function openProfileEditor() {
@@ -1914,7 +1871,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     type: type.charAt(0).toUpperCase() + type.slice(1),
                     date: date,
                     note: description,
-                    user: sessionStorage.getItem('admin_email') || 'Administrador'
+                    user: adminEmail || 'Administrador'
                 });
                 clients[idx].lastInteractionDate = date;
                 saveClients();
@@ -2017,7 +1974,7 @@ document.addEventListener('DOMContentLoaded', function() {
             html += '<td>' + (c.email || '') + '</td>';
             html += '<td>' + (c.phone || '') + '</td>';
             html += '<td>' + (c.orders || 0) + '</td>';
-            html += '<td>$' + (c.spent || 0).toFixed(2) + '</td>';
+            html += '<td>$' + (Number(c.spent) || 0).toFixed(2) + '</td>';
             html += '<td>' + (c.registeredDate || '') + '</td>';
             html += '<td><div class="table-actions">';
             html += '<button class="btn-view" data-index="' + originalIndex + '" aria-label="Ver detalle de ' + (c.name || 'cliente') + '"><i class="fas fa-eye"></i></button>';
@@ -2319,26 +2276,18 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!grid) return;
 
         var publicPromos = promociones.slice(0, 2);
-        
-        if (publicPromos.length === 0) return;
+        if (publicPromos.length === 0) {
+            grid.innerHTML = '<div class="empty-state" style="text-align:center; padding:2rem; color:#6b4f7a;">No hay promociones disponibles.</div>';
+            return;
+        }
 
-        var cards = grid.querySelectorAll('.promo-card');
-        cards.forEach(function(card, index) {
-            if (index < publicPromos.length) {
-                var promo = publicPromos[index];
-                var badge = card.querySelector('.promo-badge');
-                var title = card.querySelector('h3');
-                var desc = card.querySelector('p');
-                var meta = card.querySelector('.promo-meta');
-
-                if (badge) badge.textContent = promo.descuento || '0%';
-                if (title) title.textContent = promo.nombre || 'Promoción';
-                if (desc) desc.textContent = 'Promoción especial: ' + (promo.productos || '');
-                if (meta) {
-                    meta.innerHTML = '<span><i class="fas fa-clock" aria-hidden="true"></i> ' + (promo.vigencia || '') + '</span><span><i class="fas fa-tag" aria-hidden="true"></i> ' + (promo.estado || '') + '</span>';
-                }
-            }
-        });
+        grid.innerHTML = publicPromos.map(function(promo) {
+            return '<article class="promo-card"><div class="promo-badge">' + (promo.descuento || 'Oferta') + '</div>' +
+                '<h3>' + (promo.nombre || 'Promoción') + '</h3>' +
+                '<p>Promoción especial: ' + (promo.productos || '') + '</p>' +
+                '<div class="promo-meta"><span><i class="fas fa-clock" aria-hidden="true"></i> ' + (promo.vigencia || '') + '</span>' +
+                '<span><i class="fas fa-tag" aria-hidden="true"></i> ' + (promo.estado || '') + '</span></div></article>';
+        }).join('');
     }
 
     // ============================================================
@@ -3124,6 +3073,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         subastaOfertas.push(nuevaOferta);
         subastaOfertaActual = ofertaValor;
+        saveAuction();
         
         const ofertaActual = document.getElementById('subasta-oferta-actual-main');
         const ofertasCount = document.getElementById('subasta-ofertas-count-main');
@@ -3709,7 +3659,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var registroBtn = document.getElementById('registro-btn');
     if (registroBtn) {
-        registroBtn.addEventListener('click', function(e) {
+        registroBtn.addEventListener('click', async function(e) {
             e.preventDefault();
             var name = document.getElementById('registro-nombre')?.value.trim() || '';
             var email = document.getElementById('registro-email')?.value.trim() || '';
@@ -3753,33 +3703,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            try {
+                const result = await apiAuth('register', { name: name, email: email, password: password });
+                currentUser.name = result.user.name;
+                currentUser.email = result.user.email;
+            } catch (error) {
+                showFormMessage(msg, error.message, 'error');
+                return;
+            }
+
             if (msg) showFormMessage(msg, 'Registro exitoso.', 'success');
             
             isLoggedIn = true;
             isAdmin = false;
             currentUser.name = name;
             currentUser.email = email;
-            localStorage.setItem('delicias_current_user', JSON.stringify(currentUser));
+            saveCurrentUser();
             
             document.getElementById('registro-nombre').value = '';
             document.getElementById('registro-email').value = '';
             document.getElementById('registro-password').value = '';
             
-            var redirectTo = sessionStorage.getItem('redirect_after_login');
-            var savedCart = sessionStorage.getItem('cart_before_login');
+            var redirectTo = redirectAfterLogin;
+            var savedCart = cartBeforeLogin;
             
             if (redirectTo === 'checkout' && savedCart) {
-                try {
-                    var parsedCart = JSON.parse(savedCart);
-                    if (parsedCart && parsedCart.length > 0) {
-                        cart = parsedCart;
-                        saveCart();
-                        updateCartUI();
-                    }
-                } catch (e) {}
+                if (savedCart && savedCart.length > 0) {
+                    cart = savedCart;
+                    saveCart();
+                    updateCartUI();
+                }
                 
-                sessionStorage.removeItem('redirect_after_login');
-                sessionStorage.removeItem('cart_before_login');
+                redirectAfterLogin = null;
+                cartBeforeLogin = null;
                 
                 setTimeout(function() {
                     updateNavVisibility();
@@ -3796,7 +3752,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var loginBtn = document.getElementById('login-btn');
     if (loginBtn) {
-        loginBtn.addEventListener('click', function(e) {
+        loginBtn.addEventListener('click', async function(e) {
             e.preventDefault();
             var email = document.getElementById('login-email')?.value.trim() || '';
             var password = document.getElementById('login-password')?.value || '';
@@ -3823,9 +3779,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (document.body.classList.contains('admin-page-shell')) {
+                try {
+                    const result = await apiAuth('login', { email: email, password: password });
+                    if (!['admin', 'super_administrador'].includes(result.user.role)) {
+                        throw new Error('Este usuario no tiene permisos de administrador.');
+                    }
+                    currentUser.name = result.user.name;
+                    currentUser.email = result.user.email;
+                    saveCurrentUser();
+                } catch (error) {
+                    showFormMessage(msg, error.message, 'error');
+                    return;
+                }
                 isLoggedIn = true;
                 isAdmin = true;
-                sessionStorage.setItem('admin_email', email);
+                adminEmail = email;
                 if (msg) showFormMessage(msg, 'Inicio de sesión exitoso.', 'success');
                 setTimeout(function() {
                     updateNavVisibility();
@@ -3839,29 +3807,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            try {
+                const result = await apiAuth('login', { email: email, password: password });
+                currentUser.name = result.user.name;
+                currentUser.email = result.user.email;
+            } catch (error) {
+                showFormMessage(msg, error.message, 'error');
+                return;
+            }
             isLoggedIn = true;
             isAdmin = false;
-            currentUser.email = email;
-            localStorage.setItem('delicias_current_user', JSON.stringify(currentUser));
+            saveCurrentUser();
             if (msg) showFormMessage(msg, 'Inicio de sesión exitoso.', 'success');
             document.getElementById('login-email').value = '';
             document.getElementById('login-password').value = '';
             
-            var redirectTo = sessionStorage.getItem('redirect_after_login');
-            var savedCart = sessionStorage.getItem('cart_before_login');
+            var redirectTo = redirectAfterLogin;
+            var savedCart = cartBeforeLogin;
             
             if (redirectTo === 'checkout' && savedCart) {
-                try {
-                    var parsedCart = JSON.parse(savedCart);
-                    if (parsedCart && parsedCart.length > 0) {
-                        cart = parsedCart;
-                        saveCart();
-                        updateCartUI();
-                    }
-                } catch (e) {}
+                if (savedCart && savedCart.length > 0) {
+                    cart = savedCart;
+                    saveCart();
+                    updateCartUI();
+                }
                 
-                sessionStorage.removeItem('redirect_after_login');
-                sessionStorage.removeItem('cart_before_login');
+                redirectAfterLogin = null;
+                cartBeforeLogin = null;
                 
                 setTimeout(function() {
                     updateNavVisibility();
@@ -3878,17 +3850,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var adminLoginBtn = document.getElementById('admin-login-btn');
     if (adminLoginBtn) {
-        adminLoginBtn.addEventListener('click', function(e) {
+        adminLoginBtn.addEventListener('click', async function(e) {
             e.preventDefault();
             var msg = document.getElementById('login-message');
+            var email = document.getElementById('login-email')?.value.trim() || '';
+            var password = document.getElementById('login-password')?.value || '';
+            if (!email || !password) {
+                showFormMessage(msg, 'Ingresa correo y contraseña.', 'error');
+                return;
+            }
+            try {
+                const result = await apiAuth('login', { email: email, password: password });
+                if (!['admin', 'super_administrador'].includes(result.user.role)) {
+                    throw new Error('Este usuario no tiene permisos de administrador.');
+                }
+                currentUser.name = result.user.name;
+                currentUser.email = result.user.email;
+                saveCurrentUser();
+            } catch (error) {
+                showFormMessage(msg, error.message, 'error');
+                return;
+            }
             isLoggedIn = true;
             isAdmin = true;
-            sessionStorage.setItem('admin_email', document.getElementById('login-email')?.value.trim() || 'Administrador');
+            adminEmail = email;
             if (msg) showFormMessage(msg, 'Acceso de administrador concedido.', 'success');
             document.getElementById('login-email').value = '';
             document.getElementById('login-password').value = '';
-            sessionStorage.removeItem('redirect_after_login');
-            sessionStorage.removeItem('cart_before_login');
+            redirectAfterLogin = null;
+            cartBeforeLogin = null;
             setTimeout(function() {
                 updateNavVisibility();
                 var adminLoginPage = document.getElementById('page-login');
@@ -3915,7 +3905,9 @@ document.addEventListener('DOMContentLoaded', function() {
         logoutBtn.addEventListener('click', function() {
             isLoggedIn = false;
             isAdmin = false;
-            sessionStorage.removeItem('admin_email');
+            adminEmail = '';
+            authToken = '';
+            window.deliciasAuthToken = '';
             var msg = document.getElementById('profile-message');
             if (msg) showFormMessage(msg, 'Has cerrado sesión exitosamente.', 'success');
             updateNavVisibility();
@@ -3931,7 +3923,9 @@ document.addEventListener('DOMContentLoaded', function() {
         adminLogoutBtn.addEventListener('click', function() {
             isLoggedIn = false;
             isAdmin = false;
-            sessionStorage.removeItem('admin_email');
+            adminEmail = '';
+            authToken = '';
+            window.deliciasAuthToken = '';
             updateNavVisibility();
             showPage('inicio');
         });
@@ -3971,7 +3965,7 @@ document.addEventListener('DOMContentLoaded', function() {
             currentUser.email = email;
             currentUser.phone = phone;
             currentUser.address = address;
-            try { localStorage.setItem('delicias_current_user', JSON.stringify(currentUser)); } catch (error) {}
+            saveCurrentUser();
             updateProfileUI();
             updateNavVisibility();
             document.getElementById('edit-profile-modal').style.display = 'none';
@@ -4027,6 +4021,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            contactMessages.unshift({
+                name: name,
+                email: email,
+                message: message,
+                date: new Date().toISOString()
+            });
+            saveContactMessages();
             if (feedback) showFormMessage(feedback, 'Mensaje enviado.', 'success');
             document.getElementById('contact-name').value = '';
             document.getElementById('contact-email').value = '';
@@ -4720,6 +4721,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderHistorialCompras() {
         const container = document.getElementById('compras-lista-container');
         const vacio = document.getElementById('compras-vacio');
+        if (!container) return;
         const filtroEstado = document.getElementById('compras-filtro-estado')?.value || 'todos';
         const busqueda = document.getElementById('compras-buscar')?.value?.toLowerCase() || '';
         
@@ -5008,6 +5010,12 @@ document.addEventListener('DOMContentLoaded', function() {
             cp: cp || 'No especificado',
             uso: uso
         };
+        invoices.unshift({
+            ...facturaFiscalData,
+            folio: ticketData ? ticketData.folio : null,
+            fecha: new Date().toISOString()
+        });
+        saveInvoices();
 
         // Mostrar en la vista generada
         document.getElementById('factura-show-rfc').textContent = rfc;
@@ -5114,5 +5122,6 @@ document.addEventListener('DOMContentLoaded', function() {
         renderHistorialCompras();
     }
     showPage(document.body.classList.contains('admin-page-shell') ? 'login' : 'inicio');
+    loadApiData();
 
 });

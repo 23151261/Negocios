@@ -55,7 +55,7 @@
                 <div class="admin-content">
                     <div id="admin-dashboard" class="admin-page active">
                         <div class="admin-dashboard-grid">
-                            <div class="stat-card"><div class="stat-icon"><i class="fas fa-dollar-sign"></i></div><div class="stat-number">$12,500</div><div class="stat-label">Ventas del mes</div></div>
+                            <div class="stat-card"><div class="stat-icon"><i class="fas fa-dollar-sign"></i></div><div class="stat-number" id="stat-sales-month">$0.00</div><div class="stat-label">Ventas del mes</div></div>
                             <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-friends"></i></div><div class="stat-number" id="stat-active-clients">0</div><div class="stat-label">Clientes activos</div></div>
                             <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-clock"></i></div><div class="stat-number" id="stat-inactive-clients">0</div><div class="stat-label">Clientes inactivos</div></div>
                             <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-times"></i></div><div class="stat-number" id="stat-at-risk-clients">0</div><div class="stat-label">En riesgo de desaparecer</div></div>
@@ -156,7 +156,7 @@
                                 <div class="form-group">
                                     <label for="form-user-role">Rol</label>
                                     <select id="form-user-role">
-                                        <option value="administrador">Administrador</option>
+                                        <option value="admin">Administrador</option>
                                     </select>
                                     <small style="color: #6b7280;">Solo existe la cuenta principal con rol "Super Administrador"</small>
                                 </div>
@@ -169,7 +169,7 @@
                         </div>
                     </div>
 
-                    <div id="admin-reportes" class="admin-page hidden"><div class="product-table-container"><h3>Reportes</h3><div class="admin-dashboard-grid"><div class="stat-card"><div class="stat-number">$12,500</div><div class="stat-label">Ventas del mes</div></div><div class="stat-card"><div class="stat-number">156</div><div class="stat-label">Pedidos este mes</div></div></div></div></div>
+                    <div id="admin-reportes" class="admin-page hidden"><div class="product-table-container"><h3>Reportes</h3><div class="admin-dashboard-grid"><div class="stat-card"><div class="stat-number" id="report-sales-month">$0.00</div><div class="stat-label">Ventas del mes</div></div><div class="stat-card"><div class="stat-number" id="report-orders-month">0</div><div class="stat-label">Pedidos este mes</div></div></div></div></div>
                 </div>
             </div>
         </section>
@@ -178,20 +178,10 @@
 
     <script>
         // ============================================================
-        // SIMULACIÓN DE DATOS Y FUNCIONALIDAD PARA USUARIOS (ADMINS)
+        // FUNCIONALIDAD PARA USUARIOS ADMINISTRADORES
         // ============================================================
 
-        // Datos iniciales: solo existe la cuenta principal (Super Admin)
-        let users = [
-            {
-                id: 1,
-                name: "Administrador Principal",
-                email: "admin@deliciasresto.com",
-                password: "admin123",
-                role: "super_administrador",
-                status: "activo"
-            }
-        ];
+        let users = [];
 
         // Referencias a elementos DOM
         const usersTableBody = document.getElementById('users-table-body');
@@ -289,7 +279,7 @@
             formUserEmail.value = '';
             formUserPassword.value = '';
             formUserConfirmPassword.value = '';
-            formUserRole.value = 'administrador';
+            formUserRole.value = 'admin';
             editingUserId = null;
             formUserSaveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar';
             document.querySelector('#admin-user-form h3').innerHTML = '<i class="fas fa-user-plus"></i> Agregar administrador';
@@ -351,7 +341,7 @@
 
         // Evento para guardar usuario CON VALIDACIONES
         if (userForm) {
-            userForm.addEventListener('submit', function(e) {
+            userForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
 
                 const name = formUserName.value.trim();
@@ -434,6 +424,22 @@
                     }
                 } else {
                     // Agregar nuevo usuario
+                    try {
+                        const response = await fetch('http://localhost:5000/api/auth/admin-register', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + (window.deliciasAuthToken || '')
+                            },
+                            body: JSON.stringify({ name: name, email: email, password: password })
+                        });
+                        const data = await response.json();
+                        if (!response.ok) throw new Error(data.error || 'No se pudo registrar el administrador.');
+                    } catch (error) {
+                        showUserFormMessage(error.message, 'error');
+                        return;
+                    }
+
                     const newUser = {
                         id: users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1,
                         name: name,
