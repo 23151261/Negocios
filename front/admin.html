@@ -40,7 +40,6 @@
             </div>
             <div class="admin-layout">
                 <aside class="admin-sidebar" aria-label="Menú de administración">
-                    <div class="admin-user"><div class="admin-avatar" aria-hidden="true">AD</div><div><div class="admin-name">Administrador</div><div class="admin-email">admin@deliciasresto.com</div></div></div>
                     <ul class="sidebar-menu">
                         <li><a href="#" class="active" data-admin-page="dashboard"><i class="fas fa-chart-pie" aria-hidden="true"></i> Dashboard</a></li>
                         <li><a href="#" data-admin-page="productos"><i class="fas fa-box" aria-hidden="true"></i> Productos</a></li>
@@ -108,7 +107,6 @@
                         </div>
                     </div>
 
-                    <!-- SECCIÓN DE USUARIOS (ADMINISTRADORES) -->
                     <div id="admin-usuarios" class="admin-page hidden">
                         <div class="product-table-container">
                             <div class="table-header">
@@ -117,21 +115,13 @@
                             </div>
                             <div style="overflow-x:auto;">
                                 <table class="product-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Nombre</th>
-                                            <th>Correo</th>
-                                            <th>Rol</th>
-                                            <th>Estado</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
+                                    <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
                                     <tbody id="users-table-body"></tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
-
+                    
                     <!-- FORMULARIO PARA AGREGAR ADMINISTRADOR -->
                     <div id="admin-user-form" class="admin-page hidden">
                         <div class="product-form-container">
@@ -176,6 +166,79 @@
     </main>
     <script src="script.js"></script>
 
+    <!-- ===== MODAL PROGRAMAR SEGUIMIENTO ===== -->
+<div class="modal-overlay" id="seguimiento-modal" style="display: none;">
+    <div class="modal-box" style="max-width: 550px; text-align: left;">
+        <div class="modal-icon" aria-hidden="true">
+            <i class="fas fa-calendar-plus" style="color: #8b5cf6;"></i>
+        </div>
+        <h2 style="text-align: center;">📅 Programar seguimiento</h2>
+        <p style="text-align: center; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+            Cliente: <strong id="seguimiento-cliente-nombre">---</strong>
+        </p>
+        
+        <form id="seguimiento-form" onsubmit="return false;">
+            <div class="form-group">
+                <label for="seguimiento-titulo"><i class="fas fa-tag"></i> Título de la reunión</label>
+                <input type="text" id="seguimiento-titulo" placeholder="Ej: Reunión de seguimiento" required>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="seguimiento-fecha"><i class="fas fa-calendar-day"></i> Fecha</label>
+                    <input type="date" id="seguimiento-fecha" required>
+                </div>
+                <div class="form-group">
+                    <label for="seguimiento-hora"><i class="fas fa-clock"></i> Hora</label>
+                    <input type="time" id="seguimiento-hora" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="seguimiento-duracion"><i class="fas fa-hourglass-half"></i> Duración</label>
+                <select id="seguimiento-duracion">
+                    <option value="15 min">15 minutos</option>
+                    <option value="30 min" selected>30 minutos</option>
+                    <option value="45 min">45 minutos</option>
+                    <option value="1 hora">1 hora</option>
+                    <option value="1.5 horas">1.5 horas</option>
+                    <option value="2 horas">2 horas</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="seguimiento-tipo"><i class="fas fa-video"></i> Tipo de reunión</label>
+                <select id="seguimiento-tipo">
+                    <option value="Presencial">Presencial</option>
+                    <option value="Virtual (Zoom)" selected>Virtual (Zoom)</option>
+                    <option value="Virtual (Meet)">Virtual (Google Meet)</option>
+                    <option value="Telefónica">Telefónica</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="seguimiento-descripcion"><i class="fas fa-align-left"></i> Notas / Agenda</label>
+                <textarea id="seguimiento-descripcion" rows="3" placeholder="Describe los temas a tratar..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="seguimiento-enlace"><i class="fas fa-link"></i> Enlace de la reunión (opcional)</label>
+                <input type="url" id="seguimiento-enlace" placeholder="https://zoom.us/j/123456789">
+            </div>
+            
+            <div class="form-actions" style="margin-top: 1rem;">
+                <button type="submit" class="btn-primary" id="seguimiento-guardar-btn" style="flex:1;">
+                    <i class="fas fa-save"></i> Guardar seguimiento
+                </button>
+                <button type="button" class="btn-secondary" id="seguimiento-cancelar-btn">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+            <div id="seguimiento-message" class="hidden alert-message" style="margin-top:1rem; text-align:center;"></div>
+        </form>
+    </div>
+</div>
+
     <script>
         // ============================================================
         // FUNCIONALIDAD PARA USUARIOS ADMINISTRADORES
@@ -200,6 +263,20 @@
         // Variable para saber si estamos editando o agregando
         let editingUserId = null;
 
+        async function loadUsersFromApi() {
+            if (!window.deliciasAuthToken) return;
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/admins', {
+                    headers: { 'Authorization': 'Bearer ' + window.deliciasAuthToken }
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'No se pudieron cargar los administradores.');
+                users = data.map(user => ({ ...user, status: user.status || 'activo' }));
+                renderUsersTable();
+            } catch (error) {
+                showUserFormMessage(error.message, 'error');
+            }
+        }
         // Función para renderizar la tabla de usuarios
         function renderUsersTable() {
             if (!usersTableBody) return;
@@ -210,7 +287,7 @@
                 const isSuperAdmin = user.role === 'super_administrador';
 
                 // Determinar si se puede eliminar (solo si no es el super admin)
-                const canDelete = !isSuperAdmin;
+                const canDelete = user.role === 'admin';
 
                 tr.innerHTML = `
                     <td><strong>${user.name}</strong></td>
@@ -236,22 +313,25 @@
         }
 
         // Función para eliminar un usuario (solo si no es el super admin)
-        window.deleteUser = function(userId) {
+        window.deleteUser = async function(userId) {
             const userToDelete = users.find(u => u.id === userId);
             if (!userToDelete) return;
-            if (userToDelete.role === 'super_administrador') {
-                alert('No se puede eliminar la cuenta principal de Super Administrador.');
+            if (userToDelete.role !== 'admin') {
                 return;
             }
             if (confirm(`¿Estás seguro de eliminar al administrador "${userToDelete.name}"?`)) {
-                users = users.filter(u => u.id !== userId);
-                renderUsersTable();
-                // También ocultar el formulario si estaba abierto
-                if (userFormContainer) {
-                    userFormContainer.classList.add('hidden');
-                    userFormContainer.classList.remove('active');
+                try {
+                    const response = await fetch('http://localhost:5000/api/auth/admins/' + userId, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': 'Bearer ' + (window.deliciasAuthToken || '') }
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error || 'No se pudo eliminar el administrador.');
+                    await loadUsersFromApi();
+                    showUserFormMessage('Usuario eliminado correctamente.', 'success');
+                } catch (error) {
+                    showUserFormMessage(error.message, 'error');
                 }
-                showUserFormMessage('Usuario eliminado correctamente.', 'success');
             }
         };
 
@@ -449,6 +529,7 @@
                         status: 'activo'
                     };
                     users.push(newUser);
+                    await loadUsersFromApi();
                     showUserFormMessage('Administrador agregado correctamente.', 'success');
                 }
 
@@ -474,6 +555,8 @@
             renderUsersTable();
         });
 
+        document.addEventListener('admin-authenticated', loadUsersFromApi);
+
         // ============================================================
         // INTEGRACIÓN CON EL SIDEBAR EXISTENTE
         // ============================================================
@@ -485,6 +568,9 @@
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
                     const page = this.getAttribute('data-admin-page');
+
+                    // El flujo principal de Admin controla todas las secciones salvo Usuarios.
+                    if (page !== 'usuarios') return;
 
                     // Remover clase active de todos los enlaces
                     sidebarLinks.forEach(l => l.classList.remove('active'));

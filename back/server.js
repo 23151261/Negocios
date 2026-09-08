@@ -67,6 +67,60 @@ async function startServer() {
         )
     `);
 
+    const [clientPasswordColumn] = await pool.query(`
+        SELECT COLUMN_NAME
+        FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'clientes'
+          AND COLUMN_NAME = 'password'
+    `);
+
+    if (clientPasswordColumn.length === 0) {
+        await pool.query('ALTER TABLE clientes ADD COLUMN password VARCHAR(255) NULL AFTER email');
+    }
+
+    const [clientCompanyColumn] = await pool.query(`
+        SELECT COLUMN_NAME
+        FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'clientes'
+          AND COLUMN_NAME = 'company'
+    `);
+
+    if (clientCompanyColumn.length === 0) {
+        await pool.query("ALTER TABLE clientes ADD COLUMN company VARCHAR(150) NOT NULL DEFAULT '' AFTER password");
+    }
+
+    await pool.query(`
+        INSERT INTO clientes (name, email, password, phone, address, stage, status, orders, spent, registered_date, last_interaction_date)
+        SELECT u.name, u.email, u.password, '', '', 'prospecto', 'activo', 0, 0, CURDATE(), CURDATE()
+        FROM usuarios u
+        LEFT JOIN clientes c ON LOWER(c.email) = LOWER(u.email)
+        WHERE u.role = 'usuario' AND c.id IS NULL
+    `);
+    await pool.query(`
+        UPDATE clientes c
+        INNER JOIN usuarios u ON LOWER(c.email) = LOWER(u.email)
+        SET c.password = u.password
+        WHERE u.role = 'usuario' AND c.password IS NULL
+    `);
+    await pool.query("DELETE FROM usuarios WHERE role = 'usuario'");
+
+    const [cartColumns] = await pool.query(`
+        SELECT COLUMN_NAME
+        FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'carrito'
+          AND COLUMN_NAME = 'publication_id'
+    `);
+
+    if (cartColumns.length === 0) {
+        await pool.query('ALTER TABLE carrito MODIFY product_id INT NULL');
+        await pool.query('ALTER TABLE carrito ADD COLUMN publication_id INT NULL AFTER product_id');
+        await pool.query('ALTER TABLE carrito ADD CONSTRAINT carrito_publication_fk FOREIGN KEY (publication_id) REFERENCES publicaciones(id) ON DELETE CASCADE');
+        await pool.query('ALTER TABLE carrito ADD UNIQUE KEY unique_cart_publication (session_key, publication_id)');
+    }
+
     app.listen(PORT, () => {
         console.log(`Servidor corriendo en http://localhost:${PORT}`);
     });

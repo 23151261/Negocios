@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 
 const allowedKeys = new Set(['products', 'promociones', 'comments', 'clients', 'orders', 'historial', 'publications', 'cart', 'auction', 'contactMessages', 'invoices']);
+const saveQueues = new Map();
 
 function isAllowed(key) {
     return allowedKeys.has(key);
@@ -8,6 +9,31 @@ function isAllowed(key) {
 
 function toDate(value) {
     return value ? new Date(value) : new Date();
+}
+
+function toInteractionType(value) {
+    const normalized = String(value || 'nota').trim().toLowerCase();
+    const aliases = {
+        registro: 'nota',
+        llamada: 'llamada',
+        correo: 'correo',
+        reunion: 'reunion',
+        'reunión': 'reunion',
+        nota: 'nota',
+        compra: 'compra',
+        pedido: 'compra',
+        seguimiento: 'nota'
+    };
+    return aliases[normalized] || 'nota';
+}
+
+function parseAddress(value) {
+    if (!value || typeof value !== 'string') return value;
+    try {
+        return JSON.parse(value);
+    } catch (_) {
+        return value;
+    }
 }
 
 async function getRows(key) {
@@ -30,21 +56,31 @@ async function getRows(key) {
     if (key === 'clients') {
         const [clients] = await pool.query('SELECT * FROM clientes ORDER BY id DESC');
         const [interactions] = await pool.query('SELECT * FROM interacciones ORDER BY date DESC');
-        return clients.map(client => ({ ...client, registeredDate: client.registered_date, lastInteractionDate: client.last_interaction_date, interactions: interactions.filter(item => item.cliente_id === client.id) }));
+        return clients.map(({ password, ...client }) => ({ ...client, registeredDate: client.registered_date, lastInteractionDate: client.last_interaction_date, interactions: interactions.filter(item => item.cliente_id === client.id) }));
     }
     if (key === 'orders' || key === 'historial') {
         const source = key === 'orders' ? 'admin' : 'history';
         const [orders] = await pool.query('SELECT * FROM pedidos WHERE source = ? ORDER BY order_date DESC', [source]);
         const [items] = await pool.query('SELECT * FROM pedido_items');
-        return orders.map(order => ({ id: order.id, client: order.client_name, products: items.filter(item => item.pedido_id === order.id).map(item => item.name + ' (' + item.quantity + ')').join(', '), total: Number(order.total), status: order.status, date: order.order_date, metodo: order.payment_method, estado: order.status, direccion: order.address, items: items.filter(item => item.pedido_id === order.id).map(item => ({ name: item.name, quantity: item.quantity, price: Number(item.price), subtotal: Number(item.subtotal) })) }));
+        return orders.map(order => ({ id: order.id, client: order.client_name, products: items.filter(item => item.pedido_id === order.id).map(item => item.name + ' (' + item.quantity + ')').join(', '), total: Number(order.total), status: order.status, date: order.order_date, metodo: order.payment_method, estado: order.status, direccion: parseAddress(order.address), items: items.filter(item => item.pedido_id === order.id).map(item => ({ name: item.name, quantity: item.quantity, price: Number(item.price), subtotal: Number(item.subtotal) })) }));
     }
     if (key === 'contactMessages') {
         const [rows] = await pool.query('SELECT * FROM mensajes_contacto ORDER BY id DESC');
-        return rows;
+        return rows.map(row => ({ ...row, date: row.created_at }));
     }
     if (key === 'invoices') {
         const [rows] = await pool.query('SELECT * FROM facturas ORDER BY id DESC');
-        return rows;
+        return rows.map(row => ({
+            id: row.id,
+            pedidoId: row.pedido_id,
+            folio: row.folio,
+            rfc: row.rfc,
+            razonSocial: row.razon_social,
+            regimen: row.regimen,
+            cp: row.cp,
+            uso: row.uso_cfdi,
+            fecha: row.created_at
+        }));
     }
     if (key === 'auction') {
         const [rows] = await pool.query('SELECT * FROM ofertas_subasta ORDER BY offered_at');
@@ -52,8 +88,8 @@ async function getRows(key) {
         return { ofertas: rows.map(row => ({ usuario: row.user_name, monto: Number(row.amount), timestamp: row.offered_at })), ofertaActual: auction.length ? Number(auction[0].current_bid) : 6 };
     }
     if (key === 'cart') {
-        const [rows] = await pool.query('SELECT c.*, p.name, p.price FROM carrito c JOIN productos p ON p.id = c.product_id WHERE c.session_key = ?', ['global']);
-        return rows.map(row => ({ productId: row.product_id, quantity: row.quantity, nombre: row.name, precio: Number(row.price), esMarketplace: Boolean(row.marketplace) }));
+        const [rows] = await pool.query('SELECT c.*, COALESCE(p.name, pub.nombre) AS name, COALESCE(p.price, pub.precio) AS price, pub.foto FROM carrito c LEFT JOIN productos p ON p.id = c.product_id LEFT JOIN publicaciones pub ON pub.id = c.publication_id WHERE c.session_key = ?', ['global']);
+        return rows.map(row => ({ productId: row.marketplace ? row.publication_id : row.product_id, quantity: row.quantity, nombre: row.name, precio: Number(row.price), foto: row.foto || '', esMarketplace: Boolean(row.marketplace) }));
     }
     return [];
 }
@@ -75,18 +111,21 @@ async function replaceRows(key, data) {
             await connection.query('DELETE FROM publicaciones');
             for (const item of data) await connection.query('INSERT INTO publicaciones (id, nombre, precio, categoria, descripcion, foto, fecha, compras) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [item.id, item.nombre, item.precio, item.categoria, item.descripcion, item.foto || '', toDate(item.fecha), item.compras || 0]);
         } else if (key === 'clients') {
+            const [storedClients] = await connection.query('SELECT email, password, company FROM clientes');
+            const storedByEmail = new Map(storedClients.map(client => [String(client.email).toLowerCase(), client]));
             await connection.query('DELETE FROM interacciones');
             await connection.query('DELETE FROM clientes');
             for (const item of data) {
-                await connection.query('INSERT INTO clientes (id, name, email, phone, address, stage, status, orders, spent, registered_date, last_interaction_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [item.id, item.name, item.email, item.phone, item.address || '', item.stage || 'prospecto', item.status || 'activo', item.orders || 0, item.spent || 0, toDate(item.registeredDate), item.lastInteractionDate ? toDate(item.lastInteractionDate) : null]);
-                for (const interaction of item.interactions || []) await connection.query('INSERT INTO interacciones (cliente_id, type, date, note, user) VALUES (?, ?, ?, ?, ?)', [item.id, interaction.type || 'Nota', toDate(interaction.date), interaction.note || '', interaction.user || 'Administrador']);
+                const stored = storedByEmail.get(String(item.email || '').toLowerCase()) || {};
+                await connection.query('INSERT INTO clientes (id, name, email, password, company, phone, address, stage, status, orders, spent, registered_date, last_interaction_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [item.id, item.name, item.email, stored.password || null, item.company !== undefined ? item.company : (stored.company || ''), item.phone, item.address || '', item.stage || 'prospecto', item.status || 'activo', item.orders || 0, item.spent || 0, toDate(item.registeredDate), item.lastInteractionDate ? toDate(item.lastInteractionDate) : null]);
+                for (const interaction of item.interactions || []) await connection.query('INSERT INTO interacciones (cliente_id, type, date, note, user) VALUES (?, ?, ?, ?, ?)', [item.id, toInteractionType(interaction.type), toDate(interaction.date), interaction.note || '', interaction.user || 'Administrador']);
             }
         } else if (key === 'contactMessages') {
             await connection.query('DELETE FROM mensajes_contacto');
             for (const item of data) await connection.query('INSERT INTO mensajes_contacto (name, email, message, created_at) VALUES (?, ?, ?, ?)', [item.name, item.email, item.message, toDate(item.date)]);
         } else if (key === 'invoices') {
             await connection.query('DELETE FROM facturas');
-            for (const item of data) await connection.query('INSERT INTO facturas (folio, rfc, razon_social, regimen, cp, uso_cfdi, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', [item.folio, item.rfc, item.razonSocial, item.regimen, item.cp, item.uso, toDate(item.fecha)]);
+            for (const item of data) await connection.query('INSERT INTO facturas (pedido_id, folio, rfc, razon_social, regimen, cp, uso_cfdi, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [item.pedidoId || item.pedido_id || null, item.folio || 'SIN-FOLIO', item.rfc || 'RFC NO ESPECIFICADO', item.razonSocial || item.razon_social || 'Sin razón social', item.regimen || 'Régimen General de Ley', item.cp || 'No especificado', item.uso || item.uso_cfdi || 'G01 - Adquisicion de mercancias', toDate(item.fecha || item.created_at)]);
         } else if (key === 'auction') {
             await connection.query('DELETE FROM ofertas_subasta');
             await connection.query('DELETE FROM subastas');
@@ -95,7 +134,11 @@ async function replaceRows(key, data) {
         } else if (key === 'cart') {
             await connection.query('DELETE FROM carrito WHERE session_key = ?', ['global']);
             for (const item of data) {
-                if (!item.esMarketplace) await connection.query('INSERT INTO carrito (session_key, product_id, quantity) VALUES (?, ?, ?)', ['global', item.productId, item.quantity || 1]);
+                const isMarketplace = Boolean(item.esMarketplace);
+                await connection.query(
+                    'INSERT INTO carrito (session_key, product_id, publication_id, quantity, marketplace) VALUES (?, ?, ?, ?, ?)',
+                    ['global', isMarketplace ? null : item.productId, isMarketplace ? item.productId : null, item.quantity || 1, isMarketplace ? 1 : 0]
+                );
             }
         } else if (key === 'orders' || key === 'historial') {
             const source = key === 'orders' ? 'admin' : 'history';
@@ -129,7 +172,12 @@ const getData = async (req, res) => {
 const saveData = async (req, res) => {
     const { key } = req.params;
     if (!isAllowed(key)) return res.status(400).json({ error: 'Colección no permitida' });
-    try { await replaceRows(key, req.body); res.json({ key, data: req.body }); } catch (error) { console.error(error); res.status(500).json({ error: 'Error al guardar datos SQL' }); }
+    const previousSave = saveQueues.get(key) || Promise.resolve();
+    const currentSave = previousSave.catch(() => {}).then(() => replaceRows(key, req.body));
+    saveQueues.set(key, currentSave);
+    try { await currentSave; res.json({ key, data: req.body }); } catch (error) { console.error(error); res.status(500).json({ error: 'Error al guardar datos SQL' }); } finally {
+        if (saveQueues.get(key) === currentSave) saveQueues.delete(key);
+    }
 };
 
 module.exports = { getData, saveData };

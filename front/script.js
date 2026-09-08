@@ -14,12 +14,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function apiSave(key, value) {
-        fetch(API_BASE + '/data/' + key, {
+        return fetch(API_BASE + '/data/' + key, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(value)
+        }).then(async function(response) {
+            var result = await response.json().catch(function() { return {}; });
+            if (!response.ok) throw new Error(result.error || 'No se pudo guardar ' + key + ' en SQL.');
+            return result;
         }).catch(function(error) {
             console.error('No se pudo guardar ' + key + ' en SQL:', error);
+            return null;
         });
     }
 
@@ -41,104 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ============================================================
     
     let products = [];
-    const defaultProducts = []; /*
-        { 
-            id: 1, 
-            name: 'Pizza Margarita', 
-            category: 'Pizzas', 
-            price: 12.50, 
-            desc: 'Clásica pizza con mozzarella, tomate fresco y albahaca.', 
-            image: 'pizza.jpg',
-            badge: 'popular', 
-            badgeText: 'Popular', 
-            stock: 15, 
-            status: 'disponible' 
-        },
-        { 
-            id: 2, 
-            name: 'Pizza Pepperoni', 
-            category: 'Pizzas', 
-            price: 14.90, 
-            desc: 'Pizza con pepperoni, mozzarella y salsa de tomate.', 
-            image: 'pepperoni.jpg',
-            badge: 'new', 
-            badgeText: 'Nuevo', 
-            stock: 10, 
-            status: 'disponible' 
-        },
-        { 
-            id: 3, 
-            name: 'Hamburguesa Clásica', 
-            category: 'Hamburguesas', 
-            price: 10.90, 
-            desc: 'Carne 100% premium de res, lechuga, tomate, cebolla morada y salsa especial.', 
-            image: 'clasica.jpg',
-            badge: 'offer', 
-            badgeText: 'Oferta', 
-            stock: 8, 
-            status: 'disponible' 
-        },
-        { 
-            id: 4, 
-            name: 'Hamburguesa BBQ', 
-            category: 'Hamburguesas', 
-            price: 13.50, 
-            desc: 'Hamburguesa con salsa BBQ, aros de cebolla crujientes y queso cheddar.', 
-            image: 'bbq.jpg',
-            badge: null, 
-            badgeText: null, 
-            stock: 5, 
-            status: 'disponible' 
-        },
-        { 
-            id: 5, 
-            name: 'Salmón a la plancha', 
-            category: 'Pescados', 
-            price: 18.40, 
-            desc: 'Salmón fresco sellado a la plancha, con vegetales asados.', 
-            image: 'salmon.jpg',
-            badge: 'popular', 
-            badgeText: 'Popular', 
-            stock: 0, 
-            status: 'agotado' 
-        },
-        { 
-            id: 6, 
-            name: 'Ceviche de camarón', 
-            category: 'Pescados', 
-            price: 15.20, 
-            desc: 'Camarones frescos marinados en jugo de limón con cebolla y cilantro.', 
-            image: 'ceviche.jpg',
-            badge: 'new', 
-            badgeText: 'Nuevo', 
-            stock: 7, 
-            status: 'disponible' 
-        },
-        { 
-            id: 7, 
-            name: 'Café de especialidad', 
-            category: 'Bebidas', 
-            price: 4.20, 
-            desc: 'Café de origen mexicano, tueste medio, con notas de chocolate.', 
-            image: 'cafe.jpg',
-            badge: null, 
-            badgeText: null, 
-            stock: 20, 
-            status: 'disponible' 
-        },
-        { 
-            id: 8, 
-            name: 'Ensalada César', 
-            category: 'Ensaladas', 
-            price: 11.80, 
-            desc: 'Lechuga romana, pollo a la plancha, parmesano y aderezo César.', 
-            image: 'cesar.jpg',
-            badge: 'vegan', 
-            badgeText: 'Vegano', 
-            stock: 0, 
-            status: 'agotado' 
-        }
-    ]; */
+    const defaultProducts = [];
 
     // ============================================================
     // USUARIO ACTUAL
@@ -201,88 +109,13 @@ document.addEventListener('DOMContentLoaded', function() {
         total: 0,
         items: []
     };
+    let promoAplicada = false;
 
     // ============================================================
     // HISTORIAL DE COMPRAS (PEDIDOS SIMULADOS CON TODOS LOS DATOS)
     // ============================================================
 
-    const defaultHistorialCompras = []; /*
-        {
-            id: 'DEL-2026-1001',
-            fecha: '15/01/2026 14:30',
-            items: [
-                { name: 'Pizza Margarita', quantity: 2, price: 12.50, subtotal: 25.00 },
-                { name: 'Café de especialidad', quantity: 1, price: 4.20, subtotal: 4.20 }
-            ],
-            total: 29.20,
-            metodo: 'Tarjeta',
-            estado: 'entregado',
-            direccion: {
-                nombre: 'Juan Pérez',
-                email: 'juan.perez@email.com',
-                telefono: '55 1234 5678',
-                direccion: 'Calle Principal 123, Colonia Centro',
-                ciudad: 'Ciudad de México',
-                cp: '12345'
-            }
-        },
-        {
-            id: 'DEL-2026-1002',
-            fecha: '10/01/2026 12:15',
-            items: [
-                { name: 'Hamburguesa Clásica', quantity: 1, price: 10.90, subtotal: 10.90 },
-                { name: 'Ensalada César', quantity: 1, price: 11.80, subtotal: 11.80 },
-                { name: 'Café de especialidad', quantity: 2, price: 4.20, subtotal: 8.40 }
-            ],
-            total: 31.10,
-            metodo: 'Transferencia',
-            estado: 'entregado',
-            direccion: {
-                nombre: 'Juan Pérez',
-                email: 'juan.perez@email.com',
-                telefono: '55 1234 5678',
-                direccion: 'Calle Principal 123, Colonia Centro',
-                ciudad: 'Ciudad de México',
-                cp: '12345'
-            }
-        }
-    ]; */
-
-    // ============================================================
-    // ESTADO INICIAL: LOS DATOS LLEGAN DESDE SQL
-    // ============================================================
-
-    products = [];
-    cart = [];
-    historialCompras = [];
-
-    const defaultClients = []; /*
-        { id: 1, name: 'María García', email: 'maria@email.com', phone: '55 1234 5678', address: 'Av. Principal 123', orders: 8, spent: 340.50, registeredDate: '10/01/2024', stage: 'frecuente', lastInteractionDate: '2026-05-12', interactions: [
-            { type: 'Compra', date: '2026-05-12', note: 'Compra completada por $340.50 y entrega confirmada.' },
-            { type: 'Correo', date: '2026-05-10', note: 'Se envió recordatorio sobre la entrega y próxima promoción.' },
-            { type: 'Registro', date: '2024-01-10', note: 'El cliente se registró y confirmó datos de contacto.' }
-        ] },
-        { id: 2, name: 'Carlos López', email: 'carlos@email.com', phone: '55 2345 6789', address: 'Calle Centro 456', orders: 5, spent: 210.80, registeredDate: '15/03/2024', stage: 'activo', lastInteractionDate: '2026-04-18', interactions: [
-            { type: 'Llamada', date: '2026-04-18', note: 'Confirmó interés por el combo familiar.' },
-            { type: 'Pedido', date: '2026-04-12', note: 'Pedido entregado con buena calificación.' },
-            { type: 'Registro', date: '2024-03-15', note: 'Registro inicial del cliente.' }
-        ] },
-        { id: 3, name: 'Ana Martínez', email: 'ana@email.com', phone: '55 3456 7890', address: 'Boulevard Sur 789', orders: 12, spent: 520.30, registeredDate: '02/06/2024', stage: 'frecuente', lastInteractionDate: '2026-05-16', interactions: [
-            { type: 'Compra', date: '2026-05-16', note: 'Pedido con entrega en horario solicitado.' },
-            { type: 'Reunión', date: '2026-05-05', note: 'Se coordinó una visita para ofrecer un descuento por volumen.' },
-            { type: 'Registro', date: '2024-06-02', note: 'Registro de cliente frecuente.' }
-        ] },
-        { id: 4, name: 'Pedro Ramírez', email: 'pedro@email.com', phone: '55 4567 8901', address: 'Paseo Norte 321', orders: 3, spent: 95.20, registeredDate: '20/08/2024', stage: 'prospecto', lastInteractionDate: '2026-01-20', interactions: [
-            { type: 'Correo', date: '2026-01-20', note: 'Se le compartió una promoción del mes.' },
-            { type: 'Llamada', date: '2025-11-12', note: 'Mostró interés pero no volvió a comprar.' },
-            { type: 'Registro', date: '2024-08-20', note: 'Registro inicial con perfil de posible cliente.' }
-        ] },
-        { id: 5, name: 'Laura Fernández', email: 'laura@email.com', phone: '55 5678 9012', address: 'Avenida Este 654', orders: 6, spent: 280.00, registeredDate: '05/10/2024', stage: 'inactivo', lastInteractionDate: '2025-09-18', interactions: [
-            { type: 'Correo', date: '2025-09-18', note: 'Se envió campaña de reactivación.' },
-            { type: 'Compra', date: '2025-08-11', note: 'Se registró la última compra del cliente.' },
-            { type: 'Registro', date: '2024-10-05', note: 'Cliente activo en su momento, ahora requiere seguimiento.' }
-        ] }
-    ]; */
+    const defaultHistorialCompras = [];
     clients = [];
     orders = [];
 
@@ -311,11 +144,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // ============================================================
 
     function saveProducts() {
-        apiSave('products', products);
+        return apiSave('products', products);
     }
 
     function saveCart() {
-        apiSave('cart', cart);
+        return apiSave('cart', cart);
     }
 
     function saveComments() {
@@ -323,11 +156,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function saveClients() {
-        apiSave('clients', clients);
+        return apiSave('clients', clients);
     }
 
     function saveOrders() {
-        apiSave('orders', orders);
+        return apiSave('orders', orders);
     }
 
     function savePromociones() {
@@ -339,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function saveHistorial() {
-        apiSave('historial', historialCompras);
+        return apiSave('historial', historialCompras);
     }
 
     function saveCurrentUser() {
@@ -355,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function saveInvoices() {
-        apiSave('invoices', invoices);
+        return apiSave('invoices', invoices);
     }
 
     async function loadApiData() {
@@ -411,72 +244,92 @@ document.addEventListener('DOMContentLoaded', function() {
     // FUNCIONES DE UTILIDAD
     // ============================================================
 
-    function showFormMessage(msgElement, message, type) {
-        if (!msgElement) return;
-        msgElement.className = type === 'success' ? 'auth-success alert-message' : 'auth-error alert-message';
-        msgElement.textContent = message;
-        msgElement.classList.remove('hidden');
-        
-        setTimeout(function() {
-            msgElement.classList.add('hidden');
-        }, 4000);
+// ============================================================
+// FUNCIONES DE UTILIDAD
+// ============================================================
+
+function showFormMessage(msgElement, message, type) {
+    if (!msgElement) return;
+    
+    // Limpiar clases anteriores
+    msgElement.className = 'alert-message';
+    msgElement.classList.remove('hidden', 'auth-success', 'auth-error');
+    
+    if (type === 'success') {
+        msgElement.classList.add('auth-success');
+        msgElement.style.color = '#10b981';
+        msgElement.style.border = '1px solid #10b981';
+        msgElement.style.background = '#f0fdf4';
+    } else {
+        msgElement.classList.add('auth-error');
+        msgElement.style.color = '#ef4444';
+        msgElement.style.border = '1px solid #ef4444';
+        msgElement.style.background = '#fef2f2';
+    }
+    
+    msgElement.textContent = message;
+    msgElement.classList.remove('hidden');
+    
+    setTimeout(function() {
+        msgElement.classList.add('hidden');
+    }, 4000);
+}
+
+function showConfirmModal(message, callback) {
+    var modal = document.getElementById('confirm-modal');
+    
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'confirm-modal';
+        modal.className = 'modal-overlay';
+        modal.style.display = 'none';
+        modal.innerHTML = `
+            <div class="modal-box">
+                <div class="modal-icon" aria-hidden="true"><i class="fas fa-question-circle"></i></div>
+                <h2>Confirmar</h2>
+                <p id="confirm-message">¿Estás seguro?</p>
+                <div style="display:flex; gap:0.8rem; justify-content:center; flex-wrap:wrap; margin-top:0.5rem;">
+                    <button class="btn-primary" id="confirm-btn" style="min-width:100px;">Aceptar</button>
+                    <button class="btn-secondary" id="confirm-cancel-btn" style="min-width:100px;">Cancelar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
     }
 
-    function showConfirmModal(message, callback) {
-        var modal = document.getElementById('confirm-modal');
-        
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'confirm-modal';
-            modal.className = 'modal-overlay';
-            modal.style.display = 'none';
-            modal.innerHTML = `
-                <div class="modal-box">
-                    <div class="modal-icon" aria-hidden="true"><i class="fas fa-question-circle"></i></div>
-                    <h2>Confirmar</h2>
-                    <p id="confirm-message">¿Estás seguro?</p>
-                    <div style="display:flex; gap:0.8rem; justify-content:center; flex-wrap:wrap; margin-top:0.5rem;">
-                        <button class="btn-primary" id="confirm-btn" style="min-width:100px;">Aceptar</button>
-                        <button class="btn-secondary" id="confirm-cancel-btn" style="min-width:100px;">Cancelar</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-        }
+    var messageEl = document.getElementById('confirm-message');
+    var confirmBtn = document.getElementById('confirm-btn');
+    var cancelBtn = document.getElementById('confirm-cancel-btn');
 
-        var messageEl = document.getElementById('confirm-message');
-        var confirmBtn = document.getElementById('confirm-btn');
-        var cancelBtn = document.getElementById('confirm-cancel-btn');
+    messageEl.textContent = message;
+    modal.classList.add('show');
+    modal.style.display = 'flex';
 
-        messageEl.textContent = message;
-        modal.classList.add('show');
-        modal.style.display = 'flex';
+    var newConfirmBtn = confirmBtn.cloneNode(true);
+    var newCancelBtn = cancelBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
 
-        var newConfirmBtn = confirmBtn.cloneNode(true);
-        var newCancelBtn = cancelBtn.cloneNode(true);
-        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+    newConfirmBtn.addEventListener('click', function() {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        if (callback) callback(true);
+    });
 
-        newConfirmBtn.addEventListener('click', function() {
-            modal.classList.remove('show');
-            modal.style.display = 'none';
-            if (callback) callback(true);
-        });
+    newCancelBtn.addEventListener('click', function() {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        if (callback) callback(false);
+    });
 
-        newCancelBtn.addEventListener('click', function() {
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
             modal.classList.remove('show');
             modal.style.display = 'none';
             if (callback) callback(false);
-        });
-
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                modal.classList.remove('show');
-                modal.style.display = 'none';
-                if (callback) callback(false);
-            }
-        });
-    }
+        }
+    });
+}
 
     // ============================================================
     // FUNCIONES DE REDIRECCIÓN DESPUÉS DE LOGIN
@@ -562,6 +415,7 @@ document.addEventListener('DOMContentLoaded', function() {
         'client-form': document.getElementById('admin-client-form'),
         'client-detail': document.getElementById('admin-client-detail'),
         'mi-actividad': document.getElementById('admin-mi-actividad'),
+        usuarios: document.getElementById('admin-usuarios'),
         reportes: document.getElementById('admin-reportes')
     };
 
@@ -727,7 +581,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function activityBelongsToCurrentUser(interaction) {
         var owner = String(interaction.user || '').toLowerCase();
         var currentIdentity = getActivityUserIdentity();
-        return owner === currentIdentity || owner === String(currentUser.name || '').toLowerCase() || owner === String(currentUser.email || '').toLowerCase();
+        var isRegistration = String(interaction.type || '').toLowerCase() === 'registro';
+        return isRegistration || owner === currentIdentity || owner === String(currentUser.name || '').toLowerCase() || owner === String(currentUser.email || '').toLowerCase();
     }
 
     function renderNormalActivity() {
@@ -1099,7 +954,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         var totalPrice = 0;
         for (var j = 0; j < cart.length; j++) {
-            var p = products.find(function(pr) { return pr.id === cart[j].productId; });
+            var p = obtenerProductoCarrito(cart[j]);
             if (p) totalPrice += p.price * cart[j].quantity;
         }
         if (cartTotalBadge) cartTotalBadge.textContent = '$' + totalPrice.toFixed(0);
@@ -1118,7 +973,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         var html = '';
         for (var k = 0; k < cart.length; k++) {
-            var product = products.find(function(p) { return p.id === cart[k].productId; });
+            var product = obtenerProductoCarrito(cart[k]);
             if (!product) continue;
             html += '<div class="cart-item" data-index="' + k + '" role="listitem">';
             html += '<div class="cart-item-img"><img src="' + product.image + '" alt="' + product.name + '" onerror="this.src=\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Crect fill=%22%23ede6f5%22 width=%2260%22 height=%2260%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%238b5cf6%22 font-family=%22sans-serif%22 font-size=%2210%22%3E' + product.name + '%3C/text%3E%3C/svg%3E\'"></div>';
@@ -1167,12 +1022,47 @@ document.addEventListener('DOMContentLoaded', function() {
 
         var total = 0;
         for (var m = 0; m < cart.length; m++) {
-            var prod = products.find(function(p) { return p.id === cart[m].productId; });
+            var prod = obtenerProductoCarrito(cart[m]);
             if (prod) total += prod.price * cart[m].quantity;
         }
         if (cartTotalAmount) cartTotalAmount.textContent = '$' + total.toFixed(2);
         if (checkoutBtn) checkoutBtn.disabled = false;
         saveCart();
+    }
+
+    function obtenerProductoCarrito(item) {
+        if (item && item.esMarketplace) {
+            return { name: item.nombre || 'Producto marketplace', image: item.foto || '', price: Number(item.precio) || 0 };
+        }
+        return products.find(function(product) { return product.id === item.productId; }) || null;
+    }
+
+    function obtenerDescuentoAplicable(items) {
+        var mejorDescuento = 0;
+        var productos = items || checkoutData.items || [];
+        promociones.forEach(function(promo) {
+            if (String(promo.estado || '').toLowerCase() !== 'activa') return;
+            var descuento = parseFloat(String(promo.descuento || '').replace(',', '.'));
+            if (!isFinite(descuento) || descuento <= 0 || descuento > 100) return;
+
+            var alcance = String(promo.productos || '').toLowerCase();
+            var aplicaATodo = /\b(todo|todos|general|catalogo|catálogo)\b/.test(alcance);
+            var coincide = aplicaATodo || productos.some(function(item) {
+                if (item.esMarketplace) return false;
+                var nombre = String(item.name || '').toLowerCase();
+                var categoria = String(item.category || '').toLowerCase();
+                return alcance.includes(nombre) || nombre.includes(alcance) ||
+                    (categoria && alcance.includes(categoria));
+            });
+            if (coincide) mejorDescuento = Math.max(mejorDescuento, descuento);
+        });
+        return mejorDescuento;
+    }
+
+    function aplicarDescuento(subtotal, items) {
+        var descuento = obtenerDescuentoAplicable(items);
+        promoAplicada = descuento > 0;
+        return subtotal * (1 - descuento / 100);
     }
 
     function addToCart(productId, quantity) {
@@ -1259,6 +1149,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             return;
         }
+
+        for (var itemIndex = 0; itemIndex < cart.length; itemIndex++) {
+            var cartProduct = obtenerProductoCarrito(cart[itemIndex]);
+            if (!cartProduct) {
+                mostrarErrorCarrito('Uno de los productos ya no está disponible.');
+                return;
+            }
+            if (!cart[itemIndex].esMarketplace && (cartProduct.status !== 'disponible' || cart[itemIndex].quantity > Number(cartProduct.stock || 0))) {
+                mostrarErrorCarrito('No hay existencia suficiente para "' + cartProduct.name + '".');
+                return;
+            }
+        }
         
         closeCart();
         showPage('checkout');
@@ -1290,7 +1192,7 @@ document.addEventListener('DOMContentLoaded', function() {
         checkoutData.items = [];
         
         for (var j = 0; j < cart.length; j++) {
-            var product = products.find(function(p) { return p.id === cart[j].productId; });
+            var product = obtenerProductoCarrito(cart[j]);
             if (product) {
                 var subtotal = product.price * cart[j].quantity;
                 total += subtotal;
@@ -1298,21 +1200,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     name: product.name,
                     quantity: cart[j].quantity,
                     price: product.price,
-                    subtotal: subtotal
-                });
-            } else if (cart[j].esMarketplace) {
-                var subtotalMP = (cart[j].precio || 0) * cart[j].quantity;
-                total += subtotalMP;
-                checkoutData.items.push({
-                    name: cart[j].nombre || 'Producto marketplace',
-                    quantity: cart[j].quantity,
-                    price: cart[j].precio || 0,
-                    subtotal: subtotalMP
+                    subtotal: subtotal,
+                    esMarketplace: Boolean(cart[j].esMarketplace)
                 });
             }
         }
-        
-        checkoutData.total = total;
+        checkoutData.total = aplicarDescuento(total, checkoutData.items);
+    }
+
+    function mostrarErrorCarrito(message) {
+        var feedback = document.getElementById('cart-feedback');
+        if (!feedback) return;
+        feedback.textContent = message;
+        feedback.style.display = 'block';
+        feedback.style.background = '#fce4ec';
+        feedback.style.color = '#c62828';
+        feedback.style.borderLeftColor = '#e53935';
+        setTimeout(function() { feedback.style.display = 'none'; }, 4000);
     }
 
     // ============================================================
@@ -1771,7 +1675,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="client-detail-metric">
                         <span>Gastado</span>
-                        <strong>$${(c.spent || 0).toFixed(2)}</strong>
+                        <strong>$${(Number(c.spent) || 0).toFixed(2)}</strong>
                     </div>
                     <div class="client-detail-metric">
                         <span>Teléfono</span>
@@ -1909,22 +1813,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (followUpBtn) {
-            followUpBtn.addEventListener('click', function() {
-                var followUpText = window.prompt('Agenda un seguimiento para este cliente:', 'Enviar recordatorio de reactivación');
-                if (!followUpText || !followUpText.trim()) return;
-                clients[idx].interactions = clients[idx].interactions || [];
-                clients[idx].interactions.unshift({
-                    type: 'Seguimiento',
-                    date: new Date().toISOString().slice(0, 10),
-                    note: followUpText.trim()
-                });
-                clients[idx].lastInteractionDate = new Date().toISOString().slice(0, 10);
-                saveClients();
-                openClientDetail(idx);
-                updateDashboardStats();
-                renderClientsTable();
-            });
-        }
+    followUpBtn.addEventListener('click', function() {
+        var index = parseInt(this.getAttribute('data-client-index'));
+        abrirModalSeguimiento(index);
+    });
+}
 
         var deleteBtn = document.getElementById('client-detail-delete-btn');
         if (deleteBtn) {
@@ -1970,7 +1863,8 @@ document.addEventListener('DOMContentLoaded', function() {
             var c = filteredClients[i];
             var originalIndex = clients.indexOf(c);
             var stageBadge = '<span class="status-badge ' + (c.stage === 'frecuente' ? 'status-available' : c.stage === 'inactivo' ? 'status-inactive' : c.stage === 'activo' ? 'status-warning' : 'status-out-of-stock') + '">' + getClientStageLabel(c.stage || 'prospecto') + '</span>';
-            html += '<tr><td><div style="display:flex; flex-direction:column; gap:0.3rem;"><strong>' + (c.name || 'Sin nombre') + '</strong>' + stageBadge + '</div></td>';
+            var statusBadge = '<span class="status-badge ' + (c.status === 'inactivo' ? 'status-inactive' : 'status-available') + '">Estado: ' + (c.status === 'inactivo' ? 'Inactivo' : 'Activo') + '</span>';
+            html += '<tr><td><div style="display:flex; flex-direction:column; gap:0.3rem;"><strong>' + (c.name || 'Sin nombre') + '</strong>' + stageBadge + statusBadge + '</div></td>';
             html += '<td>' + (c.email || '') + '</td>';
             html += '<td>' + (c.phone || '') + '</td>';
             html += '<td>' + (c.orders || 0) + '</td>';
@@ -2091,10 +1985,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         tbody.querySelectorAll('.order-action-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                var orderId = parseInt(this.getAttribute('data-order-id'));
+                var orderId = String(this.getAttribute('data-order-id') || '');
                 var order = null;
                 for (var j = 0; j < orders.length; j++) {
-                    if (orders[j].id === orderId) { order = orders[j]; break; }
+                    if (String(orders[j].id) === orderId) { order = orders[j]; break; }
                 }
                 if (!order) return;
                 order.status = getNextOrderStatus(order.status);
@@ -2495,7 +2389,7 @@ document.addEventListener('DOMContentLoaded', function() {
         renderCommunityComments();
         
         if (feedback) {
-            showFormMessage(feedback, '✅ Comentario editado exitosamente.', 'success');
+            showFormMessage(feedback, 'Comentario editado exitosamente.', 'success');
             setTimeout(function() {
                 cerrarModalEditarComentario();
             }, 1500);
@@ -2522,7 +2416,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     var feedback = document.getElementById('mis-comentarios-feedback');
                     if (feedback) {
-                        showFormMessage(feedback, '🗑️ Comentario eliminado.', 'success');
+                        showFormMessage(feedback, 'Comentario eliminado.', 'success');
                         setTimeout(function() {
                             feedback.classList.add('hidden');
                         }, 3000);
@@ -2618,9 +2512,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function agregarProductoMarketplaceAlCarrito(id, nombre, precio) {
+        id = Number(id);
+        precio = Number(precio);
+        nombre = String(nombre || '').trim();
+        if (!Number.isInteger(id) || id <= 0 || !nombre || !isFinite(precio) || precio <= 0) {
+            return;
+        }
+
         var existing = null;
         for (var i = 0; i < cart.length; i++) {
-            if (cart[i].productId === id) {
+            if (cart[i].productId === id && cart[i].esMarketplace) {
                 existing = cart[i];
                 break;
             }
@@ -2632,7 +2533,7 @@ document.addEventListener('DOMContentLoaded', function() {
             cart.push({ 
                 productId: id, 
                 quantity: 1,
-                nombre: nombre || 'Producto',
+                nombre: nombre,
                 precio: precio || 0,
                 esMarketplace: true
             });
@@ -3716,6 +3617,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             isLoggedIn = true;
             isAdmin = false;
+            var previousEmail = currentUser.email;
             currentUser.name = name;
             currentUser.email = email;
             saveCurrentUser();
@@ -3794,6 +3696,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 isLoggedIn = true;
                 isAdmin = true;
                 adminEmail = email;
+                document.dispatchEvent(new CustomEvent('admin-authenticated'));
                 if (msg) showFormMessage(msg, 'Inicio de sesión exitoso.', 'success');
                 setTimeout(function() {
                     updateNavVisibility();
@@ -3874,6 +3777,7 @@ document.addEventListener('DOMContentLoaded', function() {
             isLoggedIn = true;
             isAdmin = true;
             adminEmail = email;
+            document.dispatchEvent(new CustomEvent('admin-authenticated'));
             if (msg) showFormMessage(msg, 'Acceso de administrador concedido.', 'success');
             document.getElementById('login-email').value = '';
             document.getElementById('login-password').value = '';
@@ -3940,7 +3844,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var editProfileForm = document.getElementById('edit-profile-form');
     if (editProfileForm) {
-        editProfileForm.addEventListener('submit', function(e) {
+        editProfileForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             var name = document.getElementById('edit-profile-name').value.trim();
             var email = document.getElementById('edit-profile-email').value.trim();
@@ -3965,6 +3869,38 @@ document.addEventListener('DOMContentLoaded', function() {
             currentUser.email = email;
             currentUser.phone = phone;
             currentUser.address = address;
+            var client = clients.find(function(item) {
+                return String(item.email || '').toLowerCase() === String(previousEmail || '').toLowerCase();
+            });
+            if (client) {
+                client.name = name;
+                client.email = email;
+                client.phone = phone;
+                client.address = address;
+            } else {
+                var nextClientId = clients.reduce(function(maxId, item) {
+                    return Math.max(maxId, Number(item.id) || 0);
+                }, 0) + 1;
+                clients.push({
+                    id: nextClientId,
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    address: address,
+                    orders: 0,
+                    spent: 0,
+                    registeredDate: new Date().toLocaleDateString('es-ES'),
+                    stage: 'prospecto',
+                    status: 'activo',
+                    lastInteractionDate: new Date().toISOString().slice(0, 10),
+                    interactions: []
+                });
+            }
+            var saved = await saveClients();
+            if (!saved) {
+                showFormMessage(feedback, 'No se pudo guardar el perfil en la base de datos.', 'error');
+                return;
+            }
             saveCurrentUser();
             updateProfileUI();
             updateNavVisibility();
@@ -4047,12 +3983,22 @@ document.addEventListener('DOMContentLoaded', function() {
     if (promoApplyBtn) {
         promoApplyBtn.addEventListener('click', function(e) {
             e.preventDefault();
+            var subtotal = calcularTotalCheckout();
+            var descuento = obtenerDescuentoAplicable(obtenerItemsCheckout());
+            if (!descuento) {
+                if (promoFeedback) {
+                    promoFeedback.textContent = 'No hay una promoción activa aplicable a tu carrito.';
+                    promoFeedback.className = 'promo-feedback error';
+                }
+                return;
+            }
             if (promoFeedback) {
                 promoFeedback.textContent = 'Descuento aplicado';
                 promoFeedback.className = 'promo-feedback success';
             }
-            if (promoTotal) promoTotal.textContent = '$21.60';
-            if (promoDiscount) promoDiscount.textContent = 'Ahorro 10%';
+            if (promoTotal) promoTotal.textContent = '$' + aplicarDescuento(subtotal, obtenerItemsCheckout()).toFixed(2);
+            if (promoDiscount) promoDiscount.textContent = 'Ahorro ' + descuento + '%';
+            checkoutData.total = aplicarDescuento(subtotal, obtenerItemsCheckout());
         });
     }
 
@@ -4269,12 +4215,30 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             
             if (checkoutCurrentStep === 1) {
-                var direccion = document.getElementById('checkout-direccion')?.value || '';
-                var nombre = document.getElementById('checkout-nombre')?.value || '';
-                var email = document.getElementById('checkout-email')?.value || '';
-                var telefono = document.getElementById('checkout-telefono')?.value || '';
-                var ciudad = document.getElementById('checkout-ciudad')?.value || '';
-                var cp = document.getElementById('checkout-cp')?.value || '';
+                var direccion = document.getElementById('checkout-direccion')?.value.trim() || '';
+                var nombre = document.getElementById('checkout-nombre')?.value.trim() || '';
+                var email = document.getElementById('checkout-email')?.value.trim() || '';
+                var telefono = document.getElementById('checkout-telefono')?.value.trim() || '';
+                var ciudad = document.getElementById('checkout-ciudad')?.value.trim() || '';
+                var cp = document.getElementById('checkout-cp')?.value.trim() || '';
+                var checkoutMessage = document.getElementById('checkout-message');
+
+                if (!nombre || nombre.length < 3) {
+                    showFormMessage(checkoutMessage, 'Escribe tu nombre completo.', 'error');
+                    return;
+                }
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    showFormMessage(checkoutMessage, 'Escribe un correo electrónico válido.', 'error');
+                    return;
+                }
+                if (!/^\+?[0-9\s()-]{7,20}$/.test(telefono)) {
+                    showFormMessage(checkoutMessage, 'Escribe un teléfono válido.', 'error');
+                    return;
+                }
+                if (direccion.length < 5 || ciudad.length < 2 || !/^\d{5}$/.test(cp)) {
+                    showFormMessage(checkoutMessage, 'Completa dirección, ciudad y código postal de 5 dígitos.', 'error');
+                    return;
+                }
                 
                 checkoutData.direccion = {
                     nombre: nombre || '',
@@ -4294,10 +4258,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     checkoutData.metodoPago = 'tarjeta';
                 }
+
+                if (checkoutData.metodoPago === 'tarjeta') {
+                    var cardName = document.getElementById('checkout-tarjeta-nombre')?.value.trim() || '';
+                    var cardNumber = (document.getElementById('checkout-tarjeta-numero')?.value || '').replace(/\s/g, '');
+                    var expiry = document.getElementById('checkout-tarjeta-fecha')?.value.trim() || '';
+                    var cvv = document.getElementById('checkout-tarjeta-cvv')?.value.trim() || '';
+                    var cardMessage = document.getElementById('checkout-message');
+                    if (!cardName || !/^\d{13,19}$/.test(cardNumber) || !/^\d{2}\/\d{2}$/.test(expiry) || !/^\d{3,4}$/.test(cvv)) {
+                        showFormMessage(cardMessage, 'Completa correctamente los datos de la tarjeta.', 'error');
+                        return;
+                    }
+                    var expiryParts = expiry.split('/');
+                    var expiryDate = new Date(2000 + Number(expiryParts[1]), Number(expiryParts[0]), 0);
+                    if (Number(expiryParts[0]) < 1 || Number(expiryParts[0]) > 12 || expiryDate < new Date()) {
+                        showFormMessage(cardMessage, 'La tarjeta está vencida o la fecha no es válida.', 'error');
+                        return;
+                    }
+                }
+                if (checkoutData.metodoPago === 'ewallet' && checkoutData.total > 5) {
+                    var walletMessage = document.getElementById('checkout-message');
+                    showFormMessage(walletMessage, 'El saldo de la E-wallet es de $5.00 y no cubre este pedido.', 'error');
+                    return;
+                }
                 
                 if (checkoutData.items.length === 0) {
                     for (var i = 0; i < cart.length; i++) {
-                        var p = products.find(function(pr) { return pr.id === cart[i].productId; });
+                        var p = obtenerProductoCarrito(cart[i]);
                         if (p) {
                             checkoutData.items.push({
                                 name: p.name,
@@ -4305,24 +4292,20 @@ document.addEventListener('DOMContentLoaded', function() {
                                 price: p.price,
                                 subtotal: p.price * cart[i].quantity
                             });
-                        } else if (cart[i].esMarketplace) {
-                            checkoutData.items.push({
-                                name: cart[i].nombre || 'Producto marketplace',
-                                quantity: cart[i].quantity,
-                                price: cart[i].precio || 0,
-                                subtotal: (cart[i].precio || 0) * cart[i].quantity
-                            });
                         }
                     }
                     checkoutData.total = 0;
                     for (var j = 0; j < checkoutData.items.length; j++) {
                         checkoutData.total += checkoutData.items[j].subtotal;
                     }
+                    checkoutData.total = aplicarDescuento(checkoutData.total, checkoutData.items);
                 }
                 
                 document.getElementById('checkout-total').textContent = '$' + checkoutData.total.toFixed(2);
+                document.getElementById('confirm-total').textContent = '$' + checkoutData.total.toFixed(2);
                 document.getElementById('checkout-payment-method').textContent = 
                     checkoutData.metodoPago.charAt(0).toUpperCase() + checkoutData.metodoPago.slice(1);
+                document.getElementById('confirm-metodo-pago').textContent = checkoutData.metodoPago.charAt(0).toUpperCase() + checkoutData.metodoPago.slice(1);
                 
                 var numeroPedido = 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000);
                 document.getElementById('checkout-order-number').textContent = '#' + numeroPedido;
@@ -4338,53 +4321,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     htmlResumen += '</div>';
                 }
                 resumenContainer.innerHTML = htmlResumen;
+                document.getElementById('confirm-resumen-items').innerHTML = htmlResumen;
                 
                 irAlPaso(3);
                 
-                // Guardar compra en el historial
-                const compra = {
-                    id: numeroPedido,
-                    fecha: new Date().toLocaleString('es-ES'),
-                    items: checkoutData.items,
-                    total: checkoutData.total,
-                    metodo: checkoutData.metodoPago,
-                    estado: 'entregado',
-                    direccion: checkoutData.direccion || {
-                        nombre: currentUser.name || 'Juan Pérez',
-                        email: currentUser.email || 'juan@email.com',
-                        telefono: currentUser.phone || '55 1234 5678',
-                        direccion: currentUser.address || 'Calle Principal 123, Colonia Centro',
-                        ciudad: 'Ciudad de México',
-                        cp: '12345'
-                    }
-                };
-                guardarCompra(compra);
-                
-                // Guardar datos para el ticket
-                ticketData = {
-                    folio: numeroPedido,
-                    fecha: compra.fecha,
-                    hora: new Date().toLocaleTimeString('es-ES'),
-                    cliente: {
-                        nombre: compra.direccion.nombre || currentUser.name || 'Juan Pérez',
-                        email: compra.direccion.email || currentUser.email || 'juan@email.com',
-                        direccion: compra.direccion.direccion || currentUser.address || 'Calle Principal 123, Colonia Centro'
-                    },
-                    items: checkoutData.items,
-                    total: checkoutData.total,
-                    metodo: checkoutData.metodoPago
-                };
-                
-                cart = [];
-                saveCart();
-                updateCartUI();
-                
-                var mensajeExito = document.querySelector('#checkout-step-3 .checkout-card p');
-                if (mensajeExito) {
-                    mensajeExito.textContent = '✅ ¡Tu compra ha sido confirmada exitosamente!';
-                    mensajeExito.style.color = '#2e7d32';
-                    mensajeExito.style.fontWeight = '500';
-                }
             }
         });
     });
@@ -4426,8 +4366,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // CHECKOUT - CONFIRMAR COMPRA (PASO 3)
     // ============================================================
 
-    document.getElementById('confirmar-compra-btn')?.addEventListener('click', function(e) {
+    document.getElementById('confirmar-compra-btn')?.addEventListener('click', async function(e) {
         e.preventDefault();
+        var confirmButton = this;
+        if (confirmButton.disabled) return;
         
         // 1. Verificar que se hayan aceptado los términos
         const terminosCheckbox = document.getElementById('aceptar-terminos');
@@ -4446,6 +4388,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (terminosError) {
             terminosError.style.display = 'none';
         }
+        confirmButton.disabled = true;
         
         // 2. Preparar los datos del pedido
         const total = checkoutData.total || calcularTotalCheckout();
@@ -4474,11 +4417,47 @@ document.addEventListener('DOMContentLoaded', function() {
             direccion: direccion
         };
         historialCompras.unshift(compra);
-        saveHistorial();
+        orders.unshift({
+            id: numeroPedido,
+            client: direccion.nombre,
+            products: items.map(function(item) { return item.name + ' (' + item.quantity + ')'; }).join(', '),
+            total: total,
+            status: 'pendiente',
+            date: fecha,
+            metodo: metodo,
+            direccion: direccion,
+            items: items
+        });
+        var savedHistory = await saveHistorial();
+        var savedOrders = await saveOrders();
+        if (!savedHistory || !savedOrders) {
+            historialCompras.shift();
+            orders.shift();
+            await Promise.all([saveHistorial(), saveOrders()]);
+            confirmButton.disabled = false;
+            var orderSaveError = document.getElementById('terminos-error');
+            if (orderSaveError) {
+                orderSaveError.textContent = 'No se pudo guardar el pedido. Intenta nuevamente.';
+                orderSaveError.style.display = 'block';
+            }
+            return;
+        }
         
         // 4. Vaciar el carrito
+        var previousCart = cart.slice();
         cart = [];
-        saveCart();
+        var savedCart = await saveCart();
+        if (!savedCart) {
+            cart = previousCart;
+            confirmButton.disabled = false;
+            var cartSaveError = document.getElementById('terminos-error');
+            if (cartSaveError) {
+                cartSaveError.textContent = 'El pedido se guardó, pero no se pudo actualizar el carrito.';
+                cartSaveError.style.display = 'block';
+            }
+            updateCartUI();
+            return;
+        }
         updateCartUI();
         
         // 5. Guardar datos del ticket
@@ -4507,11 +4486,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function calcularTotalCheckout() {
         let total = 0;
         for (let i = 0; i < cart.length; i++) {
-            const product = products.find(function(p) { return p.id === cart[i].productId; });
+            const product = obtenerProductoCarrito(cart[i]);
             if (product) {
                 total += product.price * cart[i].quantity;
-            } else if (cart[i].esMarketplace) {
-                total += (cart[i].precio || 0) * cart[i].quantity;
             }
         }
         return total;
@@ -4520,20 +4497,13 @@ document.addEventListener('DOMContentLoaded', function() {
     function obtenerItemsCheckout() {
         const items = [];
         for (let i = 0; i < cart.length; i++) {
-            const product = products.find(function(p) { return p.id === cart[i].productId; });
+            const product = obtenerProductoCarrito(cart[i]);
             if (product) {
                 items.push({
                     name: product.name,
                     quantity: cart[i].quantity,
                     price: product.price,
                     subtotal: product.price * cart[i].quantity
-                });
-            } else if (cart[i].esMarketplace) {
-                items.push({
-                    name: cart[i].nombre || 'Producto marketplace',
-                    quantity: cart[i].quantity,
-                    price: cart[i].precio || 0,
-                    subtotal: (cart[i].precio || 0) * cart[i].quantity
                 });
             }
         }
@@ -4994,28 +4964,47 @@ document.addEventListener('DOMContentLoaded', function() {
     // FUNCIÓN PARA GENERAR FACTURA FISCAL (SIN VALIDACIÓN)
     // ============================================================
 
-    function generarFacturaFiscal() {
-        const rfc = document.getElementById('factura-rfc').value.trim().toUpperCase() || 'RFC NO ESPECIFICADO';
-        const razonSocial = document.getElementById('factura-razon-social').value.trim() || 'Sin razón social';
+    async function generarFacturaFiscal() {
+        const rfc = document.getElementById('factura-rfc').value.trim().toUpperCase();
+        const razonSocial = document.getElementById('factura-razon-social').value.trim();
         const regimen = document.getElementById('factura-regimen').value || 'Régimen General de Ley';
-        const cp = document.getElementById('factura-cp').value.trim() || 'No especificado';
+        const cp = document.getElementById('factura-cp').value.trim();
         const uso = document.getElementById('factura-uso-cfdi').value || 'G01 - Adquisición de mercancias';
         const feedback = document.getElementById('factura-fiscal-feedback');
+
+        if (!/^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/.test(rfc)) {
+            showFormMessage(feedback, 'Ingresa un RFC válido de 12 o 13 caracteres.', 'error');
+            return;
+        }
+        if (razonSocial.length < 3) {
+            showFormMessage(feedback, 'La razón social debe tener al menos 3 caracteres.', 'error');
+            return;
+        }
+        if (!/^\d{5}$/.test(cp)) {
+            showFormMessage(feedback, 'El código postal debe tener 5 dígitos.', 'error');
+            return;
+        }
 
         // Guardar datos fiscales (sin validación)
         facturaFiscalData = {
             rfc: rfc,
             razonSocial: razonSocial,
             regimen: regimen,
-            cp: cp || 'No especificado',
+            cp: cp,
             uso: uso
         };
-        invoices.unshift({
+        var invoice = {
             ...facturaFiscalData,
             folio: ticketData ? ticketData.folio : null,
             fecha: new Date().toISOString()
-        });
-        saveInvoices();
+        };
+        invoices.unshift(invoice);
+        var savedInvoice = await saveInvoices();
+        if (!savedInvoice) {
+            invoices.shift();
+            showFormMessage(feedback, 'No se pudo guardar la factura en la base de datos.', 'error');
+            return;
+        }
 
         // Mostrar en la vista generada
         document.getElementById('factura-show-rfc').textContent = rfc;
@@ -5029,7 +5018,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('factura-generada-view').style.display = 'block';
 
         // Feedback de éxito
-        showFormMessage(feedback, '✅ Factura CFDI generada correctamente.', 'success');
+        showFormMessage(feedback, 'Factura CFDI generada correctamente.', 'success');
 
         // Scroll a la factura generada
         document.getElementById('factura-generada-view').scrollIntoView({ behavior: 'smooth' });
@@ -5098,6 +5087,178 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('factura-volver-final-btn')?.addEventListener('click', function() {
         showPage('perfil');
     });
+
+    // ============================================================
+// MODAL PROGRAMAR SEGUIMIENTO
+// ============================================================
+
+let clienteSeguimientoIndex = null;
+
+function abrirModalSeguimiento(index) {
+    clienteSeguimientoIndex = index;
+    const cliente = clients[index];
+    if (!cliente) return;
+
+    // Limpiar formulario
+    document.getElementById('seguimiento-titulo').value = '';
+    document.getElementById('seguimiento-descripcion').value = '';
+    document.getElementById('seguimiento-enlace').value = '';
+    
+    // Fecha por defecto: mañana
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('seguimiento-fecha').value = tomorrow.toISOString().slice(0, 10);
+    
+    // Hora por defecto: 10:00
+    document.getElementById('seguimiento-hora').value = '10:00';
+    document.getElementById('seguimiento-duracion').value = '30 min';
+    document.getElementById('seguimiento-tipo').value = 'Virtual (Zoom)';
+    
+    // Mostrar nombre del cliente
+    document.getElementById('seguimiento-cliente-nombre').textContent = cliente.name || 'Cliente sin nombre';
+    
+    // Ocultar mensaje anterior
+    const msg = document.getElementById('seguimiento-message');
+    if (msg) {
+        msg.classList.add('hidden');
+        msg.textContent = '';
+        msg.className = 'hidden alert-message';
+    }
+    
+    // Mostrar modal
+    const modal = document.getElementById('seguimiento-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('show');
+    }
+}
+
+function cerrarModalSeguimiento() {
+    const modal = document.getElementById('seguimiento-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+    }
+    clienteSeguimientoIndex = null;
+}
+
+function guardarSeguimiento() {
+    const titulo = document.getElementById('seguimiento-titulo').value.trim();
+    const fecha = document.getElementById('seguimiento-fecha').value;
+    const hora = document.getElementById('seguimiento-hora').value;
+    const duracion = document.getElementById('seguimiento-duracion').value;
+    const tipo = document.getElementById('seguimiento-tipo').value;
+    const descripcion = document.getElementById('seguimiento-descripcion').value.trim();
+    const enlace = document.getElementById('seguimiento-enlace').value.trim();
+    const msg = document.getElementById('seguimiento-message');
+
+    // VALIDACIONES
+    if (!titulo) {
+        showFormMessage(msg, 'El título de la reunión es requerido.', 'error');
+        return;
+    }
+    if (titulo.length < 3) {
+        showFormMessage(msg, 'El título debe tener al menos 3 caracteres.', 'error');
+        return;
+    }
+    if (!fecha) {
+        showFormMessage(msg, 'La fecha es requerida.', 'error');
+        return;
+    }
+    if (!hora) {
+        showFormMessage(msg, 'La hora es requerida.', 'error');
+        return;
+    }
+    if (!descripcion) {
+        showFormMessage(msg, 'La descripción/agenda es requerida.', 'error');
+        return;
+    }
+    if (descripcion.length < 10) {
+        showFormMessage(msg, 'La descripción debe tener al menos 10 caracteres.', 'error');
+        return;
+    }
+
+    // Formatear fecha para mostrar
+    const fechaObj = new Date(fecha + 'T' + hora);
+    const fechaFormateada = fechaObj.toLocaleDateString('es-ES', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    const horaFormateada = fechaObj.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    // Guardar en el cliente
+    if (clienteSeguimientoIndex !== null && clients[clienteSeguimientoIndex]) {
+        const cliente = clients[clienteSeguimientoIndex];
+        cliente.interactions = cliente.interactions || [];
+        cliente.interactions.unshift({
+            type: 'Seguimiento',
+            date: fechaFormateada + ' a las ' + horaFormateada,
+            note: `${titulo}\n${duracion}\n${tipo}\n${descripcion}\n${enlace || 'Sin enlace'}`,
+            user: adminEmail || 'Administrador'
+        });
+        cliente.lastInteractionDate = new Date().toISOString().slice(0, 10);
+        saveClients();
+        
+        showFormMessage(msg, 'Seguimiento programado correctamente para ' + fechaFormateada + ' a las ' + horaFormateada, 'success');
+        
+        // Actualizar vista
+        setTimeout(function() {
+            cerrarModalSeguimiento();
+            if (clienteSeguimientoIndex !== null) {
+                openClientDetail(clienteSeguimientoIndex);
+            }
+            renderClientsTable();
+            updateDashboardStats();
+        }, 1500);
+    }
+}
+
+// ============================================================
+// EVENT LISTENERS - MODAL SEGUIMIENTO
+// ============================================================
+
+// Guardar seguimiento
+const guardarBtn = document.getElementById('seguimiento-guardar-btn');
+if (guardarBtn) {
+    guardarBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        guardarSeguimiento();
+    });
+}
+
+// Cancelar
+const cancelarBtn = document.getElementById('seguimiento-cancelar-btn');
+if (cancelarBtn) {
+    cancelarBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        cerrarModalSeguimiento();
+    });
+}
+
+// Cerrar al hacer clic fuera del modal
+const modalSeguimiento = document.getElementById('seguimiento-modal');
+if (modalSeguimiento) {
+    modalSeguimiento.addEventListener('click', function(e) {
+        if (e.target === modalSeguimiento) {
+            cerrarModalSeguimiento();
+        }
+    });
+}
+
+// Cerrar con Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('seguimiento-modal');
+        if (modal && modal.style.display === 'flex') {
+            cerrarModalSeguimiento();
+        }
+    }
+});
 
     // ============================================================
     // INICIALIZACIÓN

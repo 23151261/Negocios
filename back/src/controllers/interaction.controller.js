@@ -1,12 +1,28 @@
 const pool = require('../config/db');
 
+function toInteractionType(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    return {
+        llamada: 'llamada',
+        correo: 'correo',
+        reunion: 'reunion',
+        'reunión': 'reunion',
+        compra: 'compra',
+        pedido: 'compra',
+        nota: 'nota',
+        registro: 'nota',
+        seguimiento: 'nota'
+    }[normalized] || null;
+}
+
 // Registrar interacción
 const createInteraction = async (req, res) => {
     try {
         const { clienteId, type, date, note } = req.body;
         const user = req.user.email || 'Administrador';
 
-        if (!clienteId || !type || !date || !note) {
+        const interactionType = toInteractionType(type);
+        if (!clienteId || !interactionType || !date || !note) {
             return res.status(400).json({ error: 'Faltan campos obligatorios' });
         }
 
@@ -17,12 +33,12 @@ const createInteraction = async (req, res) => {
 
         const [result] = await pool.query(
             `INSERT INTO interacciones (cliente_id, type, date, note, user) VALUES (?, ?, ?, ?, ?)`,
-            [clienteId, type, date, note, user]
+            [clienteId, interactionType, date, note, user]
         );
 
         await pool.query('UPDATE clientes SET last_interaction_date = ? WHERE id = ?', [date, clienteId]);
 
-        const newInteraction = { id: result.insertId, clienteId, type, date, note, user };
+        const newInteraction = { id: result.insertId, clienteId, type: interactionType, date, note, user };
         res.status(201).json(newInteraction);
     } catch (error) {
         console.error(error);
