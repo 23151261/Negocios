@@ -13,20 +13,58 @@ document.addEventListener('DOMContentLoaded', function() {
         return response.json();
     }
 
-    function apiSave(key, value) {
-        return fetch(API_BASE + '/data/' + key, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(value)
-        }).then(async function(response) {
-            var result = await response.json().catch(function() { return {}; });
-            if (!response.ok) throw new Error(result.error || 'No se pudo guardar ' + key + ' en SQL.');
-            return result;
-        }).catch(function(error) {
-            console.error('No se pudo guardar ' + key + ' en SQL:', error);
-            return null;
-        });
+function apiSave(key, value) {
+    console.log(`apiSave llamada con key: "${key}"`);
+    console.log(`Datos a guardar (${key}):`, value);
+    console.log(`Tipo de value:`, typeof value);
+    console.log(`Es array:`, Array.isArray(value));
+    
+    if (!value) {
+        console.warn(`El valor para "${key}" es null o undefined, usando array vacio`);
+        value = [];
     }
+    
+    if (!Array.isArray(value)) {
+        console.warn(`El valor para "${key}" no es un array, convirtiendo...`);
+        value = [value];
+    }
+    
+    console.log(`Enviando PUT a: ${API_BASE}/data/${key}`);
+    console.log(`Datos a enviar (${key}):`, JSON.stringify(value).substring(0, 200) + '...');
+    
+    return fetch(API_BASE + '/data/' + key, {
+        method: 'PUT',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + (window.deliciasAuthToken || '')
+        },
+        body: JSON.stringify(value)
+    })
+    .then(async function(response) {
+        console.log(`Respuesta de ${key}:`, response.status, response.statusText);
+        
+        const responseText = await response.text();
+        console.log(`Texto de respuesta (${key}):`, responseText);
+        
+        if (!response.ok) {
+            console.error(`Error HTTP ${response.status}:`, responseText);
+            return { success: false, error: `HTTP ${response.status}: ${responseText}` };
+        }
+        
+        try {
+            const data = JSON.parse(responseText);
+            console.log(`${key} guardado correctamente:`, data);
+            return { success: true, data: data };
+        } catch (parseError) {
+            console.log(`No se pudo parsear JSON, pero la respuesta fue exitosa:`, responseText);
+            return { success: true, message: 'Guardado correctamente', raw: responseText };
+        }
+    })
+    .catch(function(error) {
+        console.error(`Error en apiSave (${key}):`, error);
+        return { success: false, error: error.message };
+    });
+}
 
     async function apiAuth(path, payload) {
         const response = await fetch(API_BASE + '/auth/' + path, {
@@ -159,9 +197,23 @@ document.addEventListener('DOMContentLoaded', function() {
         return apiSave('clients', clients);
     }
 
-    function saveOrders() {
-        return apiSave('orders', orders);
+async function saveOrders() {
+    console.log('🔍 === DIAGNÓSTICO DE SAVEORDERS ===');
+    console.log('📊 Contenido de orders:', JSON.stringify(orders, null, 2));
+    console.log('📊 Tipo de orders:', typeof orders);
+    console.log('📊 Es array:', Array.isArray(orders));
+    console.log('📊 Longitud:', orders.length);
+    
+    try {
+        console.log('💾 Llamando a apiSave con key="orders"');
+        const result = await apiSave('orders', orders);
+        console.log('📥 Resultado de apiSave:', result);
+        return result;
+    } catch (error) {
+        console.error('❌ Error en saveOrders:', error);
+        return null;
     }
+}
 
     function savePromociones() {
         apiSave('promociones', promociones);
@@ -4794,94 +4846,109 @@ function showConfirmModal(message, callback) {
     // FUNCIÓN MOSTRAR TICKET - CORREGIDA
     // ============================================================
 
-    function mostrarTicket(compra) {
-        if (!compra) {
-            compra = {
-                id: 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000),
-                fecha: new Date().toLocaleString('es-ES'),
-                items: checkoutData.items || obtenerItemsCheckout(),
-                total: checkoutData.total || calcularTotalCheckout(),
-                metodo: checkoutData.metodoPago || 'Tarjeta',
-                estado: 'entregado',
-                direccion: checkoutData.direccion || {
-                    nombre: currentUser.name || 'Juan Pérez',
-                    email: currentUser.email || 'juan@email.com',
-                    telefono: currentUser.phone || '55 1234 5678',
-                    direccion: currentUser.address || 'Calle Principal 123, Colonia Centro',
-                    ciudad: 'Ciudad de México',
-                    cp: '12345'
-                }
-            };
-        }
-
-        ticketData = {
-            folio: compra.id || 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000),
-            fecha: compra.fecha || new Date().toLocaleString('es-ES'),
-            hora: compra.fecha ? compra.fecha.split(' ')[1] || '12:00' : new Date().toLocaleTimeString('es-ES'),
-            cliente: {
-                nombre: compra.direccion?.nombre || currentUser.name || 'Juan Pérez',
-                email: compra.direccion?.email || currentUser.email || 'juan@email.com',
-                direccion: compra.direccion?.direccion || currentUser.address || 'Calle Principal 123, Colonia Centro'
-            },
-            items: compra.items || [],
-            total: compra.total || 0,
-            metodo: compra.metodo || 'Tarjeta'
-        };
-
-        // Actualizar el ticket en el DOM
-        const folioEl = document.getElementById('ticket-folio');
-        const fechaEl = document.getElementById('ticket-fecha');
-        const horaEl = document.getElementById('ticket-hora');
-        const clienteNombreEl = document.getElementById('ticket-cliente-nombre');
-        const clienteEmailEl = document.getElementById('ticket-cliente-email');
-        const clienteDireccionEl = document.getElementById('ticket-cliente-direccion');
-        const tbody = document.getElementById('ticket-productos-body');
-        const totalEl = document.getElementById('ticket-total');
-
-        if (folioEl) folioEl.textContent = ticketData.folio;
-        if (fechaEl) fechaEl.textContent = ticketData.fecha;
-        if (horaEl) horaEl.textContent = ticketData.hora;
-        if (clienteNombreEl) clienteNombreEl.textContent = ticketData.cliente.nombre;
-        if (clienteEmailEl) clienteEmailEl.textContent = ticketData.cliente.email;
-        if (clienteDireccionEl) clienteDireccionEl.textContent = ticketData.cliente.direccion;
-
-        let htmlItems = '';
-        if (ticketData.items && ticketData.items.length > 0) {
-            for (let i = 0; i < ticketData.items.length; i++) {
-                const item = ticketData.items[i];
-                htmlItems += '<tr>';
-                htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:center;">' + (item.quantity || 0) + '</td>';
-                htmlItems += '<td style="padding:0.3rem 0.5rem;">' + (item.name || 'Producto') + '</td>';
-                htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + (item.price || 0).toFixed(2) + '</td>';
-                htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + (item.subtotal || (item.price * item.quantity) || 0).toFixed(2) + '</td>';
-                htmlItems += '</tr>';
+ function mostrarTicket(compra) {
+    if (!compra) {
+        compra = {
+            id: 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000),
+            fecha: new Date().toLocaleString('es-ES'),
+            items: checkoutData.items || obtenerItemsCheckout(),
+            total: checkoutData.total || calcularTotalCheckout(),
+            metodo: checkoutData.metodoPago || 'Tarjeta',
+            estado: 'entregado',
+            direccion: checkoutData.direccion || {
+                nombre: currentUser.name || 'Juan Pérez',
+                email: currentUser.email || 'juan@email.com',
+                telefono: currentUser.phone || '55 1234 5678',
+                direccion: currentUser.address || 'Calle Principal 123, Colonia Centro',
+                ciudad: 'Ciudad de México',
+                cp: '12345'
             }
-        } else {
-            htmlItems = '<tr><td colspan="4" style="text-align:center; padding:1rem; color:#6b4f7a;">No hay productos en este ticket.</td></tr>';
-        }
-        if (tbody) tbody.innerHTML = htmlItems;
-        if (totalEl) totalEl.textContent = '$' + (ticketData.total || 0).toFixed(2);
-
-        // Mostrar la vista del ticket
-        const ticketView = document.getElementById('ticket-view');
-        const facturaFiscalView = document.getElementById('factura-fiscal-view');
-        const facturaGeneradaView = document.getElementById('factura-generada-view');
-        
-        if (ticketView) ticketView.style.display = 'block';
-        if (facturaFiscalView) facturaFiscalView.style.display = 'none';
-        if (facturaGeneradaView) facturaGeneradaView.style.display = 'none';
-
-        // Ocultar feedback
-        const feedback = document.getElementById('ticket-feedback');
-        if (feedback) {
-            feedback.classList.add('hidden');
-            feedback.textContent = '';
-            feedback.className = 'hidden alert-message';
-        }
-
-        // Ir a la página de factura
-        showPage('factura');
+        };
     }
+
+    // Asegurar que fecha tenga un valor válido
+    let fechaStr = compra.fecha || new Date().toLocaleString('es-ES');
+    let horaStr = '12:00';
+    
+    if (fechaStr && typeof fechaStr === 'string') {
+        const partes = fechaStr.split(' ');
+        if (partes.length > 1) {
+            horaStr = partes[1];
+        } else {
+            // Si no tiene hora, usar la hora actual
+            horaStr = new Date().toLocaleTimeString('es-ES');
+        }
+    }
+
+    ticketData = {
+        folio: compra.id || 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000),
+        fecha: fechaStr,
+        hora: horaStr,
+        cliente: {
+            nombre: compra.direccion?.nombre || currentUser.name || 'Juan Pérez',
+            email: compra.direccion?.email || currentUser.email || 'juan@email.com',
+            direccion: compra.direccion?.direccion || currentUser.address || 'Calle Principal 123, Colonia Centro'
+        },
+        items: compra.items || [],
+        total: compra.total || 0,
+        metodo: compra.metodo || 'Tarjeta'
+    };
+
+    // Actualizar el ticket en el DOM
+    const folioEl = document.getElementById('ticket-folio');
+    const fechaEl = document.getElementById('ticket-fecha');
+    const horaEl = document.getElementById('ticket-hora');
+    const clienteNombreEl = document.getElementById('ticket-cliente-nombre');
+    const clienteEmailEl = document.getElementById('ticket-cliente-email');
+    const clienteDireccionEl = document.getElementById('ticket-cliente-direccion');
+    const tbody = document.getElementById('ticket-productos-body');
+    const totalEl = document.getElementById('ticket-total');
+
+    if (folioEl) folioEl.textContent = ticketData.folio;
+    if (fechaEl) fechaEl.textContent = ticketData.fecha;
+    if (horaEl) horaEl.textContent = ticketData.hora;
+    if (clienteNombreEl) clienteNombreEl.textContent = ticketData.cliente.nombre;
+    if (clienteEmailEl) clienteEmailEl.textContent = ticketData.cliente.email;
+    if (clienteDireccionEl) clienteDireccionEl.textContent = ticketData.cliente.direccion;
+
+    let htmlItems = '';
+    if (ticketData.items && ticketData.items.length > 0) {
+        for (let i = 0; i < ticketData.items.length; i++) {
+            const item = ticketData.items[i];
+            const subtotal = item.subtotal || (item.price * item.quantity) || 0;
+            htmlItems += '<tr>';
+            htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:center;">' + (item.quantity || 0) + '</td>';
+            htmlItems += '<td style="padding:0.3rem 0.5rem;">' + (item.name || 'Producto') + '</td>';
+            htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + (item.price || 0).toFixed(2) + '</td>';
+            htmlItems += '<td style="padding:0.3rem 0.5rem; text-align:right;">$' + subtotal.toFixed(2) + '</td>';
+            htmlItems += '</tr>';
+        }
+    } else {
+        htmlItems = '<tr><td colspan="4" style="text-align:center; padding:1rem; color:#6b4f7a;">No hay productos en este ticket.</td></tr>';
+    }
+    if (tbody) tbody.innerHTML = htmlItems;
+    if (totalEl) totalEl.textContent = '$' + (ticketData.total || 0).toFixed(2);
+
+    // Mostrar la vista del ticket
+    const ticketView = document.getElementById('ticket-view');
+    const facturaFiscalView = document.getElementById('factura-fiscal-view');
+    const facturaGeneradaView = document.getElementById('factura-generada-view');
+    
+    if (ticketView) ticketView.style.display = 'block';
+    if (facturaFiscalView) facturaFiscalView.style.display = 'none';
+    if (facturaGeneradaView) facturaGeneradaView.style.display = 'none';
+
+    // Ocultar feedback
+    const feedback = document.getElementById('ticket-feedback');
+    if (feedback) {
+        feedback.classList.add('hidden');
+        feedback.textContent = '';
+        feedback.className = 'hidden alert-message';
+    }
+
+    // Ir a la página de factura
+    showPage('factura');
+}
 
     // ============================================================
     // EVENT LISTENER - PUBLICAR PRODUCTO
