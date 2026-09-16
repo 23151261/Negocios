@@ -6,16 +6,35 @@
     <title>DeliciasResto - Administración</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="estilos.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body class="admin-page-shell">
     <main class="app" id="main-content" role="main">
-        <header class="navbar">
-            <a href="cocina.html" class="logo-area" style="text-decoration:none;">
-                <div class="logo-icon" aria-hidden="true"><i class="fas fa-utensils"></i></div>
-                <div class="logo-text">Delicias<span>Resto</span></div>
-            </a>
-        </header>
+<header class="navbar" style="display:flex; align-items:center; justify-content:space-between;">
+    <a href="cocina.html" class="logo-area" style="text-decoration:none;">
+        <div class="logo-icon" aria-hidden="true"><i class="fas fa-utensils"></i></div>
+        <div class="logo-text">Delicias<span>Resto</span></div>
+    </a>
+    <button id="admin-top-logout-btn" title="Cerrar sesión" style="
+        background:#ef4444;
+        color:#fff;
+        border:none;
+        border-radius:40px;
+        padding:0.5rem 1rem;
+        font-weight:600;
+        cursor:pointer;
+        display:none;
+        align-items:center;
+        gap:0.5rem;
+        font-size:0.9rem;
+    ">
+        <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+        <span>Cerrar sesión</span>
+    </button>
+</header>
 
+        <!-- ============ LOGIN ADMIN ============ -->
         <section id="page-login" class="page-section active" aria-labelledby="login-title">
             <div class="auth-container">
                 <h2 id="login-title"><i class="fas fa-user-shield" style="color:#8b5cf6;" aria-hidden="true"></i> Acceso administrador</h2>
@@ -34,114 +53,247 @@
             </div>
         </section>
 
+        <!-- ============ PANEL ADMIN ============ -->
         <section id="page-admin" class="page-section" aria-labelledby="admin-title">
             <div class="admin-header-row">
                 <h2 id="admin-title" class="section-title"><i class="fas fa-tachometer-alt" aria-hidden="true"></i> Panel de Administración</h2>
             </div>
             <div class="admin-layout">
+
+                <!-- ============ SIDEBAR ============ -->
                 <aside class="admin-sidebar" aria-label="Menú de administración">
-                    <div class="admin-user"><div class="admin-avatar" aria-hidden="true">AD</div><div><div class="admin-name">Administrador</div><div class="admin-email">admin@deliciasresto.com</div></div></div>
-                    <ul class="sidebar-menu">
-                        <li><a href="#" class="active" data-admin-page="dashboard"><i class="fas fa-chart-pie" aria-hidden="true"></i> Dashboard</a></li>
-                        <li><a href="#" data-admin-page="productos"><i class="fas fa-box" aria-hidden="true"></i> Productos</a></li>
-                        <li><a href="#" data-admin-page="pedidos"><i class="fas fa-shopping-bag" aria-hidden="true"></i> Pedidos</a></li>
-                        <li><a href="#" data-admin-page="promociones"><i class="fas fa-tags" aria-hidden="true"></i> Promociones</a></li>
-                        <li><a href="#" data-admin-page="clientes"><i class="fas fa-users" aria-hidden="true"></i> Clientes</a></li>
-                        <li><a href="#" data-admin-page="mi-actividad"><i class="fas fa-history" aria-hidden="true"></i> Mi actividad</a></li>
-                        <li><a href="#" data-admin-page="usuarios"><i class="fas fa-user-cog" aria-hidden="true"></i> Usuarios</a></li>
-                        <li><a href="#" data-admin-page="reportes"><i class="fas fa-file-alt" aria-hidden="true"></i> Reportes</a></li>
-                    </ul>
-                </aside>
-                <div class="admin-content">
-                    <div id="admin-dashboard" class="admin-page active">
-                        <div class="admin-dashboard-grid">
-                            <div class="stat-card"><div class="stat-icon"><i class="fas fa-dollar-sign"></i></div><div class="stat-number" id="stat-sales-month">$0.00</div><div class="stat-label">Ventas del mes</div></div>
-                            <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-friends"></i></div><div class="stat-number" id="stat-active-clients">0</div><div class="stat-label">Clientes activos</div></div>
-                            <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-clock"></i></div><div class="stat-number" id="stat-inactive-clients">0</div><div class="stat-label">Clientes inactivos</div></div>
-                            <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-times"></i></div><div class="stat-number" id="stat-at-risk-clients">0</div><div class="stat-label">En riesgo de desaparecer</div></div>
-                            <div class="stat-card"><div class="stat-icon"><i class="fas fa-comments"></i></div><div class="stat-number" id="stat-interactions-per-client">0</div><div class="stat-label">Interacciones por cliente</div></div>
-                        </div>
-                        <div class="crm-summary">
-                            <div class="crm-panel">
-                                <div class="crm-panel-header"><h3><i class="fas fa-funnel-dollar"></i> Etapas CRM</h3></div>
-                                <div class="stage-pills" id="crm-stage-summary"></div>
-                            </div>
-                            <div class="crm-panel">
-                                <div class="crm-panel-header"><h3><i class="fas fa-exclamation-triangle"></i> Clientes en riesgo</h3></div>
-                                <ul class="crm-risk-list" id="crm-risk-list"></ul>
-                            </div>
-                            <div class="crm-panel crm-stage-chart-panel">
-                                <div class="crm-panel-header"><h3><i class="fas fa-chart-bar"></i> Distribución por etapa</h3></div>
-                                <div id="crm-stage-chart" class="crm-stage-chart" role="img" aria-label="Distribución de clientes por etapa CRM"></div>
-                            </div>
-                        </div>
-                        <div class="admin-actions">
-                            <button class="btn-primary" id="admin-view-clients-btn"><i class="fas fa-users"></i> Ver clientes</button>
-                            <button class="btn-secondary" id="admin-add-client-quick-btn"><i class="fas fa-user-plus"></i> Agregar cliente</button>
-                            <button class="btn-success" id="admin-create-promo-btn"><i class="fas fa-tag"></i> Crear promoción</button>
+                    <div class="admin-user">
+                        <div class="admin-avatar" aria-hidden="true">AD</div>
+                        <div>
+                            <div class="admin-name">Administrador</div>
+                            <div class="admin-email">admin@deliciasresto.com</div>
                         </div>
                     </div>
-                    <div id="admin-productos" class="admin-page hidden"><div class="product-table-container"><div class="table-header"><div class="search-box"><input type="text" id="product-search" placeholder="Buscar producto..."><select id="category-filter"><option value="todas">Todas las categorías</option><option>Pizzas</option><option>Hamburguesas</option><option>Pescados</option><option>Bebidas</option><option>Ensaladas</option></select><select id="status-filter"><option value="todos">Todos los estados</option><option value="disponible">Disponible</option><option value="agotado">Agotado</option><option value="inactivo">Inactivo</option></select></div><button class="btn-primary" id="admin-add-product-btn2"><i class="fas fa-plus"></i> Agregar producto</button></div><div style="overflow-x:auto;"><table class="product-table" id="product-table"><thead><tr><th>Imagen</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Existencia</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="product-table-body"></tbody></table></div></div></div>
-                    <div id="admin-product-form" class="admin-page hidden"><div class="product-form-container"><h3><i class="fas fa-plus-circle"></i> <span id="form-title">Agregar producto</span></h3><form id="product-form" onsubmit="return false;"><div class="form-group"><label for="form-product-name">Nombre</label><input id="form-product-name" required></div><div class="form-row"><div class="form-group"><label for="form-product-category">Categoría</label><select id="form-product-category"><option>Pizzas</option><option>Hamburguesas</option><option>Pescados</option><option>Bebidas</option><option>Ensaladas</option></select></div><div class="form-group"><label for="form-product-price">Precio</label><input type="number" step="0.01" id="form-product-price"></div></div><div class="form-group"><label for="form-product-desc">Descripción</label><textarea id="form-product-desc"></textarea></div><div class="form-row"><div class="form-group"><label for="form-product-stock">Existencia</label><input type="number" id="form-product-stock"></div><div class="form-group"><label for="form-product-status">Estado</label><select id="form-product-status"><option value="disponible">Activo</option><option value="inactivo">Inactivo</option></select></div></div><div class="form-group"><label for="form-product-image">Imagen</label><input id="form-product-image" placeholder="pizza.jpg"><div class="image-preview" id="form-image-preview"></div></div><div class="form-actions"><button type="submit" class="btn-primary"><i class="fas fa-save"></i> Guardar</button><button type="button" class="btn-secondary" id="form-cancel-btn">Cancelar</button></div><div id="form-message" class="hidden alert-message"></div></form></div></div>
-                    <div id="admin-pedidos" class="admin-page hidden"><div class="product-table-container"><h3>Pedidos recientes</h3><div style="overflow-x:auto;"><table class="product-table"><thead><tr><th>ID</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody id="orders-table-body"></tbody></table></div></div></div>
-                    <div id="admin-promociones" class="admin-page hidden"><div class="product-table-container"><div class="table-header"><h3>Promociones</h3><button class="btn-success" id="admin-create-promo-btn2"><i class="fas fa-plus"></i> Nueva promoción</button></div><table class="product-table"><thead><tr><th>Nombre</th><th>Descuento</th><th>Productos</th><th>Vigencia</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="promo-table-body-admin"></tbody></table></div></div>
-                    <div id="admin-promo-form" class="admin-page hidden"><div class="product-form-container"><h3 id="promo-form-title">Nueva promoción</h3><form id="promo-form" onsubmit="return false;"><input type="hidden" id="promo-form-index"><input id="promo-form-name" placeholder="Nombre" required><input id="promo-form-discount" placeholder="Descuento" required><input id="promo-form-products" placeholder="Productos" required><input id="promo-form-validity" placeholder="Vigencia" required><select id="promo-form-status"><option>Activa</option><option>Vencida</option><option>Próxima</option></select><div class="form-actions"><button type="submit" class="btn-primary" id="promo-form-save-btn">Guardar</button><button type="button" class="btn-secondary" id="promo-form-cancel-btn">Cancelar</button></div><div id="promo-form-message" class="hidden alert-message"></div></form></div></div>
-                    <div id="admin-clientes" class="admin-page hidden"><div class="product-table-container"><div class="table-header"><h3>Clientes registrados</h3><button class="btn-primary" id="admin-add-client-btn">Agregar cliente</button></div><div class="crm-client-filters"><label for="client-search">Buscar cliente</label><input type="search" id="client-search" placeholder="Nombre, correo o teléfono"><label for="client-status-filter">Estado</label><select id="client-status-filter"><option value="todos">Todos los estados</option><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select><label for="client-stage-filter">Etapa CRM</label><select id="client-stage-filter"><option value="todas">Todas las etapas</option><option value="prospecto">Prospecto</option><option value="activo">Activo</option><option value="frecuente">Frecuente</option><option value="inactivo">Inactivo</option></select></div><table class="product-table"><thead><tr><th>Cliente</th><th>Email</th><th>Teléfono</th><th>Pedidos</th><th>Total</th><th>Registro</th><th>Acciones</th></tr></thead><tbody id="clients-table-body"></tbody></table></div></div>
-<div id="admin-client-form" class="admin-page hidden">
-    <div class="product-form-container">
-        <h3 id="client-form-title">Agregar cliente</h3>
-        <form id="client-form" onsubmit="return false;">
-            <div class="form-group">
-                <label for="form-client-name">Nombre</label>
-                <input id="form-client-name" placeholder="Nombre">
-            </div>
-            <div class="form-group">
-                <label for="form-client-email">Correo</label>
-                <input id="form-client-email" placeholder="Correo">
-            </div>
-            <div class="form-group">
-                <label for="form-client-phone">Teléfono</label>
-                <input id="form-client-phone" placeholder="Teléfono">
-            </div>
-            <div class="form-group">
-                <label for="form-client-password">Contraseña <span style="color:#e53935;">*</span></label>
-                <input type="password" id="form-client-password" placeholder="Contraseña (mínimo 6 caracteres)">
-                <small style="color: #6b7280; display: block; margin-top: 4px;">La contraseña debe tener al menos 6 caracteres, una mayúscula y un número</small>
-            </div>
-            <div class="form-group">
-                <label for="form-client-password-confirm">Confirmar contraseña <span style="color:#e53935;">*</span></label>
-                <input type="password" id="form-client-password-confirm" placeholder="Confirmar contraseña">
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="form-client-status">Estado</label>
-                    <select id="form-client-status">
-                        <option value="activo">Activo</option>
-                        <option value="inactivo">Inactivo</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="form-client-stage">Etapa CRM</label>
-                    <select id="form-client-stage">
-                        <option value="prospecto">Prospecto</option>
-                        <option value="activo">Activo</option>
-                        <option value="frecuente">Frecuente</option>
-                        <option value="inactivo">Inactivo</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="form-client-address">Dirección</label>
-                <textarea id="form-client-address" placeholder="Dirección"></textarea>
-            </div>
-            <div class="form-actions">
-                <button type="submit" class="btn-primary" id="form-client-save-btn">Guardar</button>
-                <button type="button" class="btn-secondary" id="form-client-cancel-btn">Cancelar</button>
-            </div>
-            <div id="client-form-message" class="hidden alert-message"></div>
-        </form>
+                    <ul class="sidebar-menu">
+                        <li><a href="#" class="active" data-admin-page="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
+                        <li><a href="#" data-admin-page="productos"><i class="fas fa-box"></i> Productos</a></li>
+                        <li><a href="#" data-admin-page="pedidos"><i class="fas fa-shopping-bag"></i> Pedidos</a></li>
+                        <li><a href="#" data-admin-page="promociones"><i class="fas fa-tags"></i> Promociones</a></li>
+                        <li><a href="#" data-admin-page="clientes"><i class="fas fa-users"></i> Clientes</a></li>
+                        <li><a href="#" data-admin-page="mi-actividad"><i class="fas fa-history"></i> Mi actividad</a></li>
+                        <li><a href="#" data-admin-page="actividad-usuarios"><i class="fas fa-users-cog"></i> Actividad usuarios</a></li>
+                        <li><a href="#" data-admin-page="usuarios"><i class="fas fa-user-cog"></i> Usuarios</a></li>
+                        <li><a href="#" data-admin-page="reportes"><i class="fas fa-file-alt"></i> Reportes</a></li>
+                    </ul>
+                </aside>
+
+                <!-- ============ CONTENIDO ADMIN ============ -->
+                <div class="admin-content">
+
+<!-- ===== DASHBOARD ===== -->
+<div id="admin-dashboard" class="admin-page active">
+    <div class="admin-dashboard-grid">
+        <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-friends"></i></div><div class="stat-number" id="stat-active-clients">0</div><div class="stat-label">Clientes activos</div></div>
+        <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-clock"></i></div><div class="stat-number" id="stat-inactive-clients">0</div><div class="stat-label">Clientes inactivos</div></div>
+        <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-times"></i></div><div class="stat-number" id="stat-at-risk-clients">0</div><div class="stat-label">En riesgo de desaparecer</div></div>
+        <div class="stat-card"><div class="stat-icon"><i class="fas fa-comments"></i></div><div class="stat-number" id="stat-interactions-per-client">0</div><div class="stat-label">Interacciones por cliente</div></div>
+    </div>
+
+
+    <div class="product-table-container" style="margin-top: 2rem; padding: 1.5rem;">
+        <h3 style="margin-bottom: 1.5rem; font-size: 1.2rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.6rem;">
+            <i class="fas fa-chart-pie" style="color: var(--primary);"></i> Distribución de Clientes
+        </h3>
+        <div style="max-width: 400px; margin: 0 auto;">
+            <canvas id="clientesChart"></canvas>
+        </div>
     </div>
 </div>
+
+                    <!-- ===== MI ACTIVIDAD ===== -->
+                    <div id="admin-mi-actividad" class="admin-page hidden">
+                        <div class="product-table-container">
+                            <div class="table-header">
+                                <h3><i class="fas fa-history"></i> Mi actividad</h3>
+                            </div>
+                            <div style="overflow-x:auto;">
+                                <table class="product-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Usuario</th>
+                                            <th>Tipo</th>
+                                            <th>Descripción</th>
+                                            <th>Email</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="my-activity-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== PRODUCTOS ===== -->
+                    <div id="admin-productos" class="admin-page hidden">
+                        <div class="product-table-container">
+                            <div class="table-header">
+                                <div class="search-box">
+                                    <input type="text" id="product-search" placeholder="Buscar producto...">
+                                    <select id="category-filter">
+                                        <option value="todas">Todas las categorías</option>
+                                        <option>Pizzas</option>
+                                        <option>Hamburguesas</option>
+                                        <option>Pescados</option>
+                                        <option>Bebidas</option>
+                                        <option>Ensaladas</option>
+                                    </select>
+                                    <select id="status-filter">
+                                        <option value="todos">Todos los estados</option>
+                                        <option value="disponible">Disponible</option>
+                                        <option value="agotado">Agotado</option>
+                                        <option value="inactivo">Inactivo</option>
+                                    </select>
+                                </div>
+                                <button class="btn-primary" id="admin-add-product-btn2"><i class="fas fa-plus"></i> Agregar producto</button>
+                            </div>
+                            <div style="overflow-x:auto;">
+                                <table class="product-table" id="product-table">
+                                    <thead>
+                                        <tr><th>Imagen</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Existencia</th><th>Estado</th><th>Acciones</th></tr>
+                                    </thead>
+                                    <tbody id="product-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== FORM PRODUCTO ===== -->
+                    <div id="admin-product-form" class="admin-page hidden">
+                        <div class="product-form-container">
+                            <h3><i class="fas fa-plus-circle"></i> <span id="form-title">Agregar producto</span></h3>
+                            <form id="product-form" onsubmit="return false;">
+                                <div class="form-group"><label for="form-product-name">Nombre</label><input id="form-product-name" required></div>
+                                <div class="form-row">
+                                    <div class="form-group"><label for="form-product-category">Categoría</label><select id="form-product-category"><option>Pizzas</option><option>Hamburguesas</option><option>Pescados</option><option>Bebidas</option><option>Ensaladas</option></select></div>
+                                    <div class="form-group"><label for="form-product-price">Precio</label><input type="number" step="0.01" id="form-product-price"></div>
+                                </div>
+                                <div class="form-group"><label for="form-product-desc">Descripción</label><textarea id="form-product-desc"></textarea></div>
+                                <div class="form-row">
+                                    <div class="form-group"><label for="form-product-stock">Existencia</label><input type="number" id="form-product-stock"></div>
+                                    <div class="form-group"><label for="form-product-status">Estado</label><select id="form-product-status"><option value="disponible">Activo</option><option value="inactivo">Inactivo</option></select></div>
+                                </div>
+                                <div class="form-group"><label for="form-product-image">Imagen</label><input id="form-product-image" placeholder="pizza.jpg"><div class="image-preview" id="form-image-preview"></div></div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Guardar</button>
+                                    <button type="button" class="btn-secondary" id="form-cancel-btn">Cancelar</button>
+                                </div>
+                                <div id="form-message" class="hidden alert-message"></div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- ===== PEDIDOS ===== -->
+                    <div id="admin-pedidos" class="admin-page hidden">
+                        <div class="product-table-container">
+                            <h3>Pedidos recientes</h3>
+                            <div style="overflow-x:auto;">
+                                <table class="product-table">
+                                    <thead><tr><th>ID</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+                                    <tbody id="orders-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== PROMOCIONES ===== -->
+                    <div id="admin-promociones" class="admin-page hidden">
+                        <div class="product-table-container">
+                            <div class="table-header">
+                                <h3>Promociones</h3>
+                                <button class="btn-success" id="admin-create-promo-btn2"><i class="fas fa-plus"></i> Nueva promoción</button>
+                            </div>
+                            <table class="product-table">
+                                <thead><tr><th>Nombre</th><th>Descuento</th><th>Productos</th><th>Vigencia</th><th>Estado</th><th>Acciones</th></tr></thead>
+                                <tbody id="promo-table-body-admin"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ===== FORM PROMOCIÓN ===== -->
+                    <div id="admin-promo-form" class="admin-page hidden">
+                        <div class="product-form-container">
+                            <h3 id="promo-form-title">Nueva promoción</h3>
+                            <form id="promo-form" onsubmit="return false;">
+                                <input type="hidden" id="promo-form-index">
+                                <input id="promo-form-name" placeholder="Nombre" required>
+                                <input id="promo-form-discount" placeholder="Descuento" required>
+                                <input id="promo-form-products" placeholder="Productos" required>
+                                <input id="promo-form-validity" placeholder="Vigencia" required>
+                                <select id="promo-form-status"><option>Activa</option><option>Vencida</option><option>Próxima</option></select>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary" id="promo-form-save-btn">Guardar</button>
+                                    <button type="button" class="btn-secondary" id="promo-form-cancel-btn">Cancelar</button>
+                                </div>
+                                <div id="promo-form-message" class="hidden alert-message"></div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- ===== CLIENTES ===== -->
+                    <div id="admin-clientes" class="admin-page hidden">
+                        <div class="product-table-container">
+                            <div class="table-header">
+                                <h3>Clientes registrados</h3>
+                                <button class="btn-primary" id="admin-add-client-btn">Agregar cliente</button>
+                            </div>
+                            <div class="crm-client-filters">
+                                <label for="client-search">Buscar cliente</label>
+                                <input type="search" id="client-search" placeholder="Nombre, correo o teléfono">
+                                <label for="client-status-filter">Estado</label>
+                                <select id="client-status-filter"><option value="todos">Todos los estados</option><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select>
+                                <label for="client-stage-filter">Etapa CRM</label>
+                                <select id="client-stage-filter"><option value="todas">Todas las etapas</option><option value="prospecto">Prospecto</option><option value="activo">Activo</option><option value="frecuente">Frecuente</option><option value="inactivo">Inactivo</option></select>
+                            </div>
+                            <table class="product-table">
+                                <thead><tr><th>Cliente</th><th>Email</th><th>Teléfono</th><th>Pedidos</th><th>Total</th><th>Registro</th><th>Acciones</th></tr></thead>
+                                <tbody id="clients-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ===== FORM CLIENTE ===== -->
+                    <div id="admin-client-form" class="admin-page hidden">
+                        <div class="product-form-container">
+                            <h3 id="client-form-title">Agregar cliente</h3>
+                            <form id="client-form" onsubmit="return false;">
+                                <div class="form-group"><label for="form-client-name">Nombre</label><input id="form-client-name" placeholder="Nombre"></div>
+                                <div class="form-group"><label for="form-client-email">Correo</label><input id="form-client-email" placeholder="Correo"></div>
+                                <div class="form-group"><label for="form-client-phone">Teléfono</label><input id="form-client-phone" placeholder="Teléfono"></div>
+                                <div class="form-group">
+                                    <label for="form-client-password">Contraseña <span style="color:#e53935;">*</span></label>
+                                    <input type="password" id="form-client-password" placeholder="Contraseña (mínimo 6 caracteres)">
+                                    <small style="color: #6b7280; display: block; margin-top: 4px;">La contraseña debe tener al menos 6 caracteres, una mayúscula y un número</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-client-password-confirm">Confirmar contraseña <span style="color:#e53935;">*</span></label>
+                                    <input type="password" id="form-client-password-confirm" placeholder="Confirmar contraseña">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="form-client-status">Estado</label>
+                                        <select id="form-client-status"><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="form-client-stage">Etapa CRM</label>
+                                        <select id="form-client-stage"><option value="prospecto">Prospecto</option><option value="activo">Activo</option><option value="frecuente">Frecuente</option><option value="inactivo">Inactivo</option></select>
+                                    </div>
+                                </div>
+                                <div class="form-group"><label for="form-client-address">Dirección</label><textarea id="form-client-address" placeholder="Dirección"></textarea></div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary" id="form-client-save-btn">Guardar</button>
+                                    <button type="button" class="btn-secondary" id="form-client-cancel-btn">Cancelar</button>
+                                </div>
+                                <div id="client-form-message" class="hidden alert-message"></div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- ===== DETALLE CLIENTE ===== -->
                     <div id="admin-client-detail" class="admin-page hidden">
                         <div class="product-table-container client-detail-screen">
                             <div class="table-header client-detail-header">
@@ -154,14 +306,22 @@
                         </div>
                     </div>
 
-                    <div id="admin-mi-actividad" class="admin-page hidden">
+                    <!-- ===== ACTIVIDAD USUARIOS ===== -->
+                    <div id="admin-actividad-usuarios" class="admin-page hidden">
                         <div class="product-table-container">
-                            <div class="table-header"><h3><i class="fas fa-history"></i> Mi actividad</h3></div>
-                            <div style="overflow-x:auto;"><table class="product-table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Tipo</th><th>Descripción</th><th>Responsable</th></tr></thead><tbody id="my-activity-table-body"></tbody></table></div>
+                            <div class="table-header"><h3><i class="fas fa-users-cog"></i> Actividad de usuarios</h3></div>
+                            <div style="overflow-x:auto;">
+                                <table class="product-table">
+                                    <thead>
+                                        <tr><th>Fecha</th><th>Usuario</th><th>Tipo</th><th>Descripción</th><th>Email</th></tr>
+                                    </thead>
+                                    <tbody id="usuarios-activity-table-body"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- SECCIÓN DE USUARIOS (ADMINISTRADORES) -->
+                    <!-- ===== USUARIOS (ADMINS) ===== -->
                     <div id="admin-usuarios" class="admin-page hidden">
                         <div class="product-table-container">
                             <div class="table-header">
@@ -171,13 +331,7 @@
                             <div style="overflow-x:auto;">
                                 <table class="product-table">
                                     <thead>
-                                        <tr>
-                                            <th>Nombre</th>
-                                            <th>Correo</th>
-                                            <th>Rol</th>
-                                            <th>Estado</th>
-                                            <th>Acciones</th>
-                                        </tr>
+                                        <tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>
                                     </thead>
                                     <tbody id="users-table-body"></tbody>
                                 </table>
@@ -185,32 +339,18 @@
                         </div>
                     </div>
 
-                    <!-- FORMULARIO PARA AGREGAR ADMINISTRADOR -->
+                    <!-- ===== FORM USUARIO ===== -->
                     <div id="admin-user-form" class="admin-page hidden">
                         <div class="product-form-container">
                             <h3><i class="fas fa-user-plus"></i> Agregar administrador</h3>
                             <form id="user-form" onsubmit="return false;">
-                                <div class="form-group">
-                                    <label for="form-user-name">Nombre completo</label>
-                                    <input type="text" id="form-user-name" placeholder="Nombre del administrador">
-                                </div>
-                                <div class="form-group">
-                                    <label for="form-user-email">Correo electrónico</label>
-                                    <input type="email" id="form-user-email" placeholder="admin@ejemplo.com">
-                                </div>
-                                <div class="form-group">
-                                    <label for="form-user-password">Contraseña</label>
-                                    <input type="password" id="form-user-password" placeholder="Contraseña">
-                                </div>
-                                <div class="form-group">
-                                    <label for="form-user-confirm-password">Confirmar contraseña</label>
-                                    <input type="password" id="form-user-confirm-password" placeholder="Confirmar contraseña">
-                                </div>
+                                <div class="form-group"><label for="form-user-name">Nombre completo</label><input type="text" id="form-user-name" placeholder="Nombre del administrador"></div>
+                                <div class="form-group"><label for="form-user-email">Correo electrónico</label><input type="email" id="form-user-email" placeholder="admin@ejemplo.com"></div>
+                                <div class="form-group"><label for="form-user-password">Contraseña</label><input type="password" id="form-user-password" placeholder="Contraseña"></div>
+                                <div class="form-group"><label for="form-user-confirm-password">Confirmar contraseña</label><input type="password" id="form-user-confirm-password" placeholder="Confirmar contraseña"></div>
                                 <div class="form-group">
                                     <label for="form-user-role">Rol</label>
-                                    <select id="form-user-role">
-                                        <option value="admin">Administrador</option>
-                                    </select>
+                                    <select id="form-user-role"><option value="admin">Administrador</option></select>
                                     <small style="color: #6b7280;">Solo existe la cuenta principal con rol "Super Administrador"</small>
                                 </div>
                                 <div class="form-actions">
@@ -222,21 +362,27 @@
                         </div>
                     </div>
 
-                    <div id="admin-reportes" class="admin-page hidden"><div class="product-table-container"><h3>Reportes</h3><div class="admin-dashboard-grid"><div class="stat-card"><div class="stat-number" id="report-sales-month">$0.00</div><div class="stat-label">Ventas del mes</div></div><div class="stat-card"><div class="stat-number" id="report-orders-month">0</div><div class="stat-label">Pedidos este mes</div></div></div></div></div>
-                </div>
-            </div>
+                    <!-- ===== REPORTES ===== -->
+                    <div id="admin-reportes" class="admin-page hidden">
+                        <div class="product-table-container">
+                            <h3>Reportes</h3>
+                            <div class="admin-dashboard-grid">
+                                <div class="stat-card"><div class="stat-number" id="report-sales-month">$0.00</div><div class="stat-label">Ventas del mes</div></div>
+                                <div class="stat-card"><div class="stat-number" id="report-orders-month">0</div><div class="stat-label">Pedidos este mes</div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div> <!-- cierra admin-content -->
+            </div> <!-- cierra admin-layout -->
         </section>
     </main>
+
     <script src="script.js"></script>
 
+    <!-- Script de usuarios administradores -->
     <script>
-        // ============================================================
-        // FUNCIONALIDAD PARA USUARIOS ADMINISTRADORES
-        // ============================================================
-
         let users = [];
-
-        // Referencias a elementos DOM
         const usersTableBody = document.getElementById('users-table-body');
         const userFormContainer = document.getElementById('admin-user-form');
         const userForm = document.getElementById('user-form');
@@ -249,8 +395,6 @@
         const formUserCancelBtn = document.getElementById('form-user-cancel-btn');
         const userFormMessage = document.getElementById('user-form-message');
         const addUserBtn = document.getElementById('admin-add-user-btn');
-
-        // Variable para saber si estamos editando o agregando
         let editingUserId = null;
 
         async function loadUsersFromApi() {
@@ -268,18 +412,13 @@
             }
         }
 
-        // Función para renderizar la tabla de usuarios
         function renderUsersTable() {
             if (!usersTableBody) return;
             usersTableBody.innerHTML = '';
-
             users.forEach(user => {
                 const tr = document.createElement('tr');
                 const isSuperAdmin = user.role === 'super_administrador';
-
-                // Determinar si se puede eliminar (solo si no es el super admin)
                 const canDelete = user.role === 'admin';
-
                 tr.innerHTML = `
                     <td><strong>${user.name}</strong></td>
                     <td>${user.email}</td>
@@ -294,23 +433,21 @@
                             <button class="btn-danger" style="padding: 4px 10px; border-radius: 6px; border: none; cursor: pointer; background: #ef4444; color: white;" onclick="deleteUser(${user.id})">
                                 <i class="fas fa-trash"></i> Eliminar
                             </button>
-                        ` : `
-                            <span style="color: #6b7280; font-size: 0.8rem;">(Cuenta principal)</span>
-                        `}
+                        ` : `<span style="color: #6b7280; font-size: 0.8rem;">(Cuenta principal)</span>`}
                     </td>
                 `;
                 usersTableBody.appendChild(tr);
             });
         }
 
-        // Función para eliminar un usuario (solo si no es el super admin)
         window.deleteUser = async function(userId) {
             const userToDelete = users.find(u => u.id === userId);
             if (!userToDelete) return;
-            if (userToDelete.role !== 'admin') {
-                return;
-            }
-            if (confirm(`¿Estás seguro de eliminar al administrador "${userToDelete.name}"?`)) {
+            if (userToDelete.role !== 'admin') return;
+
+
+            if (typeof window.showConfirmModal !== 'function') {
+                if (!confirm(`¿Estás seguro de eliminar al administrador "${userToDelete.name}"?`)) return;
                 try {
                     const response = await fetch('http://localhost:5000/api/auth/admins/' + userId, {
                         method: 'DELETE',
@@ -323,28 +460,39 @@
                 } catch (error) {
                     showUserFormMessage(error.message, 'error');
                 }
+                return;
             }
+
+            window.showConfirmModal(
+                '¿Estás seguro de eliminar al administrador "' + userToDelete.name + '"?',
+                async function(confirmed) {
+                    if (!confirmed) return;
+                    try {
+                        const response = await fetch('http://localhost:5000/api/auth/admins/' + userId, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': 'Bearer ' + (window.deliciasAuthToken || '') }
+                        });
+                        const data = await response.json();
+                        if (!response.ok) throw new Error(data.error || 'No se pudo eliminar el administrador.');
+                        await loadUsersFromApi();
+                        showUserFormMessage('Usuario eliminado correctamente.', 'success');
+                    } catch (error) {
+                        showUserFormMessage(error.message, 'error');
+                    }
+                }
+            );
         };
 
-        // Función para mostrar mensajes en el formulario de usuarios
         function showUserFormMessage(message, type = 'success') {
             if (!userFormMessage) return;
             userFormMessage.textContent = message;
             userFormMessage.className = 'alert-message';
             userFormMessage.classList.remove('hidden');
-            if (type === 'success') {
-                userFormMessage.style.color = '#10b981';
-                userFormMessage.style.border = '1px solid #10b981';
-            } else {
-                userFormMessage.style.color = '#ef4444';
-                userFormMessage.style.border = '1px solid #ef4444';
-            }
-            setTimeout(() => {
-                userFormMessage.classList.add('hidden');
-            }, 4000);
+            userFormMessage.style.color = type === 'success' ? '#10b981' : '#ef4444';
+            userFormMessage.style.border = type === 'success' ? '1px solid #10b981' : '1px solid #ef4444';
+            setTimeout(() => userFormMessage.classList.add('hidden'), 4000);
         }
 
-        // Función para resetear el formulario de usuarios
         function resetUserForm() {
             formUserName.value = '';
             formUserEmail.value = '';
@@ -357,11 +505,9 @@
             userFormMessage.classList.add('hidden');
         }
 
-        // Función para mostrar el formulario de usuarios
         function showUserForm() {
             if (!userFormContainer) return;
             resetUserForm();
-            // Ocultar todas las páginas de admin y mostrar solo el formulario
             document.querySelectorAll('.admin-page').forEach(p => {
                 p.classList.add('hidden');
                 p.classList.remove('active');
@@ -370,7 +516,6 @@
             userFormContainer.classList.add('active');
         }
 
-        // Evento para abrir el formulario de agregar usuario
         if (addUserBtn) {
             addUserBtn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -378,11 +523,9 @@
             });
         }
 
-        // Evento para cancelar el formulario de usuarios
         if (formUserCancelBtn) {
             formUserCancelBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                // Volver a la página de usuarios
                 document.querySelectorAll('.admin-page').forEach(p => {
                     p.classList.add('hidden');
                     p.classList.remove('active');
@@ -396,105 +539,43 @@
             });
         }
 
-        // FUNCIONES DE VALIDACIÓN
-        function isValidEmail(email) {
-            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-        }
-
-        function isValidPassword(password) {
-            // Mínimo 6 caracteres, al menos una mayúscula y un número
-            return password.length >= 6 && /[A-Z]/.test(password) && /\d/.test(password);
-        }
-
+        function isValidEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
+        function isValidPassword(password) { return password.length >= 6 && /[A-Z]/.test(password) && /\d/.test(password); }
         function emailExists(email, excludeUserId = null) {
             return users.some(u => u.email.toLowerCase() === email.toLowerCase() && u.id !== excludeUserId);
         }
 
-        // Evento para guardar usuario CON VALIDACIONES
         if (userForm) {
             userForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
-
                 const name = formUserName.value.trim();
                 const email = formUserEmail.value.trim();
                 const password = formUserPassword.value.trim();
                 const confirmPassword = formUserConfirmPassword.value.trim();
                 const role = formUserRole.value;
 
-                // VALIDACIONES
-                if (!name) {
-                    showUserFormMessage('El nombre es requerido.', 'error');
-                    return;
-                }
-                if (name.length < 3) {
-                    showUserFormMessage('El nombre debe tener al menos 3 caracteres.', 'error');
-                    return;
-                }
-
-                if (!email) {
-                    showUserFormMessage('El correo electrónico es requerido.', 'error');
-                    return;
-                }
-                if (!isValidEmail(email)) {
-                    showUserFormMessage('Ingresa un correo electrónico válido.', 'error');
-                    return;
-                }
-
-                if (!editingUserId && emailExists(email)) {
-                    showUserFormMessage('Este correo electrónico ya está registrado.', 'error');
-                    return;
-                }
-
+                if (!name || name.length < 3) return showUserFormMessage('El nombre debe tener al menos 3 caracteres.', 'error');
+                if (!email || !isValidEmail(email)) return showUserFormMessage('Ingresa un correo electrónico válido.', 'error');
+                if (!editingUserId && emailExists(email)) return showUserFormMessage('Este correo electrónico ya está registrado.', 'error');
                 if (!editingUserId) {
-                    // Solo validar contraseña al crear nuevo usuario
-                    if (!password) {
-                        showUserFormMessage('La contraseña es requerida.', 'error');
-                        return;
-                    }
-                    if (!isValidPassword(password)) {
-                        showUserFormMessage('La contraseña debe tener al menos 6 caracteres, una mayúscula y un número.', 'error');
-                        return;
-                    }
-                    if (!confirmPassword) {
-                        showUserFormMessage('Debes confirmar la contraseña.', 'error');
-                        return;
-                    }
-                    if (password !== confirmPassword) {
-                        showUserFormMessage('Las contraseñas no coinciden.', 'error');
-                        return;
-                    }
+                    if (!password || !isValidPassword(password)) return showUserFormMessage('La contraseña debe tener al menos 6 caracteres, una mayúscula y un número.', 'error');
+                    if (password !== confirmPassword) return showUserFormMessage('Las contraseñas no coinciden.', 'error');
                 } else {
-                    // Al editar, contraseña es opcional
-                    if (password && !isValidPassword(password)) {
-                        showUserFormMessage('La contraseña debe tener al menos 6 caracteres, una mayúscula y un número.', 'error');
-                        return;
-                    }
-                    if (password && confirmPassword && password !== confirmPassword) {
-                        showUserFormMessage('Las contraseñas no coinciden.', 'error');
-                        return;
-                    }
+                    if (password && !isValidPassword(password)) return showUserFormMessage('La contraseña debe tener al menos 6 caracteres, una mayúscula y un número.', 'error');
+                    if (password && password !== confirmPassword) return showUserFormMessage('Las contraseñas no coinciden.', 'error');
                 }
 
-                // PROCESAR VALIDACIONES PASADAS
                 if (editingUserId) {
-                    // Editar usuario existente
                     const userIndex = users.findIndex(u => u.id === editingUserId);
                     if (userIndex !== -1) {
-                        // No se permite editar al super admin
-                        if (users[userIndex].role === 'super_administrador') {
-                            showUserFormMessage('No se puede editar la cuenta principal.', 'error');
-                            return;
-                        }
+                        if (users[userIndex].role === 'super_administrador') return showUserFormMessage('No se puede editar la cuenta principal.', 'error');
                         users[userIndex].name = name;
                         users[userIndex].email = email;
-                        if (password) {
-                            users[userIndex].password = password;
-                        }
+                        if (password) users[userIndex].password = password;
                         users[userIndex].role = role;
                         showUserFormMessage('Usuario actualizado correctamente.', 'success');
                     }
                 } else {
-                    // Agregar nuevo usuario
                     try {
                         const response = await fetch('http://localhost:5000/api/auth/admin-register', {
                             method: 'POST',
@@ -502,33 +583,19 @@
                                 'Content-Type': 'application/json',
                                 'Authorization': 'Bearer ' + (window.deliciasAuthToken || '')
                             },
-                            body: JSON.stringify({ name: name, email: email, password: password })
+                            body: JSON.stringify({ name, email, password })
                         });
                         const data = await response.json();
                         if (!response.ok) throw new Error(data.error || 'No se pudo registrar el administrador.');
                     } catch (error) {
-                        showUserFormMessage(error.message, 'error');
-                        return;
+                        return showUserFormMessage(error.message, 'error');
                     }
-
-                    const newUser = {
-                        id: users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1,
-                        name: name,
-                        email: email,
-                        password: password,
-                        role: role,
-                        status: 'activo'
-                    };
-                    users.push(newUser);
                     await loadUsersFromApi();
                     showUserFormMessage('Administrador agregado correctamente.', 'success');
                 }
 
-                // Renderizar tabla y resetear formulario
                 renderUsersTable();
                 resetUserForm();
-
-                // Volver a la página de usuarios
                 document.querySelectorAll('.admin-page').forEach(p => {
                     p.classList.add('hidden');
                     p.classList.remove('active');
@@ -541,292 +608,133 @@
             });
         }
 
-        // Inicializar la tabla de usuarios al cargar
-        document.addEventListener('DOMContentLoaded', function() {
-            renderUsersTable();
-        });
-
+        document.addEventListener('DOMContentLoaded', function() { renderUsersTable(); });
         document.addEventListener('admin-authenticated', loadUsersFromApi);
-
-        // ============================================================
-        // INTEGRACIÓN CON EL SIDEBAR EXISTENTE
-        // ============================================================
-
-        // Agregar el manejador para el nuevo ítem "Usuarios" en el sidebar
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebarLinks = document.querySelectorAll('.sidebar-menu a');
-            sidebarLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const page = this.getAttribute('data-admin-page');
-
-                    // Remover clase active de todos los enlaces
-                    sidebarLinks.forEach(l => l.classList.remove('active'));
-                    this.classList.add('active');
-
-                    // Ocultar todas las páginas de admin
-                    document.querySelectorAll('.admin-page').forEach(p => {
-                        p.classList.add('hidden');
-                        p.classList.remove('active');
-                    });
-
-                    // Mostrar la página correspondiente
-                    if (page === 'usuarios') {
-                        const usersPage = document.getElementById('admin-usuarios');
-                        if (usersPage) {
-                            usersPage.classList.remove('hidden');
-                            usersPage.classList.add('active');
-                            renderUsersTable();
-                        }
-                    } else {
-                        const targetPage = document.getElementById(`admin-${page}`);
-                        if (targetPage) {
-                            targetPage.classList.remove('hidden');
-                            targetPage.classList.add('active');
-                        }
-                    }
-
-                    // Si el formulario de usuarios está abierto, cerrarlo
-                    if (userFormContainer) {
-                        userFormContainer.classList.add('hidden');
-                        userFormContainer.classList.remove('active');
-                    }
-                });
-            });
-        });
     </script>
 
-<script>
-    // ============================================================
-    // ADMIN - CLIENTES CON CONTRASEÑA
-    // ============================================================
+    <!-- Script de clientes con contraseña -->
+    <script>
+        function openClientForm(idx) {
+            if (idx === undefined) idx = null;
+            editingClientId = idx;
+            previousClientView = (adminPages && adminPages['client-detail'] && adminPages['client-detail'].classList.contains('active')) ? 'client-detail' : 'clientes';
 
-    function openClientForm(idx) {
-        if (idx === undefined) idx = null;
-        editingClientId = idx;
-        previousClientView = (adminPages && adminPages['client-detail'] && adminPages['client-detail'].classList.contains('active')) ? 'client-detail' : 'clientes';
-        
-        var title = document.getElementById('client-form-title');
-        var nameInput = document.getElementById('form-client-name');
-        var emailInput = document.getElementById('form-client-email');
-        var phoneInput = document.getElementById('form-client-phone');
-        var addressInput = document.getElementById('form-client-address');
-        var stageInput = document.getElementById('form-client-stage');
-        var statusInput = document.getElementById('form-client-status');
-        var passwordInput = document.getElementById('form-client-password');
-        var passwordConfirmInput = document.getElementById('form-client-password-confirm');
-        var msg = document.getElementById('client-form-message');
-
-        if (!nameInput) return;
-        
-        if (msg) {
-            msg.classList.add('hidden');
-            msg.textContent = '';
-            msg.className = '';
-        }
-
-        if (idx !== null && idx >= 0) {
-            var c = clients[idx];
-            if (title) title.textContent = 'Editar cliente';
-            nameInput.value = c.name || '';
-            if (emailInput) emailInput.value = c.email || '';
-            if (phoneInput) phoneInput.value = c.phone || '';
-            if (addressInput) addressInput.value = c.address || '';
-            if (stageInput) stageInput.value = c.stage || 'prospecto';
-            if (statusInput) statusInput.value = c.status || 'activo';
-            if (passwordInput) passwordInput.value = '';
-            if (passwordConfirmInput) passwordConfirmInput.value = '';
-            var label = document.querySelector('label[for="form-client-password"]');
-            if (label) label.innerHTML = 'Contraseña <span style="color:#6b7280;font-weight:400;">(opcional)</span>';
-        } else {
-            if (title) title.textContent = 'Agregar cliente';
-            nameInput.value = '';
-            if (emailInput) emailInput.value = '';
-            if (phoneInput) phoneInput.value = '';
-            if (addressInput) addressInput.value = '';
-            if (stageInput) stageInput.value = 'prospecto';
-            if (statusInput) statusInput.value = 'activo';
-            if (passwordInput) passwordInput.value = '';
-            if (passwordConfirmInput) passwordConfirmInput.value = '';
-            var label2 = document.querySelector('label[for="form-client-password"]');
-            if (label2) label2.innerHTML = 'Contraseña <span style="color:#e53935;">*</span>';
-        }
-
-        showAdminPage('client-form');
-    }
-
-    // ============================================================
-    // ADMIN - GUARDAR CLIENTE CON CONTRASEÑA
-    // ============================================================
-
-    var clientFormSaveBtn = document.getElementById('form-client-save-btn');
-    if (clientFormSaveBtn) {
-        clientFormSaveBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            var name = document.getElementById('form-client-name')?.value.trim() || '';
-            var email = document.getElementById('form-client-email')?.value.trim() || '';
-            var phone = document.getElementById('form-client-phone')?.value.trim() || '';
-            var address = document.getElementById('form-client-address')?.value.trim() || '';
-            var stage = document.getElementById('form-client-stage')?.value || 'prospecto';
-            var status = document.getElementById('form-client-status')?.value || 'activo';
-            var password = document.getElementById('form-client-password')?.value || '';
-            var passwordConfirm = document.getElementById('form-client-password-confirm')?.value || '';
+            var title = document.getElementById('client-form-title');
+            var nameInput = document.getElementById('form-client-name');
+            var emailInput = document.getElementById('form-client-email');
+            var phoneInput = document.getElementById('form-client-phone');
+            var addressInput = document.getElementById('form-client-address');
+            var stageInput = document.getElementById('form-client-stage');
+            var statusInput = document.getElementById('form-client-status');
+            var passwordInput = document.getElementById('form-client-password');
+            var passwordConfirmInput = document.getElementById('form-client-password-confirm');
             var msg = document.getElementById('client-form-message');
 
-            // VALIDAR NOMBRE
-            if (!name) {
-                showFormMessage(msg, 'El nombre es requerido.', 'error');
-                return;
-            }
-            if (name.length < 3) {
-                showFormMessage(msg, 'El nombre debe tener al menos 3 caracteres.', 'error');
-                return;
-            }
+            if (!nameInput) return;
+            if (msg) { msg.classList.add('hidden'); msg.textContent = ''; msg.className = ''; }
 
-            // VALIDAR EMAIL
-            if (!email) {
-                showFormMessage(msg, 'El correo electrónico es requerido.', 'error');
-                return;
-            }
-            var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                showFormMessage(msg, 'Ingresa un correo electrónico válido.', 'error');
-                return;
-            }
-
-            // VALIDAR TELÉFONO
-            if (!phone) {
-                showFormMessage(msg, 'El teléfono es requerido.', 'error');
-                return;
-            }
-            if (phone.length < 7) {
-                showFormMessage(msg, 'El teléfono debe tener al menos 7 dígitos.', 'error');
-                return;
-            }
-
-            // VALIDAR DIRECCIÓN
-            if (!address) {
-                showFormMessage(msg, 'La dirección es requerida.', 'error');
-                return;
-            }
-            if (address.length < 5) {
-                showFormMessage(msg, 'La dirección debe tener al menos 5 caracteres.', 'error');
-                return;
-            }
-
-            // VALIDAR CONTRASEÑA
-            if (editingClientId === null || editingClientId === undefined) {
-                // NUEVO cliente - contraseña OBLIGATORIA
-                if (!password) {
-                    showFormMessage(msg, 'La contraseña es requerida.', 'error');
-                    return;
-                }
-                if (password.length < 6) {
-                    showFormMessage(msg, 'La contraseña debe tener al menos 6 caracteres.', 'error');
-                    return;
-                }
-                if (!/[A-Z]/.test(password)) {
-                    showFormMessage(msg, 'La contraseña debe contener al menos una mayúscula.', 'error');
-                    return;
-                }
-                if (!/\d/.test(password)) {
-                    showFormMessage(msg, 'La contraseña debe contener al menos un número.', 'error');
-                    return;
-                }
-                if (!passwordConfirm) {
-                    showFormMessage(msg, 'Debes confirmar la contraseña.', 'error');
-                    return;
-                }
-                if (password !== passwordConfirm) {
-                    showFormMessage(msg, 'Las contraseñas no coinciden.', 'error');
-                    return;
-                }
+            if (idx !== null && idx >= 0) {
+                var c = clients[idx];
+                if (title) title.textContent = 'Editar cliente';
+                nameInput.value = c.name || '';
+                if (emailInput) emailInput.value = c.email || '';
+                if (phoneInput) phoneInput.value = c.phone || '';
+                if (addressInput) addressInput.value = c.address || '';
+                if (stageInput) stageInput.value = c.stage || 'prospecto';
+                if (statusInput) statusInput.value = c.status || 'activo';
+                if (passwordInput) passwordInput.value = '';
+                if (passwordConfirmInput) passwordConfirmInput.value = '';
+                var label = document.querySelector('label[for="form-client-password"]');
+                if (label) label.innerHTML = 'Contraseña <span style="color:#6b7280;font-weight:400;">(opcional)</span>';
             } else {
-                // EDITANDO cliente - contraseña OPCIONAL
-                if (password) {
-                    if (password.length < 6) {
-                        showFormMessage(msg, 'La contraseña debe tener al menos 6 caracteres.', 'error');
-                        return;
-                    }
-                    if (!/[A-Z]/.test(password)) {
-                        showFormMessage(msg, 'La contraseña debe contener al menos una mayúscula.', 'error');
-                        return;
-                    }
-                    if (!/\d/.test(password)) {
-                        showFormMessage(msg, 'La contraseña debe contener al menos un número.', 'error');
-                        return;
-                    }
-                    if (password !== passwordConfirm) {
-                        showFormMessage(msg, 'Las contraseñas no coinciden.', 'error');
-                        return;
-                    }
-                }
+                if (title) title.textContent = 'Agregar cliente';
+                nameInput.value = '';
+                if (emailInput) emailInput.value = '';
+                if (phoneInput) phoneInput.value = '';
+                if (addressInput) addressInput.value = '';
+                if (stageInput) stageInput.value = 'prospecto';
+                if (statusInput) statusInput.value = 'activo';
+                if (passwordInput) passwordInput.value = '';
+                if (passwordConfirmInput) passwordConfirmInput.value = '';
+                var label2 = document.querySelector('label[for="form-client-password"]');
+                if (label2) label2.innerHTML = 'Contraseña <span style="color:#e53935;">*</span>';
             }
+            showAdminPage('client-form');
+        }
 
-            // GUARDAR CLIENTE
-            if (editingClientId !== null && editingClientId >= 0) {
-                // Editar cliente existente
-                clients[editingClientId].name = name;
-                clients[editingClientId].email = email;
-                clients[editingClientId].phone = phone;
-                clients[editingClientId].address = address;
-                clients[editingClientId].stage = stage;
-                clients[editingClientId].status = status;
-                if (password) {
-                    clients[editingClientId].password = password;
-                }
-                clients[editingClientId].interactions = clients[editingClientId].interactions || [];
-                if (!clients[editingClientId].interactions.length) {
-                    clients[editingClientId].interactions.push({ 
-                        type: 'Registro', 
-                        date: new Date().toISOString().slice(0, 10), 
-                        note: 'Se actualizó la información del cliente.' 
-                    });
-                }
-                clients[editingClientId].lastInteractionDate = clients[editingClientId].lastInteractionDate || new Date().toISOString().slice(0, 10);
-                showFormMessage(msg, 'Cliente actualizado correctamente.', 'success');
-            } else {
-                // Nuevo cliente
-                var newId = 0;
-                for (var i = 0; i < clients.length; i++) {
-                    if (clients[i].id > newId) newId = clients[i].id;
-                }
-                newId++;
-                
-                var newClient = {
-                    id: newId,
-                    name: name,
-                    email: email,
-                    phone: phone,
-                    address: address,
-                    password: password,
-                    orders: 0,
-                    spent: 0,
-                    registeredDate: new Date().toLocaleDateString('es-ES'),
-                    stage: stage,
-                    status: status,
-                    lastInteractionDate: new Date().toISOString().slice(0, 10),
-                    interactions: [{
-                        type: 'Registro',
-                        date: new Date().toISOString().slice(0, 10),
-                        note: 'Cliente agregado desde el formulario principal.'
-                    }]
-                };
-                clients.push(newClient);
-                showFormMessage(msg, 'Cliente creado correctamente.', 'success');
-            }
+        var clientFormSaveBtn = document.getElementById('form-client-save-btn');
+        if (clientFormSaveBtn) {
+            clientFormSaveBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                var name = document.getElementById('form-client-name')?.value.trim() || '';
+                var email = document.getElementById('form-client-email')?.value.trim() || '';
+                var phone = document.getElementById('form-client-phone')?.value.trim() || '';
+                var address = document.getElementById('form-client-address')?.value.trim() || '';
+                var stage = document.getElementById('form-client-stage')?.value || 'prospecto';
+                var status = document.getElementById('form-client-status')?.value || 'activo';
+                var password = document.getElementById('form-client-password')?.value || '';
+                var passwordConfirm = document.getElementById('form-client-password-confirm')?.value || '';
+                var msg = document.getElementById('client-form-message');
 
-            saveClients();
-            updateDashboardStats();
-            
-            setTimeout(function() {
-                showAdminPage('clientes');
-                renderClientsTable();
-            }, 1500);
-        });
-    }
-</script>
+                if (!name || name.length < 3) return showFormMessage(msg, 'El nombre debe tener al menos 3 caracteres.', 'error');
+                var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!email || !emailRegex.test(email)) return showFormMessage(msg, 'Ingresa un correo electrónico válido.', 'error');
+                if (!phone || phone.length < 7) return showFormMessage(msg, 'El teléfono debe tener al menos 7 dígitos.', 'error');
+                if (!address || address.length < 5) return showFormMessage(msg, 'La dirección debe tener al menos 5 caracteres.', 'error');
+
+                if (editingClientId === null || editingClientId === undefined) {
+                    if (!password || password.length < 6) return showFormMessage(msg, 'La contraseña debe tener al menos 6 caracteres.', 'error');
+                    if (!/[A-Z]/.test(password)) return showFormMessage(msg, 'La contraseña debe contener al menos una mayúscula.', 'error');
+                    if (!/\d/.test(password)) return showFormMessage(msg, 'La contraseña debe contener al menos un número.', 'error');
+                    if (password !== passwordConfirm) return showFormMessage(msg, 'Las contraseñas no coinciden.', 'error');
+                } else {
+                    if (password) {
+                        if (password.length < 6) return showFormMessage(msg, 'La contraseña debe tener al menos 6 caracteres.', 'error');
+                        if (!/[A-Z]/.test(password)) return showFormMessage(msg, 'La contraseña debe contener al menos una mayúscula.', 'error');
+                        if (!/\d/.test(password)) return showFormMessage(msg, 'La contraseña debe contener al menos un número.', 'error');
+                        if (password !== passwordConfirm) return showFormMessage(msg, 'Las contraseñas no coinciden.', 'error');
+                    }
+                }
+
+                if (editingClientId !== null && editingClientId >= 0) {
+                    clients[editingClientId].name = name;
+                    clients[editingClientId].email = email;
+                    clients[editingClientId].phone = phone;
+                    clients[editingClientId].address = address;
+                    clients[editingClientId].stage = stage;
+                    clients[editingClientId].status = status;
+                    if (password) clients[editingClientId].password = password;
+                    clients[editingClientId].interactions = clients[editingClientId].interactions || [];
+                    if (!clients[editingClientId].interactions.length) {
+                        clients[editingClientId].interactions.push({ type: 'Registro', date: new Date().toISOString().slice(0, 10), note: 'Se actualizó la información del cliente.' });
+                    }
+                    clients[editingClientId].lastInteractionDate = clients[editingClientId].lastInteractionDate || new Date().toISOString().slice(0, 10);
+                    showFormMessage(msg, 'Cliente actualizado correctamente.', 'success');
+                } else {
+                    var newId = 0;
+                    for (var i = 0; i < clients.length; i++) if (clients[i].id > newId) newId = clients[i].id;
+                    newId++;
+                    var newClient = {
+                        id: newId, name, email, phone, address, password,
+                        orders: 0, spent: 0,
+                        registeredDate: new Date().toLocaleDateString('es-ES'),
+                        stage, status,
+                        lastInteractionDate: new Date().toISOString().slice(0, 10),
+                        interactions: [{ type: 'Registro', date: new Date().toISOString().slice(0, 10), note: 'Cliente agregado desde el formulario principal.' }]
+                    };
+                    clients.push(newClient);
+                    showFormMessage(msg, 'Cliente creado correctamente.', 'success');
+                }
+
+                saveClients();
+                updateDashboardStats();
+                setTimeout(function() {
+                    showAdminPage('clientes');
+                    renderClientsTable();
+                }, 1500);
+            });
+        }
+    </script>
 
 </body>
 </html>

@@ -26,14 +26,14 @@ const register = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const [clientResult] = await connection.query(
             `INSERT INTO clientes
-                (name, email, password, phone, address, stage, status, orders, spent, registered_date, last_interaction_date)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [name, email, hashedPassword, '', '', 'prospecto', 'activo', 0, 0, new Date(), new Date()]
+                (name, email, company, password, phone, address, stage, status, orders, spent, registered_date, last_interaction_date)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [name, email, '', hashedPassword, '', '', 'prospecto', 'activo', 0, 0, new Date(), new Date()]
         );
         await connection.query(
             `INSERT INTO interacciones (cliente_id, type, date, note, user)
              VALUES (?, ?, ?, ?, ?)`,
-            [clientResult.insertId, 'nota', new Date(), 'Usuario registrado en la plataforma.', email]
+            [clientResult.insertId, 'registro', new Date(), 'Usuario registrado en la plataforma.', email]
         );
 
         await connection.commit();
@@ -59,6 +59,7 @@ const register = async (req, res) => {
 };
 
 const registerAdmin = async (req, res) => {
+    let connection;
     try {
         if (!['admin', 'super_administrador'].includes(req.user.role)) {
             return res.status(403).json({ error: 'No tienes permisos para crear administradores' });
@@ -69,24 +70,59 @@ const registerAdmin = async (req, res) => {
             return res.status(400).json({ error: 'Faltan campos obligatorios' });
         }
 
-        const [existing] = await pool.query('SELECT id FROM usuarios WHERE email = ?', [email]);
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        const [existing] = await connection.query('SELECT id FROM usuarios WHERE email = ?', [email]);
         if (existing.length > 0) {
+            await connection.rollback();
             return res.status(400).json({ error: 'El email ya está registrado' });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const [result] = await pool.query(
+        const [result] = await connection.query(
             'INSERT INTO usuarios (name, email, password, role) VALUES (?, ?, ?, ?)',
             [name, email, hashedPassword, 'admin']
         );
+
+        const [client] = await connection.query(
+            'SELECT id FROM clientes WHERE email = ?',
+            [email]
+        );
+
+        if (client.length > 0) {
+            await connection.query(
+                `INSERT INTO interacciones (cliente_id, type, date, note, user)
+                 VALUES (?, ?, ?, ?, ?)`,
+                [client[0].id, 'nota', new Date(), `Administrador ${name} creado por ${req.user.name}`, req.user.email]
+            );
+        } else {
+            const [clientResult] = await connection.query(
+                `INSERT INTO clientes
+                    (name, email, company, password, phone, address, stage, status, orders, spent, registered_date, last_interaction_date)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [name, email, '', hashedPassword, '', '', 'prospecto', 'activo', 0, 0, new Date(), new Date()]
+            );
+            
+            await connection.query(
+                `INSERT INTO interacciones (cliente_id, type, date, note, user)
+                 VALUES (?, ?, ?, ?, ?)`,
+                [clientResult.insertId, 'nota', new Date(), `Administrador ${name} creado por ${req.user.name}`, req.user.email]
+            );
+        }
+
+        await connection.commit();
 
         res.status(201).json({
             message: 'Administrador registrado',
             user: { id: result.insertId, name, email, role: 'admin' }
         });
     } catch (error) {
+        if (connection) await connection.rollback();
         console.error(error);
         res.status(500).json({ error: 'Error en el servidor' });
+    } finally {
+        if (connection) connection.release();
     }
 };
 
@@ -107,6 +143,7 @@ const getAdmins = async (req, res) => {
 };
 
 const deleteAdmin = async (req, res) => {
+    let connection;
     try {
         if (req.user.role !== 'super_administrador') {
             return res.status(403).json({ error: 'Solo el super administrador puede eliminar administradores' });
@@ -117,14 +154,50 @@ const deleteAdmin = async (req, res) => {
             return res.status(400).json({ error: 'Administrador no válido' });
         }
 
-        const [result] = await pool.query(
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        const [admin] = await connection.query(
+            'SELECT name, email FROM usuarios WHERE id = ? AND role = ?',
+            [adminId, 'admin']
+        );
+
+        if (admin.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'Administrador no encontrado' });
+        }
+
+        const [client] = await connection.query(
+            'SELECT id FROM clientes WHERE email = ?',
+            [admin[0].email]
+        );
+
+        if (client.length > 0) {
+            await connection.query(
+                `INSERT INTO interacciones (cliente_id, type, date, note, user)
+                 VALUES (?, ?, ?, ?, ?)`,
+                [client[0].id, 'nota', new Date(), `Administrador ${admin[0].name} eliminado por ${req.user.name}`, req.user.email]
+            );
+        }
+
+        const [result] = await connection.query(
             "DELETE FROM usuarios WHERE id = ? AND role = 'admin'",
             [adminId]
         );
-        if (result.affectedRows === 0) return res.status(404).json({ error: 'Administrador no encontrado' });
+
+        if (result.affectedRows === 0) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'Administrador no encontrado' });
+        }
+
+        await connection.commit();
         res.json({ message: 'Administrador eliminado' });
     } catch (error) {
+        if (connection) await connection.rollback();
+        console.error(error);
         res.status(500).json({ error: 'Error al eliminar administrador' });
+    } finally {
+        if (connection) connection.release();
     }
 };
 

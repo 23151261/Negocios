@@ -21,12 +21,14 @@ const authRoutes = require('./src/routes/auth.routes');
 const clientRoutes = require('./src/routes/client.routes');
 const interactionRoutes = require('./src/routes/interaction.routes');
 const dataRoutes = require('./src/routes/data.routes');
+const actividadRoutes = require('./src/routes/actividad.routes');
 
 // Usar rutas
 app.use('/api/auth', authRoutes);
 app.use('/api/clientes', clientRoutes);
 app.use('/api/interacciones', interactionRoutes);
 app.use('/api/data', dataRoutes);
+app.use('/api/actividad', actividadRoutes);
 
 // Iniciar servidor
 async function startServer() {

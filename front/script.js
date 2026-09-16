@@ -79,6 +79,30 @@ function apiSave(key, value) {
         return data;
     }
 
+async function registrarActividadUsuario(tipo, descripcion, metadata) {
+    if (!currentUser || !currentUser.email) return;
+    
+    try {
+        await fetch(API_BASE + '/actividad/registrar', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + (window.deliciasAuthToken || '')
+            },
+            body: JSON.stringify({
+                usuario_email: currentUser.email,
+                usuario_nombre: currentUser.name || 'Usuario',
+                usuario_role: currentUser.role || (isAdmin ? 'admin' : 'usuario'),
+                tipo: tipo,
+                descripcion: descripcion,
+                metadata: metadata || {}
+            })
+        });
+    } catch (error) {
+        console.error('Error registrando actividad:', error);
+    }
+}
+
     // ============================================================
     // PRODUCTOS
     // ============================================================
@@ -135,6 +159,15 @@ function apiSave(key, value) {
     let historialCompras = [];
     let contactMessages = [];
     let invoices = [];
+
+    // Variables de la subasta (una sola vez)
+    let subastaActiva = false;
+    let subastaTimerId = null;
+    let subastaTiempoRestante = 1800;
+    let subastaOfertaActual = 6.00;
+    let subastaOfertas = [];
+    let clientesChartInstance = null;
+
 
     // ============================================================
     // CHECKOUT - VARIABLES
@@ -197,191 +230,193 @@ function apiSave(key, value) {
         return apiSave('clients', clients);
     }
 
-async function saveOrders() {
-    console.log('🔍 === DIAGNÓSTICO DE SAVEORDERS ===');
-    console.log('📊 Contenido de orders:', JSON.stringify(orders, null, 2));
-    console.log('📊 Tipo de orders:', typeof orders);
-    console.log('📊 Es array:', Array.isArray(orders));
-    console.log('📊 Longitud:', orders.length);
-    
-    try {
-        console.log('💾 Llamando a apiSave con key="orders"');
-        const result = await apiSave('orders', orders);
-        console.log('📥 Resultado de apiSave:', result);
-        return result;
-    } catch (error) {
-        console.error('❌ Error en saveOrders:', error);
-        return null;
-    }
-}
-
-    function savePromociones() {
-        apiSave('promociones', promociones);
+    async function saveOrders() {
+        console.log('=== DIAGNÓSTICO DE SAVEORDERS ===');
+        console.log('Contenido de orders:', JSON.stringify(orders, null, 2));
+        console.log('Tipo de orders:', typeof orders);
+        console.log('Es array:', Array.isArray(orders));
+        console.log('Longitud:', orders.length);
+        
+        try {
+            console.log('Llamando a apiSave con key="orders"');
+            const result = await apiSave('orders', orders);
+            console.log('Resultado de apiSave:', result);
+            return result;
+        } catch (error) {
+            console.error('Error en saveOrders:', error);
+            return null;
+        }
     }
 
-    function savePublications() {
-        apiSave('publications', userPublications);
-    }
+        function savePromociones() {
+            apiSave('promociones', promociones);
+        }
 
-    function saveHistorial() {
-        return apiSave('historial', historialCompras);
-    }
+        function savePublications() {
+            apiSave('publications', userPublications);
+        }
 
-    function saveCurrentUser() {
-        return currentUser;
-    }
+        function saveHistorial() {
+            return apiSave('historial', historialCompras);
+        }
+
+        function saveCurrentUser() {
+            return currentUser;
+        }
 
     function saveAuction() {
         apiSave('auction', { ofertas: subastaOfertas, ofertaActual: subastaOfertaActual });
     }
 
-    function saveContactMessages() {
-        apiSave('contactMessages', contactMessages);
-    }
-
-    function saveInvoices() {
-        return apiSave('invoices', invoices);
-    }
-
-    async function loadApiData() {
-        const keys = ['products', 'cart', 'comments', 'clients', 'orders', 'promociones', 'publications', 'historial', 'auction', 'contactMessages', 'invoices'];
-        try {
-            const values = await Promise.all(keys.map(apiGet));
-            const data = {};
-            keys.forEach(function(key, index) { data[key] = values[index]; });
-
-            if (data.products !== null) products = data.products;
-            else apiSave('products', products);
-            if (data.cart !== null) cart = data.cart;
-            else apiSave('cart', cart);
-            if (data.comments !== null) communityComments = data.comments;
-            else apiSave('comments', communityComments);
-            if (data.clients !== null) clients = data.clients;
-            else apiSave('clients', clients);
-            if (data.orders !== null) orders = data.orders;
-            else apiSave('orders', orders);
-            if (data.promociones !== null) promociones = data.promociones;
-            else apiSave('promociones', promociones);
-            if (data.publications !== null) userPublications = data.publications;
-            else apiSave('publications', userPublications);
-            if (data.historial !== null) historialCompras = data.historial;
-            else apiSave('historial', historialCompras);
-            if (data.auction !== null) {
-                subastaOfertas = data.auction.ofertas || [];
-                subastaOfertaActual = data.auction.ofertaActual || 6;
-            } else apiSave('auction', { ofertas: [], ofertaActual: 6 });
-            if (data.contactMessages !== null) contactMessages = data.contactMessages;
-            else apiSave('contactMessages', contactMessages);
-            if (data.invoices !== null) invoices = data.invoices;
-            else apiSave('invoices', invoices);
-
-            apiReady = true;
-            renderCatalog(selectedCategory);
-            renderCommunityComments();
-            renderMarketplace();
-            renderMisPublicaciones();
-            renderHistorialCompras();
-            renderProductTable();
-            renderClientsTable();
-            renderOrdersTable();
-            renderPromotionsAdmin();
-            updateCartUI();
-            updateProfileUI();
-        } catch (error) {
-            console.error('API SQL no disponible; se mantienen los datos de respaldo:', error);
+        function saveContactMessages() {
+            apiSave('contactMessages', contactMessages);
         }
-    }
+
+        function saveInvoices() {
+            return apiSave('invoices', invoices);
+        }
+
+        async function loadApiData() {
+            const keys = ['products', 'cart', 'comments', 'clients', 'orders', 'promociones', 'publications', 'historial', 'auction', 'contactMessages', 'invoices'];
+            try {
+                const values = await Promise.all(keys.map(apiGet));
+                const data = {};
+                keys.forEach(function(key, index) { data[key] = values[index]; });
+
+                if (data.products !== null) products = data.products;
+                else apiSave('products', products);
+                if (data.cart !== null) cart = data.cart;
+                else apiSave('cart', cart);
+                if (data.comments !== null) communityComments = data.comments;
+                else apiSave('comments', communityComments);
+                if (data.clients !== null) clients = data.clients;
+                else apiSave('clients', clients);
+                if (data.orders !== null) orders = data.orders;
+                else apiSave('orders', orders);
+                if (data.promociones !== null) promociones = data.promociones;
+                else apiSave('promociones', promociones);
+                if (data.publications !== null) userPublications = data.publications;
+                else apiSave('publications', userPublications);
+                if (data.historial !== null) historialCompras = data.historial;
+                else apiSave('historial', historialCompras);
+                if (data.auction !== null) {
+                    subastaOfertas = data.auction.ofertas || [];
+                    subastaOfertaActual = data.auction.ofertaActual || 6;
+                } else apiSave('auction', { ofertas: [], ofertaActual: 6 });
+                if (data.contactMessages !== null) contactMessages = data.contactMessages;
+                else apiSave('contactMessages', contactMessages);
+                if (data.invoices !== null) invoices = data.invoices;
+                else apiSave('invoices', invoices);
+
+                apiReady = true;
+                renderCatalog(selectedCategory);
+                renderCommunityComments();
+                renderMarketplace();
+                renderMisPublicaciones();
+                renderHistorialCompras();
+                renderProductTable();
+                renderClientsTable();
+                renderOrdersTable();
+                renderPromotionsAdmin();
+                updateCartUI();
+                updateProfileUI();
+            } catch (error) {
+                console.error('API SQL no disponible; se mantienen los datos de respaldo:', error);
+            }
+        }
+
+        // ============================================================
+        // FUNCIONES DE UTILIDAD
+        // ============================================================
 
     // ============================================================
     // FUNCIONES DE UTILIDAD
     // ============================================================
 
-// ============================================================
-// FUNCIONES DE UTILIDAD
-// ============================================================
-
-function showFormMessage(msgElement, message, type) {
-    if (!msgElement) return;
-    
-    // Limpiar clases anteriores
-    msgElement.className = 'alert-message';
-    msgElement.classList.remove('hidden', 'auth-success', 'auth-error');
-    
-    if (type === 'success') {
-        msgElement.classList.add('auth-success');
-        msgElement.style.color = '#10b981';
-        msgElement.style.border = '1px solid #10b981';
-        msgElement.style.background = '#f0fdf4';
-    } else {
-        msgElement.classList.add('auth-error');
-        msgElement.style.color = '#ef4444';
-        msgElement.style.border = '1px solid #ef4444';
-        msgElement.style.background = '#fef2f2';
+    function showFormMessage(msgElement, message, type) {
+        if (!msgElement) return;
+        
+        // Limpiar clases anteriores
+        msgElement.className = 'alert-message';
+        msgElement.classList.remove('hidden', 'auth-success', 'auth-error');
+        
+        if (type === 'success') {
+            msgElement.classList.add('auth-success');
+            msgElement.style.color = '#10b981';
+            msgElement.style.border = '1px solid #10b981';
+            msgElement.style.background = '#f0fdf4';
+        } else {
+            msgElement.classList.add('auth-error');
+            msgElement.style.color = '#ef4444';
+            msgElement.style.border = '1px solid #ef4444';
+            msgElement.style.background = '#fef2f2';
+        }
+        
+        msgElement.textContent = message;
+        msgElement.classList.remove('hidden');
+        
+        setTimeout(function() {
+            msgElement.classList.add('hidden');
+        }, 4000);
     }
-    
-    msgElement.textContent = message;
-    msgElement.classList.remove('hidden');
-    
-    setTimeout(function() {
-        msgElement.classList.add('hidden');
-    }, 4000);
-}
 
-function showConfirmModal(message, callback) {
-    var modal = document.getElementById('confirm-modal');
-    
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'confirm-modal';
-        modal.className = 'modal-overlay';
-        modal.style.display = 'none';
-        modal.innerHTML = `
-            <div class="modal-box">
-                <div class="modal-icon" aria-hidden="true"><i class="fas fa-question-circle"></i></div>
-                <h2>Confirmar</h2>
-                <p id="confirm-message">¿Estás seguro?</p>
-                <div style="display:flex; gap:0.8rem; justify-content:center; flex-wrap:wrap; margin-top:0.5rem;">
-                    <button class="btn-primary" id="confirm-btn" style="min-width:100px;">Aceptar</button>
-                    <button class="btn-secondary" id="confirm-cancel-btn" style="min-width:100px;">Cancelar</button>
+    function showConfirmModal(message, callback) {
+        var modal = document.getElementById('confirm-modal');
+        
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'confirm-modal';
+            modal.className = 'modal-overlay';
+            modal.style.display = 'none';
+            modal.innerHTML = `
+                <div class="modal-box">
+                    <div class="modal-icon" aria-hidden="true"><i class="fas fa-question-circle"></i></div>
+                    <h2>Confirmar</h2>
+                    <p id="confirm-message">¿Estás seguro?</p>
+                    <div style="display:flex; gap:0.8rem; justify-content:center; flex-wrap:wrap; margin-top:0.5rem;">
+                        <button class="btn-primary" id="confirm-btn" style="min-width:100px;">Aceptar</button>
+                        <button class="btn-secondary" id="confirm-cancel-btn" style="min-width:100px;">Cancelar</button>
+                    </div>
                 </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
+            `;
+            document.body.appendChild(modal);
+        }
 
-    var messageEl = document.getElementById('confirm-message');
-    var confirmBtn = document.getElementById('confirm-btn');
-    var cancelBtn = document.getElementById('confirm-cancel-btn');
+        var messageEl = document.getElementById('confirm-message');
+        var confirmBtn = document.getElementById('confirm-btn');
+        var cancelBtn = document.getElementById('confirm-cancel-btn');
 
-    messageEl.textContent = message;
-    modal.classList.add('show');
-    modal.style.display = 'flex';
+        messageEl.textContent = message;
+        modal.classList.add('show');
+        modal.style.display = 'flex';
 
-    var newConfirmBtn = confirmBtn.cloneNode(true);
-    var newCancelBtn = cancelBtn.cloneNode(true);
-    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+        var newConfirmBtn = confirmBtn.cloneNode(true);
+        var newCancelBtn = cancelBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
 
-    newConfirmBtn.addEventListener('click', function() {
-        modal.classList.remove('show');
-        modal.style.display = 'none';
-        if (callback) callback(true);
-    });
+        newConfirmBtn.addEventListener('click', function() {
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+            if (callback) callback(true);
+        });
 
-    newCancelBtn.addEventListener('click', function() {
-        modal.classList.remove('show');
-        modal.style.display = 'none';
-        if (callback) callback(false);
-    });
-
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
+        newCancelBtn.addEventListener('click', function() {
             modal.classList.remove('show');
             modal.style.display = 'none';
             if (callback) callback(false);
-        }
-    });
-}
+        });
+
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.remove('show');
+                modal.style.display = 'none';
+                if (callback) callback(false);
+            }
+        });
+    }
+
+    window.showConfirmModal = showConfirmModal;
 
     // ============================================================
     // FUNCIONES DE REDIRECCIÓN DESPUÉS DE LOGIN
@@ -467,6 +502,7 @@ function showConfirmModal(message, callback) {
         'client-form': document.getElementById('admin-client-form'),
         'client-detail': document.getElementById('admin-client-detail'),
         'mi-actividad': document.getElementById('admin-mi-actividad'),
+        'actividad-usuarios': document.getElementById('admin-actividad-usuarios'),
         usuarios: document.getElementById('admin-usuarios'),
         reportes: document.getElementById('admin-reportes')
     };
@@ -584,6 +620,7 @@ function showConfirmModal(message, callback) {
             adminPages[pageId].classList.add('active');
             adminPages[pageId].classList.remove('hidden');
         }
+        
 
         document.querySelectorAll('.sidebar-menu a').forEach(function(link) {
             link.classList.remove('active');
@@ -598,29 +635,81 @@ function showConfirmModal(message, callback) {
         if (pageId === 'dashboard') updateDashboardStats();
         if (pageId === 'promociones') renderPromotionsAdmin();
         if (pageId === 'mi-actividad') renderMyActivity();
+        if (pageId === 'actividad-usuarios') renderActividadUsuarios();
     }
-
-    function renderMyActivity() {
-        var tbody = document.getElementById('my-activity-table-body');
+        async function renderActividadUsuarios() {
+        var tbody = document.getElementById('usuarios-activity-table-body');
         if (!tbody) return;
-        var activity = [];
-        clients.forEach(function(client) {
-            normalizeClientInteractions(client);
-            (client.interactions || []).forEach(function(interaction) {
-                if (activityBelongsToCurrentUser(interaction)) {
-                    activity.push({ client: client.name || 'Sin nombre', type: interaction.type || 'Interacción', note: interaction.note || 'Sin detalle', date: interaction.date || 'Sin fecha', user: interaction.user || getActivityUserLabel() });
-                }
+
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:#6b4f7a;">Cargando...</td></tr>';
+
+        try {
+            const response = await fetch(API_BASE + '/actividad/usuarios', {
+                headers: { 'Authorization': 'Bearer ' + (window.deliciasAuthToken || '') }
             });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Error al cargar');
+
+            if (!data.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:#6b4f7a;">Aún no hay actividad de usuarios.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(function(item) {
+                return '<tr>' +
+                    '<td>' + (item.fecha || '') + '</td>' +
+                    '<td><strong>' + (item.usuario_nombre || '') + '</strong></td>' +
+                    '<td>' + (item.tipo || '') + '</td>' +
+                    '<td>' + (item.descripcion || '') + '</td>' +
+                    '<td>' + (item.usuario_email || '') + '</td>' +
+                '</tr>';
+            }).join('');
+        } catch (error) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:#c62828;">Error: ' + error.message + '</td></tr>';
+        }
+    }
+    
+
+async function renderMyActivity() {
+    var tbody = document.getElementById('my-activity-table-body');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:#6b4f7a;">Cargando...</td></tr>';
+
+    try {
+        const response = await fetch(API_BASE + '/actividad/mi-actividad', {
+            headers: {
+                'Authorization': 'Bearer ' + (window.deliciasAuthToken || '')
+            }
         });
-        activity.sort(function(first, second) { return String(second.date).localeCompare(String(first.date)); });
-        if (!activity.length) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem; color:#6b4f7a;">Aún no hay actividad registrada.</td></tr>';
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al cargar la actividad');
+
+        if (!data.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:#6b4f7a;">No hay actividad registrada.</td></tr>';
             return;
         }
-        tbody.innerHTML = activity.map(function(item) {
-            return '<tr><td>' + item.date + '</td><td><strong>' + item.client + '</strong></td><td>' + item.type + '</td><td>' + item.note + '</td><td>' + item.user + '</td></tr>';
+
+        tbody.innerHTML = data.map(function(item) {
+            const fecha = item.fecha ? new Date(item.fecha).toLocaleString('es-ES') : '';
+            const usuario = item.usuario_nombre || 'Desconocido';
+            const tipo = item.tipo || '';
+            const descripcion = item.descripcion || '';
+            const email = item.usuario_email || '';
+            return '<tr>' +
+                '<td>' + fecha + '</td>' +
+                '<td><strong>' + usuario + '</strong></td>' +
+                '<td>' + tipo + '</td>' +
+                '<td>' + descripcion + '</td>' +
+                '<td>' + email + '</td>' +
+            '</tr>';
         }).join('');
+    } catch (error) {
+        console.error('Error al cargar mi actividad:', error);
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:#c62828;">Error: ' + error.message + '</td></tr>';
     }
+}
 
     function getActivityUserIdentity() {
         return (adminEmail || currentUser.email || currentUser.name || '').toLowerCase();
@@ -808,6 +897,59 @@ function showConfirmModal(message, callback) {
 
         renderCrmStageSummary();
         renderRiskList();
+
+        const canvas = document.getElementById('clientesChart');
+        if (canvas && typeof Chart !== 'undefined') {
+            const ctx = canvas.getContext('2d');
+            const chartData = {
+                labels: ['Activos', 'Inactivos', 'En riesgo'],
+                datasets: [{
+                    data: [activeClients, inactiveClients, atRiskClients],
+                    backgroundColor: [
+                        '#8b5cf6',
+                        '#f59e0b',
+                        '#ef4444'
+                    ],
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            };
+
+            if (!clientesChartInstance) {
+                clientesChartInstance = new Chart(ctx, {
+                    type: 'pie',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: { size: 14, family: '-apple-system, "Segoe UI", Roboto, sans-serif' },
+                                    padding: 20,
+                                    usePointStyle: true
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const total = context.chart._metasets[context.datasetIndex].total || 0;
+                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+                                        return label + ': ' + value + ' (' + percentage + ')';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                clientesChartInstance.data.datasets[0].data = [activeClients, inactiveClients, atRiskClients];
+                clientesChartInstance.update();
+            }
+        }
     }
 
     function mostrarMensajeLoginRequerido() {
@@ -1606,6 +1748,14 @@ function showConfirmModal(message, callback) {
                             renderProductTable();
                             renderCatalog(selectedCategory);
                             updateDashboardStats();
+
+                            if (isAdmin) {
+                                registrarActividadUsuario(
+                                    'producto_eliminado',
+                                    'Eliminó el producto: ' + productName,
+                                    { producto: productName }
+                                );
+                            }
                         }
                     }
                 });
@@ -1882,6 +2032,14 @@ function showConfirmModal(message, callback) {
                         saveClients();
                         showAdminPage('clientes');
                         renderClientsTable();
+
+                        if (isAdmin) {
+                            registrarActividadUsuario(
+                                'cliente_eliminado',
+                                'Eliminó al cliente: ' + clientName,
+                                { cliente: clientName }
+                            );
+                        }
                     }
                 });
             });
@@ -1946,10 +2104,18 @@ function showConfirmModal(message, callback) {
                         clients.splice(idx, 1);
                         saveClients();
                         renderClientsTable();
+
+                        if (isAdmin) {
+                            registrarActividadUsuario(
+                                'cliente_eliminado',
+                                'Eliminó al cliente: ' + clientName,
+                                { cliente: clientName }
+                            );
+                        }
                     }
                 });
             });
-        });
+        });   
     }
 
     function openClientForm(idx) {
@@ -2046,6 +2212,14 @@ function showConfirmModal(message, callback) {
                 order.status = getNextOrderStatus(order.status);
                 saveOrders();
                 renderOrdersTable();
+
+                if (isAdmin) {
+                    registrarActividadUsuario(
+                        'pedido_actualizado',
+                        'Cambió el estado del pedido #' + order.id + ' a ' + order.status,
+                        { pedido: order.id, estado: order.status }
+                    );
+                }
             });
         });
     }
@@ -2100,6 +2274,14 @@ function showConfirmModal(message, callback) {
                         savePromociones();
                         renderPromotionsAdmin();
                         renderPublicPromotions();
+
+                        if (isAdmin) {
+                            registrarActividadUsuario(
+                                'promocion_eliminada',
+                                'Eliminó la promoción: ' + promoName,
+                                { promocion: promoName }
+                            );
+                        }
                     }
                 });
             });
@@ -2208,6 +2390,22 @@ function showConfirmModal(message, callback) {
             showFormMessage(msg, 'Promoción actualizada exitosamente.', 'success');
         }
 
+        if (isAdmin) {
+            if (index === '') {
+                registrarActividadUsuario(
+                    'promocion_creada',
+                    'Creó la promoción: ' + name,
+                    { promocion: name, descuento: discount, estado: status }
+                );
+            } else {
+                registrarActividadUsuario(
+                    'promocion_editada',
+                    'Editó la promoción: ' + name,
+                    { promocion: name, descuento: discount, estado: status }
+                );
+            }
+        }
+
         savePromociones();
         renderPromotionsAdmin();
         renderPublicPromotions();
@@ -2295,7 +2493,7 @@ function showConfirmModal(message, callback) {
         communityComments.unshift(newComment);
         saveComments();
         renderCommunityComments();
-        
+        registrarActividadUsuario('comentario', 'Publicó un comentario: "' + text.substring(0, 50) + '"', { comentario: text });
         var feedback = document.getElementById('community-feedback');
         if (feedback) {
             showFormMessage(feedback, '¡Comentario publicado exitosamente!', 'success');
@@ -2464,8 +2662,8 @@ function showConfirmModal(message, callback) {
                     communityComments.splice(idx, 1);
                     saveComments();
                     renderMisComentarios();
-                    renderCommunityComments();
-                    
+                    renderCommunityComments(); 
+                    registrarActividadUsuario('comentario_eliminado', 'Eliminó un comentario de la comunidad', {});
                     var feedback = document.getElementById('mis-comentarios-feedback');
                     if (feedback) {
                         showFormMessage(feedback, 'Comentario eliminado.', 'success');
@@ -2700,6 +2898,8 @@ function showConfirmModal(message, callback) {
         userPublications.push(newPublication);
         savePublications();
         
+        registrarActividadUsuario('publicacion', 'Publicó el producto "' + nombre + '" en el marketplace', { producto: nombre, precio: precioNum });
+        
         renderMisPublicaciones();
         renderMarketplace();
 
@@ -2821,43 +3021,42 @@ function showConfirmModal(message, callback) {
         showPage('publicar-producto');
     }
 
-    function eliminarPublicacion(id) {
-        var pub = null;
-        for (var i = 0; i < userPublications.length; i++) {
-            if (userPublications[i].id === id) {
-                pub = userPublications[i];
-                break;
+function eliminarPublicacion(id) {
+    var pub = null;
+    for (var i = 0; i < userPublications.length; i++) {
+        if (userPublications[i].id === id) {
+            pub = userPublications[i];
+            break;
+        }
+    }
+    if (!pub) return;
+
+    showConfirmModal('¿Eliminar la publicación "' + (pub.nombre || 'Producto') + '"?', function(confirmed) {
+        if (confirmed) {
+            var idx = -1;
+            for (var i = 0; i < userPublications.length; i++) {
+                if (userPublications[i].id === id) {
+                    idx = i;
+                    break;
+                }
+            }
+            if (idx !== -1) {
+                var nombrePub = pub.nombre || 'Producto';
+                userPublications.splice(idx, 1);
+                savePublications();
+                renderMisPublicaciones();
+                registrarActividadUsuario(
+                    'publicacion_eliminada',
+                    'Eliminó la publicación "' + nombrePub + '"',
+                    { producto: nombrePub }
+                );
             }
         }
-        if (!pub) return;
-
-        showConfirmModal('¿Eliminar la publicación "' + (pub.nombre || 'Producto') + '"?', function(confirmed) {
-            if (confirmed) {
-                var idx = -1;
-                for (var i = 0; i < userPublications.length; i++) {
-                    if (userPublications[i].id === id) {
-                        idx = i;
-                        break;
-                    }
-                }
-                if (idx !== -1) {
-                    userPublications.splice(idx, 1);
-                    savePublications();
-                    renderMisPublicaciones();
-                }
-            }
-        });
-    }
-
+    });
+}
     // ============================================================
     // SUBASTA - FUNCIONALIDAD
     // ============================================================
-
-    let subastaActiva = false;
-    let subastaTimerId = null;
-    let subastaTiempoRestante = 1800;
-    let subastaOfertaActual = 6.00;
-    let subastaOfertas = [];
 
     function iniciarSubasta() {
         subastaActiva = true;
@@ -3027,6 +3226,7 @@ function showConfirmModal(message, callback) {
         subastaOfertas.push(nuevaOferta);
         subastaOfertaActual = ofertaValor;
         saveAuction();
+        registrarActividadUsuario('oferta', 'Hizo una oferta de $' + ofertaValor.toFixed(2) + ' en la subasta', { monto: ofertaValor });
         
         const ofertaActual = document.getElementById('subasta-oferta-actual-main');
         const ofertasCount = document.getElementById('subasta-ofertas-count-main');
@@ -3393,6 +3593,24 @@ function showConfirmModal(message, callback) {
                 showFormMessage(msg, 'Producto agregado correctamente.', 'success');
             }
 
+            // 👇 REGISTRAR ACTIVIDAD DEL ADMIN (AQUÍ, FUERA DEL IF/ELSE)
+            if (isAdmin) {
+                if (editingProductId) {
+                    registrarActividadUsuario(
+                        'producto_editado',
+                        'Editó el producto: ' + name,
+                        { producto: name, precio: price, categoria: category, stock: stock }
+                    );
+                } else {
+                    registrarActividadUsuario(
+                        'producto_creado',
+                        'Creó el producto: ' + name,
+                        { producto: name, precio: price, categoria: category, stock: stock }
+                    );
+                }
+            }
+            // 👆 HASTA AQUÍ
+
             saveProducts();
             renderProductTable();
             renderCatalog(selectedCategory);
@@ -3564,6 +3782,22 @@ function showConfirmModal(message, callback) {
                 showFormMessage(msg, 'Cliente creado correctamente.', 'success');
             }
 
+            if (isAdmin) {
+                if (editingClientId !== null && editingClientId >= 0) {
+                    registrarActividadUsuario(
+                        'cliente_editado',
+                        'Editó al cliente: ' + name,
+                        { cliente: name, email: email, telefono: phone }
+                    );
+                } else {
+                    registrarActividadUsuario(
+                        'cliente_creado',
+                        'Agregó al cliente: ' + name,
+                        { cliente: name, email: email, telefono: phone }
+                    );
+                }
+            }
+
             saveClients();
             updateDashboardStats();
             setTimeout(function() {
@@ -3660,6 +3894,7 @@ function showConfirmModal(message, callback) {
                 const result = await apiAuth('register', { name: name, email: email, password: password });
                 currentUser.name = result.user.name;
                 currentUser.email = result.user.email;
+                currentUser.role = result.user.role || 'usuario'; 
             } catch (error) {
                 showFormMessage(msg, error.message, 'error');
                 return;
@@ -3673,6 +3908,7 @@ function showConfirmModal(message, callback) {
             currentUser.name = name;
             currentUser.email = email;
             saveCurrentUser();
+            registrarActividadUsuario('registro', name + ' se registró en la plataforma', { email: email });
             
             document.getElementById('registro-nombre').value = '';
             document.getElementById('registro-email').value = '';
@@ -3732,6 +3968,9 @@ function showConfirmModal(message, callback) {
                 return;
             }
 
+            // ============================================
+            // LOGIN DE ADMIN
+            // ============================================
             if (document.body.classList.contains('admin-page-shell')) {
                 try {
                     const result = await apiAuth('login', { email: email, password: password });
@@ -3740,15 +3979,26 @@ function showConfirmModal(message, callback) {
                     }
                     currentUser.name = result.user.name;
                     currentUser.email = result.user.email;
+                    currentUser.role = result.user.role;
                     saveCurrentUser();
+
+                    // 👇 REGISTRAR ACTIVIDAD DEL ADMIN
+                    registrarActividadUsuario(
+                        'login_admin',
+                        'Inició sesión como administrador',
+                        { email: currentUser.email, role: currentUser.role }
+                    );
                 } catch (error) {
                     showFormMessage(msg, error.message, 'error');
                     return;
                 }
+
                 isLoggedIn = true;
                 isAdmin = true;
                 adminEmail = email;
                 document.dispatchEvent(new CustomEvent('admin-authenticated'));
+                var topLogoutBtn = document.getElementById('admin-top-logout-btn');
+                if (topLogoutBtn) topLogoutBtn.style.display = 'flex';
                 if (msg) showFormMessage(msg, 'Inicio de sesión exitoso.', 'success');
                 setTimeout(function() {
                     updateNavVisibility();
@@ -3762,10 +4012,14 @@ function showConfirmModal(message, callback) {
                 return;
             }
 
+            // ============================================
+            // LOGIN DE USUARIO NORMAL
+            // ============================================
             try {
                 const result = await apiAuth('login', { email: email, password: password });
                 currentUser.name = result.user.name;
                 currentUser.email = result.user.email;
+                currentUser.role = result.user.role;
             } catch (error) {
                 showFormMessage(msg, error.message, 'error');
                 return;
@@ -3773,23 +4027,24 @@ function showConfirmModal(message, callback) {
             isLoggedIn = true;
             isAdmin = false;
             saveCurrentUser();
+            registrarActividadUsuario('login', 'Inició sesión en la plataforma', {});
             if (msg) showFormMessage(msg, 'Inicio de sesión exitoso.', 'success');
             document.getElementById('login-email').value = '';
             document.getElementById('login-password').value = '';
-            
+
             var redirectTo = redirectAfterLogin;
             var savedCart = cartBeforeLogin;
-            
+
             if (redirectTo === 'checkout' && savedCart) {
                 if (savedCart && savedCart.length > 0) {
                     cart = savedCart;
                     saveCart();
                     updateCartUI();
                 }
-                
+
                 redirectAfterLogin = null;
                 cartBeforeLogin = null;
-                
+
                 setTimeout(function() {
                     updateNavVisibility();
                     processPayment();
@@ -3802,6 +4057,7 @@ function showConfirmModal(message, callback) {
             }
         });
     }
+
 
     var adminLoginBtn = document.getElementById('admin-login-btn');
     if (adminLoginBtn) {
@@ -3873,19 +4129,58 @@ function showConfirmModal(message, callback) {
             }, 2000);
         });
     }
+// Logout desde el botón superior derecho
+var topLogoutBtn = document.getElementById('admin-top-logout-btn');
+if (topLogoutBtn) {
+    topLogoutBtn.addEventListener('click', function(e) {
+        e.preventDefault();
 
-    var adminLogoutBtn = document.getElementById('nav-admin-logout');
-    if (adminLogoutBtn) {
-        adminLogoutBtn.addEventListener('click', function() {
-            isLoggedIn = false;
-            isAdmin = false;
-            adminEmail = '';
-            authToken = '';
-            window.deliciasAuthToken = '';
-            updateNavVisibility();
-            showPage('inicio');
-        });
+        if (typeof window.showConfirmModal === 'function') {
+            window.showConfirmModal('¿Cerrar sesión?', function(confirmed) {
+                if (confirmed) ejecutarLogoutAdmin();
+            });
+        } else {
+            if (confirm('¿Cerrar sesión?')) ejecutarLogoutAdmin();
+        }
+    });
+}
+
+
+var adminLogoutBtn = document.getElementById('nav-admin-logout');
+if (adminLogoutBtn) {
+    adminLogoutBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        ejecutarLogoutAdmin();
+    });
+}
+
+function ejecutarLogoutAdmin() {
+    isLoggedIn = false;
+    isAdmin = false;
+    adminEmail = '';
+    authToken = '';
+    window.deliciasAuthToken = '';
+
+    var topLogoutBtn = document.getElementById('admin-top-logout-btn');
+    if (topLogoutBtn) topLogoutBtn.style.display = 'none';
+
+    var adminLoginPage = document.getElementById('page-login');
+    var adminMainPage = document.getElementById('page-admin');
+    if (adminMainPage) adminMainPage.classList.remove('active');
+    if (adminLoginPage) adminLoginPage.classList.add('active');
+
+    var loginEmail = document.getElementById('login-email');
+    var loginPassword = document.getElementById('login-password');
+    if (loginEmail) loginEmail.value = '';
+    if (loginPassword) loginPassword.value = '';
+
+    var loginMessage = document.getElementById('login-message');
+    if (loginMessage) {
+        loginMessage.classList.add('hidden');
+        loginMessage.textContent = '';
+        loginMessage.className = 'hidden';
     }
+}
 
     var editProfileBtn = document.getElementById('edit-profile-btn');
     if (editProfileBtn) {
@@ -3958,6 +4253,7 @@ function showConfirmModal(message, callback) {
             updateNavVisibility();
             document.getElementById('edit-profile-modal').style.display = 'none';
             showFormMessage(document.getElementById('profile-message'), 'Perfil actualizado correctamente.', 'success');
+            registrarActividadUsuario('perfil', 'Actualizó su perfil', {});
         });
     }
 
@@ -4527,8 +4823,8 @@ function showConfirmModal(message, callback) {
             metodo: metodo
         };
         
-        // 6. Mostrar el ticket
         mostrarTicket(compra);
+        registrarActividadUsuario('compra', 'Realizó una compra por $' + total.toFixed(2), { total: total, items: items.length });
     });
 
     // ============================================================
@@ -5350,6 +5646,14 @@ document.addEventListener('keydown', function(e) {
         renderHistorialCompras();
     }
     showPage(document.body.classList.contains('admin-page-shell') ? 'login' : 'inicio');
-    loadApiData();
+    
+    // 👇 MODIFICADO: Esperar a que loadApiData termine y luego actualizar el dashboard
+    loadApiData().then(function() {
+        updateDashboardStats();
+    }).catch(function(error) {
+        console.error('Error al cargar los datos de la API:', error);
+        // Aún así intentamos actualizar el dashboard con los datos que haya
+        updateDashboardStats();
+    });
 
 });
