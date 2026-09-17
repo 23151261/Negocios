@@ -495,6 +495,8 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
         dashboard: document.getElementById('admin-dashboard'),
         productos: document.getElementById('admin-productos'),
         'product-form': document.getElementById('admin-product-form'),
+        proveedores: document.getElementById('admin-proveedores'),
+        'proveedor-form': document.getElementById('admin-proveedor-form'), 
         pedidos: document.getElementById('admin-pedidos'),
         promociones: document.getElementById('admin-promociones'),
         'promo-form': document.getElementById('admin-promo-form'),
