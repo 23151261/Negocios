@@ -71,16 +71,48 @@
                 </div>
             </div>
             <ul class="sidebar-menu">
-                <li><a href="#" class="active" data-admin-page="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
-                <li><a href="#" data-admin-page="productos"><i class="fas fa-box"></i> Productos</a></li>
-                <li><a href="#" data-admin-page="proveedores"><i class="fas fa-truck"></i> Proveedores</a></li>
-                <li><a href="#" data-admin-page="pedidos"><i class="fas fa-shopping-bag"></i> Pedidos</a></li>
-                <li><a href="#" data-admin-page="promociones"><i class="fas fa-tags"></i> Promociones</a></li>
-                <li><a href="#" data-admin-page="clientes"><i class="fas fa-users"></i> Clientes</a></li>
-                <li><a href="#" data-admin-page="mi-actividad"><i class="fas fa-history"></i> Mi actividad</a></li>
-                <li><a href="#" data-admin-page="actividad-usuarios"><i class="fas fa-users-cog"></i> Actividad usuarios</a></li>
-                <li><a href="#" data-admin-page="usuarios"><i class="fas fa-user-cog"></i> Usuarios</a></li>
-                <li><a href="#" data-admin-page="reportes"><i class="fas fa-file-alt"></i> Reportes</a></li>
+                <li><a href="#" class="active" data-admin-page="dashboard"><i class="fas fa-home"></i> Inicio</a></li>
+
+                <!-- SECCIÓN CRM -->
+                <li class="menu-group-header">
+                    <button type="button" class="menu-group-toggle" id="crm-menu-toggle" aria-expanded="true">
+                        <span><i class="fas fa-users-cog"></i> CRM</span>
+                        <i class="fas fa-chevron-down group-arrow"></i>
+                    </button>
+                    <ul class="submenu" id="crm-submenu">
+                        <li><a href="#" data-admin-page="dashboard"><i class="fas fa-chart-pie"></i> Dashboard CRM</a></li>
+                        <li><a href="#" data-admin-page="clientes"><i class="fas fa-users"></i> Clientes</a></li>
+                        <li><a href="#" data-admin-page="pedidos"><i class="fas fa-shopping-bag"></i> Pedidos</a></li>
+                        <li><a href="#" data-admin-page="promociones"><i class="fas fa-tags"></i> Promociones</a></li>
+                        <li><a href="#" data-admin-page="mi-actividad"><i class="fas fa-history"></i> Mi actividad</a></li>
+                        <li><a href="#" data-admin-page="actividad-usuarios"><i class="fas fa-user-clock"></i> Actividad usuarios</a></li>
+                        <li><a href="#" data-admin-page="productos"><i class="fas fa-utensils"></i> Menú Restaurante</a></li>
+                        <li><a href="#" data-admin-page="reportes"><i class="fas fa-file-alt"></i> Reportes CRM</a></li>
+                    </ul>
+                </li>
+
+                <!-- SECCIÓN SCM (debajo de CRM) -->
+                <li class="menu-group-header">
+                    <button type="button" class="menu-group-toggle active-group" id="scm-menu-toggle" aria-expanded="true">
+                        <span><i class="fas fa-boxes"></i> SCM</span>
+                        <i class="fas fa-chevron-down group-arrow"></i>
+                    </button>
+                    <ul class="submenu" id="scm-submenu">
+                        <li><a href="#" data-admin-page="scm-inicio"><i class="fas fa-th-large"></i> Menú SCM</a></li>
+                        <li><a href="#" data-admin-page="scm-productos"><i class="fas fa-box"></i> Productos</a></li>
+                        <li><a href="#" data-admin-page="scm-proveedores"><i class="fas fa-truck"></i> Proveedores</a></li>
+                        <li><a href="#" data-admin-page="scm-inventario"><i class="fas fa-warehouse"></i> Inventario</a></li>
+                        <li><a href="#" data-admin-page="scm-movimientos"><i class="fas fa-exchange-alt"></i> Movimientos</a></li>
+                        <li><a href="#" data-admin-page="scm-pedidos"><i class="fas fa-clipboard-list"></i> Pedidos</a></li>
+                        <li><a href="#" data-admin-page="scm-logistica"><i class="fas fa-random"></i> Logística (Push/Pull)</a></li>
+                        <li><a href="#" data-admin-page="scm-madurez"><i class="fas fa-chart-line"></i> Nivel de madurez</a></li>
+                        <li><a href="#" data-admin-page="scm-reportes"><i class="fas fa-chart-bar"></i> Reportes SCM</a></li>
+                    </ul>
+                </li>
+
+                <!-- USUARIOS Y CONFIGURACIÓN -->
+                <li><a href="#" data-admin-page="usuarios"><i class="fas fa-user-shield"></i> Usuarios</a></li>
+                <li><a href="#" data-admin-page="configuracion"><i class="fas fa-cog"></i> Configuración</a></li>
             </ul>
         </aside>
 
@@ -90,11 +122,6 @@
             <!-- ===== DASHBOARD ===== -->
             <div id="admin-dashboard" class="admin-page active">
                 <div class="admin-dashboard-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-truck"></i></div>
-                        <div class="stat-number" id="stat-providers">0</div>
-                        <div class="stat-label">Proveedores activos</div>
-                    </div>
                     <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-friends"></i></div><div class="stat-number" id="stat-active-clients">0</div><div class="stat-label">Clientes activos</div></div>
                     <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-clock"></i></div><div class="stat-number" id="stat-inactive-clients">0</div><div class="stat-label">Clientes inactivos</div></div>
                     <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-times"></i></div><div class="stat-number" id="stat-at-risk-clients">0</div><div class="stat-label">En riesgo de desaparecer</div></div>
@@ -193,90 +220,7 @@
                 </div>
             </div>
 
-            <!-- ===== PROVEEDORES ===== -->
-            <div id="admin-proveedores" class="admin-page hidden">
-                <div class="product-table-container">
-                    <div class="table-header">
-                        <div class="search-box">
-                            <input type="text" id="provider-search" placeholder="Buscar proveedor...">
-                            <select id="provider-status-filter">
-                                <option value="todos">Todos los estados</option>
-                                <option value="activo">Activo</option>
-                                <option value="inactivo">Inactivo</option>
-                            </select>
-                        </div>
-                        <button class="btn-primary" id="admin-add-provider-btn">
-                            <i class="fas fa-plus"></i> Agregar proveedor
-                        </button>
-                    </div>
-                    <div style="overflow-x:auto;">
-                        <table class="product-table" id="provider-table">
-                            <thead>
-                                <tr>
-                                    <th>Proveedor</th>
-                                    <th>Contacto</th>
-                                    <th>Teléfono</th>
-                                    <th>Email</th>
-                                    <th>Productos</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="provider-table-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
 
-            <!-- ===== FORM PROVEEDOR ===== -->
-            <div id="admin-proveedor-form" class="admin-page hidden">
-                <div class="product-form-container">
-                    <h3><i class="fas fa-truck"></i> <span id="provider-form-title">Agregar proveedor</span></h3>
-                    <form id="provider-form" onsubmit="return false;">
-                        <input type="hidden" id="provider-form-id">
-                        <div class="form-group">
-                            <label for="provider-form-name">Nombre de la empresa</label>
-                            <input id="provider-form-name" placeholder="Ej: Distribuidora La Estrella" required>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="provider-form-contact">Persona de contacto</label>
-                                <input id="provider-form-contact" placeholder="Ej: Juan Pérez">
-                            </div>
-                            <div class="form-group">
-                                <label for="provider-form-phone">Teléfono</label>
-                                <input id="provider-form-phone" placeholder="Ej: 555-123-4567">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="provider-form-email">Correo electrónico</label>
-                            <input type="email" id="provider-form-email" placeholder="proveedor@ejemplo.com">
-                        </div>
-                        <div class="form-group">
-                            <label for="provider-form-address">Dirección</label>
-                            <textarea id="provider-form-address" placeholder="Dirección del proveedor"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="provider-form-products">Productos que suministra</label>
-                            <input id="provider-form-products" placeholder="Ej: Pizzas, Bebidas, Lácteos">
-                        </div>
-                        <div class="form-group">
-                            <label for="provider-form-status">Estado</label>
-                            <select id="provider-form-status">
-                                <option value="activo">Activo</option>
-                                <option value="inactivo">Inactivo</option>
-                            </select>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary" id="provider-form-save-btn">
-                                <i class="fas fa-save"></i> Guardar
-                            </button>
-                            <button type="button" class="btn-secondary" id="provider-form-cancel-btn">Cancelar</button>
-                        </div>
-                        <div id="provider-form-message" class="hidden alert-message"></div>
-                    </form>
-                </div>
-            </div>
 
             <!-- ===== PEDIDOS ===== -->
             <div id="admin-pedidos" class="admin-page hidden">
@@ -464,8 +408,744 @@
                 </div>
             </div>
 
+            <!-- ===== CONFIGURACIÓN ===== -->
+            <div id="admin-configuracion" class="admin-page hidden">
+                <div class="product-table-container">
+                    <div class="table-header">
+                        <h3><i class="fas fa-cog"></i> Configuración del Sistema</h3>
+                    </div>
+                    <div style="padding:1.5rem;max-width:600px;">
+                        <div class="form-group" style="margin-bottom:1.2rem;">
+                            <label><strong>Nombre del Negocio</strong></label>
+                            <input type="text" value="DeliciasResto / Artesanía MX" style="width:100%;padding:0.6rem;border-radius:10px;border:1px solid #cbd5e1;">
+                        </div>
+                        <div class="form-group" style="margin-bottom:1.2rem;">
+                            <label><strong>Moneda</strong></label>
+                            <select style="width:100%;padding:0.6rem;border-radius:10px;border:1px solid #cbd5e1;">
+                                <option value="MXN" selected>MXN - Peso Mexicano ($)</option>
+                                <option value="USD">USD - Dólar Estadounidense ($)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom:1.5rem;">
+                            <label><strong>Notificaciones de Stock Mínimo</strong></label>
+                            <div style="margin-top:0.4rem;">
+                                <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+                                    <input type="checkbox" checked style="width:18px;height:18px;accent-color:#0d9488;">
+                                    <span>Alertar cuando un producto llegue a su stock mínimo (Estrategia PUSH)</span>
+                                </label>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-primary" onclick="alert('Configuración guardada correctamente.')"><i class="fas fa-save"></i> Guardar cambios</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+                 MÓDULO SCM (Cadena de Suministros - Pantallas 1 a 14)
+                 ============================================================ -->
+
+            <!-- PANTALLA 1: INICIO / MENÚ SCM -->
+            <div id="admin-scm-inicio" class="admin-page hidden">
+                <div class="scm-page-header">
+                    <div>
+                        <h2 class="scm-header-title"><i class="fas fa-boxes"></i> SCM - Cadena de Suministros</h2>
+                        <div class="scm-header-subtitle">Acceso al módulo de cadena de suministros y gestión integral de logística.</div>
+                    </div>
+                    <button class="btn-secondary" onclick="window.switchScmPage('scm-madurez')">
+                        <i class="fas fa-chart-line"></i> Nivel de madurez
+                    </button>
+                </div>
+
+                <div class="scm-menu-grid">
+                    <div class="scm-menu-card" onclick="window.switchScmPage('scm-productos')">
+                        <div class="scm-menu-icon"><i class="fas fa-box"></i></div>
+                        <div class="scm-menu-title">Productos</div>
+                        <div class="scm-menu-desc">Gestión de catálogo, costos y estrategias</div>
+                    </div>
+                    <div class="scm-menu-card" onclick="window.switchScmPage('scm-proveedores')">
+                        <div class="scm-menu-icon"><i class="fas fa-truck"></i></div>
+                        <div class="scm-menu-title">Proveedores</div>
+                        <div class="scm-menu-desc">Administrar proveedores y contactos</div>
+                    </div>
+                    <div class="scm-menu-card" onclick="window.switchScmPage('scm-inventario')">
+                        <div class="scm-menu-icon"><i class="fas fa-warehouse"></i></div>
+                        <div class="scm-menu-title">Inventario</div>
+                        <div class="scm-menu-desc">Control de existencias y stock mínimo</div>
+                    </div>
+                    <div class="scm-menu-card" onclick="window.switchScmPage('scm-pedidos')">
+                        <div class="scm-menu-icon"><i class="fas fa-clipboard-list"></i></div>
+                        <div class="scm-menu-title">Pedidos</div>
+                        <div class="scm-menu-desc">Reposición y suministro de materiales</div>
+                    </div>
+                    <div class="scm-menu-card" onclick="window.switchScmPage('scm-logistica')">
+                        <div class="scm-menu-icon"><i class="fas fa-random"></i></div>
+                        <div class="scm-menu-title">Logística</div>
+                        <div class="scm-menu-desc">Estrategias Push / Pull y comparativas</div>
+                    </div>
+                    <div class="scm-menu-card" onclick="window.switchScmPage('scm-reportes')">
+                        <div class="scm-menu-icon"><i class="fas fa-chart-bar"></i></div>
+                        <div class="scm-menu-title">Reportes</div>
+                        <div class="scm-menu-desc">Métricas y análisis de la cadena</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANTALLA 2: PRODUCTOS SCM (Listado) -->
+            <div id="admin-scm-productos" class="admin-page hidden">
+                <div class="product-table-container">
+                    <div class="scm-page-header">
+                        <div>
+                            <h3 class="scm-header-title"><i class="fas fa-box"></i> Productos SCM</h3>
+                            <div class="scm-header-subtitle">Visualiza, busca y administra productos de la cadena de suministros.</div>
+                        </div>
+                        <button class="btn-primary" onclick="window.openScmProductModal()">
+                            <i class="fas fa-plus"></i> Nuevo producto
+                        </button>
+                    </div>
+
+                    <div class="table-header">
+                        <div class="search-box">
+                            <input type="text" id="scm-product-search" placeholder="Buscar producto...">
+                            <select id="scm-product-cat-filter">
+                                <option value="todas">Todas las categorías</option>
+                            </select>
+                            <select id="scm-product-strat-filter">
+                                <option value="todas">Todas las estrategias</option>
+                                <option value="PUSH">PUSH</option>
+                                <option value="PULL">PULL</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x:auto;">
+                        <table class="product-table">
+                            <thead>
+                                <tr>
+                                    <th>Imagen</th>
+                                    <th>Nombre</th>
+                                    <th>Categoría</th>
+                                    <th>Stock</th>
+                                    <th>Stock mín.</th>
+                                    <th>Estrategia</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scm-products-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANTALLA 4: PROVEEDORES SCM (Listado) -->
+            <div id="admin-scm-proveedores" class="admin-page hidden">
+                <div class="product-table-container">
+                    <div class="scm-page-header">
+                        <div>
+                            <h3 class="scm-header-title"><i class="fas fa-truck"></i> Proveedores SCM</h3>
+                            <div class="scm-header-subtitle">Visualiza y administra proveedores de la cadena de suministro.</div>
+                        </div>
+                        <button class="btn-primary" onclick="window.openScmProviderModal()">
+                            <i class="fas fa-plus"></i> Nuevo proveedor
+                        </button>
+                    </div>
+
+                    <div class="table-header">
+                        <div class="search-box">
+                            <input type="text" id="scm-provider-search" placeholder="Buscar proveedor...">
+                        </div>
+                    </div>
+
+                    <div style="overflow-x:auto;">
+                        <table class="product-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Contacto</th>
+                                    <th>Correo</th>
+                                    <th>Teléfono</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scm-providers-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANTALLA 6: INVENTARIO (Vista General) -->
+            <div id="admin-scm-inventario" class="admin-page hidden">
+                <div class="product-table-container">
+                    <div class="scm-page-header">
+                        <div>
+                            <h3 class="scm-header-title"><i class="fas fa-warehouse"></i> Inventario</h3>
+                            <div class="scm-header-subtitle">Consulta existencias y estado de stock en tiempo real.</div>
+                        </div>
+                        <button class="btn-primary" onclick="window.openScmMovementModal()">
+                            <i class="fas fa-exchange-alt"></i> Registrar movimiento
+                        </button>
+                    </div>
+
+                    <div class="table-header">
+                        <div class="search-box">
+                            <input type="text" id="scm-inventory-search" placeholder="Buscar producto...">
+                            <select id="scm-inventory-status-filter">
+                                <option value="todos">Todos los estados</option>
+                                <option value="normal">Normal</option>
+                                <option value="bajo">Stock bajo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x:auto;">
+                        <table class="product-table">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Stock actual</th>
+                                    <th>Stock mínimo</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scm-inventory-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANTALLA 7: MOVIMIENTOS DE INVENTARIO -->
+            <div id="admin-scm-movimientos" class="admin-page hidden">
+                <div class="product-table-container">
+                    <div class="scm-page-header">
+                        <div>
+                            <h3 class="scm-header-title"><i class="fas fa-exchange-alt"></i> Movimientos de inventario</h3>
+                            <div class="scm-header-subtitle">Registra y consulta entradas y salidas de mercancía.</div>
+                        </div>
+                        <button class="btn-primary" onclick="window.openScmMovementModal()">
+                            <i class="fas fa-plus"></i> Nuevo movimiento
+                        </button>
+                    </div>
+
+                    <div class="table-header">
+                        <div class="search-box">
+                            <select id="scm-movement-type-filter">
+                                <option value="todos">Todos los tipos</option>
+                                <option value="Entrada">Entrada</option>
+                                <option value="Salida">Salida</option>
+                            </select>
+                            <select id="scm-movement-prod-filter">
+                                <option value="todos">Todos los productos</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x:auto;">
+                        <table class="product-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Producto</th>
+                                    <th>Tipo</th>
+                                    <th>Cantidad</th>
+                                    <th>Motivo</th>
+                                    <th>Usuario</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scm-movements-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANTALLAS 9 Y 10: LOGÍSTICA – PUSH VS PULL -->
+            <div id="admin-scm-logistica" class="admin-page hidden">
+                <div class="scm-page-header">
+                    <div>
+                        <h3 class="scm-header-title"><i class="fas fa-random"></i> Logística – Estrategia de reposición</h3>
+                        <div class="scm-header-subtitle">Define estrategia Push o Pull por producto y analiza comparativas.</div>
+                    </div>
+                </div>
+
+                <div class="scm-logistics-grid">
+                    <!-- Configurar estrategia -->
+                    <div class="scm-strategy-box">
+                        <h4 style="font-size:1.1rem;margin-bottom:1rem;color:#1e293b;"><i class="fas fa-sliders-h" style="color:#0d9488;"></i> Configurar estrategia</h4>
+                        
+                        <div class="form-group" style="margin-bottom:1rem;">
+                            <label for="scm-strategy-product-select"><strong>Producto</strong></label>
+                            <select id="scm-strategy-product-select" class="form-control" style="width:100%;padding:0.6rem;border-radius:10px;border:1px solid #cbd5e1;"></select>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom:1.5rem;">
+                            <label><strong>Estrategia</strong></label>
+                            <div style="display:flex;gap:1.5rem;margin-top:0.4rem;">
+                                <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;">
+                                    <input type="radio" name="scm-logistics-strat" id="scm-strat-push-radio" value="PUSH" checked>
+                                    <span><strong>PUSH</strong> (producción/compra anticipada)</span>
+                                </label>
+                                <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;">
+                                    <input type="radio" name="scm-logistics-strat" id="scm-strat-pull-radio" value="PULL">
+                                    <span><strong>PULL</strong> (según demanda real)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="scm-strategy-info-card push">
+                            <div style="font-size:1.5rem;color:#b45309;"><i class="fas fa-box-open"></i></div>
+                            <div>
+                                <strong style="color:#92400e;">PUSH</strong>
+                                <p style="font-size:0.85rem;color:#78350f;margin-top:0.2rem;">Se genera pedido automáticamente cuando el stock llega al nivel mínimo.</p>
+                            </div>
+                        </div>
+
+                        <div class="scm-strategy-info-card pull">
+                            <div style="font-size:1.5rem;color:#0284c7;"><i class="fas fa-hand-holding"></i></div>
+                            <div>
+                                <strong style="color:#075985;">PULL</strong>
+                                <p style="font-size:0.85rem;color:#0c4a6e;margin-top:0.2rem;">Se genera pedido solo bajo pedido de cliente o demanda confirmada.</p>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:1.5rem;text-align:right;">
+                            <button type="button" class="btn-primary" id="scm-save-strategy-btn">
+                                <i class="fas fa-save"></i> Guardar estrategia
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Comparativa Push vs Pull -->
+                    <div class="scm-strategy-box">
+                        <h4 style="font-size:1.1rem;margin-bottom:1rem;color:#1e293b;"><i class="fas fa-balance-scale" style="color:#0d9488;"></i> Comparativa Push vs Pull</h4>
+                        
+                        <div class="scm-strategy-counters">
+                            <div class="scm-counter-pill push">
+                                <div style="font-size:1.5rem;color:#f59e0b;"><i class="fas fa-arrow-down"></i></div>
+                                <div>
+                                    <div style="font-size:0.8rem;color:#92400e;font-weight:700;">PUSH</div>
+                                    <div style="font-size:1.3rem;font-weight:800;color:#78350f;"><span id="scm-push-count">3</span> productos</div>
+                                </div>
+                            </div>
+                            <div class="scm-counter-pill pull">
+                                <div style="font-size:1.5rem;color:#0284c7;"><i class="fas fa-arrow-up"></i></div>
+                                <div>
+                                    <div style="font-size:0.8rem;color:#075985;font-weight:700;">PULL</div>
+                                    <div style="font-size:1.3rem;font-weight:800;color:#0c4a6e;"><span id="scm-pull-count">2</span> productos</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="overflow-x:auto;">
+                            <table class="product-table">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Categoría</th>
+                                        <th>Stock</th>
+                                        <th>Stock mín.</th>
+                                        <th>Estrategia</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="scm-logistics-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANTALLA 11: PEDIDOS SCM -->
+            <div id="admin-scm-pedidos" class="admin-page hidden">
+                <div class="product-table-container">
+                    <div class="scm-page-header">
+                        <div>
+                            <h3 class="scm-header-title"><i class="fas fa-clipboard-list"></i> Pedidos SCM</h3>
+                            <div class="scm-header-subtitle">Gestión de pedidos de reposición o suministro a proveedores.</div>
+                        </div>
+                        <button class="btn-primary" onclick="window.openScmOrderModal()">
+                            <i class="fas fa-plus"></i> Generar pedido
+                        </button>
+                    </div>
+
+                    <div class="table-header">
+                        <div class="search-box">
+                            <select id="scm-order-status-filter">
+                                <option value="todos">Todos los estados</option>
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="En proceso">En proceso</option>
+                                <option value="Surtido">Surtido</option>
+                                <option value="Cancelado">Cancelado</option>
+                            </select>
+                            <select id="scm-order-type-filter">
+                                <option value="todos">Todos los tipos</option>
+                                <option value="Reposición">Reposición</option>
+                                <option value="Venta">Venta</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x:auto;">
+                        <table class="product-table">
+                            <thead>
+                                <tr>
+                                    <th>Folio</th>
+                                    <th>Fecha</th>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Tipo</th>
+                                    <th>Estado</th>
+                                    <th>Cambiar estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scm-orders-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANTALLA 13: NIVEL DE MADUREZ SCM -->
+            <div id="admin-scm-madurez" class="admin-page hidden">
+                <div class="scm-page-header">
+                    <div>
+                        <h3 class="scm-header-title"><i class="fas fa-chart-line"></i> Nivel de madurez SCM</h3>
+                        <div class="scm-header-subtitle">Evalúa el avance en la implementación de la cadena de suministros.</div>
+                    </div>
+                    <div>
+                        <span style="font-size:0.9rem;color:#64748b;margin-right:0.5rem;">Nivel actual:</span>
+                        <span id="scm-maturity-current-badge" style="padding:0.4rem 0.9rem;border-radius:20px;font-weight:700;font-size:0.85rem;background:#dcfce7;color:#166534;">En desarrollo</span>
+                    </div>
+                </div>
+
+                <div class="scm-maturity-stepper">
+                    <div class="scm-step-item" id="scm-step-1">
+                        <div class="scm-step-title">Inicial</div>
+                        <div class="scm-step-desc">Procesos básicos</div>
+                    </div>
+                    <div class="scm-step-item active" id="scm-step-2">
+                        <div class="scm-step-title">En desarrollo</div>
+                        <div class="scm-step-desc">Integración de procesos</div>
+                    </div>
+                    <div class="scm-step-item" id="scm-step-3">
+                        <div class="scm-step-title">Optimizado</div>
+                        <div class="scm-step-desc">Procesos avanzados</div>
+                    </div>
+                </div>
+
+                <div class="scm-checklist-container">
+                    <h4 style="font-size:1.1rem;color:#1e293b;margin-bottom:0.5rem;"><i class="fas fa-tasks" style="color:#0d9488;"></i> Checklist de avance</h4>
+                    <p style="font-size:0.85rem;color:#64748b;">Marca las fases completadas para actualizar automáticamente el nivel de madurez.</p>
+
+                    <ul class="scm-checklist-list" id="scm-checklist-items"></ul>
+
+                    <div style="background:#f8fafc;border-radius:12px;padding:1.2rem;margin-top:1.5rem;border-left:4px solid #0d9488;">
+                        <strong style="color:#0f172a;display:block;margin-bottom:0.3rem;"><i class="fas fa-info-circle"></i> Descripción del nivel</strong>
+                        <p id="scm-maturity-desc" style="font-size:0.88rem;color:#475569;margin:0;">
+                            El sistema cuenta con los módulos principales funcionando. Se están implementando estrategias logísticas y reportes.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANTALLA 14: REPORTES SCM (Dashboard) -->
+            <div id="admin-scm-reportes" class="admin-page hidden">
+                <div class="scm-page-header">
+                    <div>
+                        <h3 class="scm-header-title"><i class="fas fa-chart-bar"></i> Reportes SCM (Dashboard)</h3>
+                        <div class="scm-header-subtitle">Métricas y análisis en tiempo real de la cadena de suministro.</div>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="scm-reports-kpi-grid">
+                    <div class="scm-kpi-card">
+                        <div class="scm-kpi-icon" style="background:#f0fdfa;color:#0d9488;"><i class="fas fa-box"></i></div>
+                        <div>
+                            <div class="scm-kpi-val" id="scm-kpi-products">0</div>
+                            <div class="scm-kpi-lbl">Productos</div>
+                        </div>
+                    </div>
+                    <div class="scm-kpi-card">
+                        <div class="scm-kpi-icon" style="background:#f0f9ff;color:#0284c7;"><i class="fas fa-truck"></i></div>
+                        <div>
+                            <div class="scm-kpi-val" id="scm-kpi-providers">0</div>
+                            <div class="scm-kpi-lbl">Proveedores</div>
+                        </div>
+                    </div>
+                    <div class="scm-kpi-card">
+                        <div class="scm-kpi-icon" style="background:#fdf4ff;color:#a855f7;"><i class="fas fa-hourglass-half"></i></div>
+                        <div>
+                            <div class="scm-kpi-val" id="scm-kpi-orders">0</div>
+                            <div class="scm-kpi-lbl">Pedidos en proceso</div>
+                        </div>
+                    </div>
+                    <div class="scm-kpi-card">
+                        <div class="scm-kpi-icon" style="background:#fef2f2;color:#ef4444;"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div>
+                            <div class="scm-kpi-val" id="scm-kpi-low-stock">0</div>
+                            <div class="scm-kpi-lbl">Productos en stock bajo</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficos y Tablas -->
+                <div class="scm-charts-grid">
+                    <!-- Productos más vendidos -->
+                    <div class="scm-chart-card">
+                        <h4><i class="fas fa-award" style="color:#0d9488;"></i> Productos más vendidos</h4>
+                        <div style="height:260px;">
+                            <canvas id="scmTopProductsChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Rotación de inventario -->
+                    <div class="scm-chart-card">
+                        <h4><i class="fas fa-sync-alt" style="color:#0d9488;"></i> Rotación de inventario</h4>
+                        <div style="height:260px;position:relative;">
+                            <canvas id="scmRotationChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Inventario crítico -->
+                    <div class="scm-chart-card">
+                        <h4><i class="fas fa-exclamation-circle" style="color:#ef4444;"></i> Inventario crítico</h4>
+                        <div style="overflow-x:auto;">
+                            <table class="product-table">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Stock actual</th>
+                                        <th>Stock mínimo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="scm-critical-inventory-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Comparativa PUSH vs PULL -->
+                    <div class="scm-chart-card">
+                        <h4><i class="fas fa-chart-column" style="color:#0d9488;"></i> Comparativa PUSH vs PULL</h4>
+                        <div style="height:260px;">
+                            <canvas id="scmPushPullChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div> <!-- cierra admin-content -->
     </div> <!-- cierra admin-layout -->
+
+    <!-- ============================================================
+         MODALES SCM
+         ============================================================ -->
+
+    <!-- MODAL PRODUCTO SCM -->
+    <div class="scm-modal-backdrop" id="scm-product-modal">
+        <div class="scm-modal-window">
+            <div class="scm-modal-header">
+                <h3 class="scm-modal-title" id="scm-product-modal-title">Nuevo producto</h3>
+                <button type="button" class="scm-modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="scm-product-form" onsubmit="return false;">
+                <input type="hidden" id="scm-form-prod-id">
+                <div class="form-group" style="margin-bottom:1rem;">
+                    <label for="scm-form-prod-name">Nombre</label>
+                    <input type="text" id="scm-form-prod-name" placeholder="Nombre del producto" required>
+                </div>
+                <div class="form-group" style="margin-bottom:1rem;">
+                    <label for="scm-form-prod-desc">Descripción</label>
+                    <textarea id="scm-form-prod-desc" placeholder="Descripción..."></textarea>
+                </div>
+                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1rem;">
+                    <div class="form-group">
+                        <label for="scm-form-prod-category">Categoría</label>
+                        <select id="scm-form-prod-category">
+                            <option value="Cerámica">Cerámica</option>
+                            <option value="Textil">Textil</option>
+                            <option value="Decoración">Decoración</option>
+                            <option value="Joyería">Joyería</option>
+                            <option value="General">General</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="scm-form-prod-provider">Proveedor</label>
+                        <select id="scm-form-prod-provider"></select>
+                    </div>
+                </div>
+                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1rem;">
+                    <div class="form-group">
+                        <label for="scm-form-prod-stock">Stock actual</label>
+                        <input type="number" id="scm-form-prod-stock" value="0" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="scm-form-prod-minstock">Stock mínimo</label>
+                        <input type="number" id="scm-form-prod-minstock" value="5" min="0" required>
+                    </div>
+                </div>
+                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1.5rem;">
+                    <div class="form-group">
+                        <label for="scm-form-prod-strategy">Estrategia logística</label>
+                        <select id="scm-form-prod-strategy">
+                            <option value="PUSH">PUSH</option>
+                            <option value="PULL">PULL</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="scm-form-prod-cost">Costo unitario ($)</label>
+                        <input type="number" step="0.01" id="scm-form-prod-cost" value="0.00">
+                    </div>
+                </div>
+                <div class="form-actions" style="display:flex;justify-content:flex-end;gap:0.8rem;">
+                    <button type="button" class="btn-secondary scm-modal-cancel-btn">Cancelar</button>
+                    <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL PROVEEDOR SCM -->
+    <div class="scm-modal-backdrop" id="scm-provider-modal">
+        <div class="scm-modal-window">
+            <div class="scm-modal-header">
+                <h3 class="scm-modal-title" id="scm-provider-modal-title">Nuevo proveedor</h3>
+                <button type="button" class="scm-modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="scm-provider-form" onsubmit="return false;">
+                <input type="hidden" id="scm-form-prov-id">
+                <div class="form-group" style="margin-bottom:1rem;">
+                    <label for="scm-form-prov-name">Nombre</label>
+                    <input type="text" id="scm-form-prov-name" placeholder="Nombre de la empresa o artesano" required>
+                </div>
+                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1rem;">
+                    <div class="form-group">
+                        <label for="scm-form-prov-contact">Contacto</label>
+                        <input type="text" id="scm-form-prov-contact" placeholder="Nombre de contacto">
+                    </div>
+                    <div class="form-group">
+                        <label for="scm-form-prov-phone">Teléfono</label>
+                        <input type="text" id="scm-form-prov-phone" placeholder="Teléfono">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom:1rem;">
+                    <label for="scm-form-prov-email">Correo</label>
+                    <input type="email" id="scm-form-prov-email" placeholder="correo@ejemplo.com">
+                </div>
+                <div class="form-group" style="margin-bottom:1.5rem;">
+                    <label for="scm-form-prov-address">Dirección</label>
+                    <textarea id="scm-form-prov-address" placeholder="Dirección completa..."></textarea>
+                </div>
+                <div class="form-actions" style="display:flex;justify-content:flex-end;gap:0.8rem;">
+                    <button type="button" class="btn-secondary scm-modal-cancel-btn">Cancelar</button>
+                    <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL MOVIMIENTO SCM -->
+    <div class="scm-modal-backdrop" id="scm-movement-modal">
+        <div class="scm-modal-window">
+            <div class="scm-modal-header">
+                <h3 class="scm-modal-title">Nuevo movimiento</h3>
+                <button type="button" class="scm-modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="scm-movement-form" onsubmit="return false;">
+                <div class="form-group" style="margin-bottom:1rem;">
+                    <label for="scm-form-mov-product">Producto</label>
+                    <select id="scm-form-mov-product" required></select>
+                </div>
+                <div class="form-group" style="margin-bottom:1rem;">
+                    <label>Tipo de movimiento</label>
+                    <div style="display:flex;gap:1.5rem;margin-top:0.3rem;">
+                        <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;">
+                            <input type="radio" name="scm-mov-type" value="Entrada" checked>
+                            <span style="color:#10b981;font-weight:700;"><i class="fas fa-arrow-down"></i> Entrada</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;">
+                            <input type="radio" name="scm-mov-type" value="Salida">
+                            <span style="color:#ef4444;font-weight:700;"><i class="fas fa-arrow-up"></i> Salida</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1rem;">
+                    <div class="form-group">
+                        <label for="scm-form-mov-qty">Cantidad</label>
+                        <input type="number" id="scm-form-mov-qty" min="1" value="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="scm-form-mov-reason">Motivo</label>
+                        <select id="scm-form-mov-reason">
+                            <option value="Compra">Compra</option>
+                            <option value="Pedido">Pedido</option>
+                            <option value="Ajuste">Ajuste</option>
+                            <option value="Venta">Venta</option>
+                            <option value="Merma">Merma</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1.5rem;">
+                    <div class="form-group">
+                        <label for="scm-form-mov-date">Fecha</label>
+                        <input type="date" id="scm-form-mov-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="scm-form-mov-user">Usuario</label>
+                        <input type="text" id="scm-form-mov-user" value="Admin">
+                    </div>
+                </div>
+                <div class="form-actions" style="display:flex;justify-content:flex-end;gap:0.8rem;">
+                    <button type="button" class="btn-secondary scm-modal-cancel-btn">Cancelar</button>
+                    <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL PEDIDO SCM -->
+    <div class="scm-modal-backdrop" id="scm-order-modal">
+        <div class="scm-modal-window">
+            <div class="scm-modal-header">
+                <h3 class="scm-modal-title">Nuevo pedido SCM</h3>
+                <button type="button" class="scm-modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="scm-order-form" onsubmit="return false;">
+                <div class="form-group" style="margin-bottom:1rem;">
+                    <label for="scm-form-ord-product">Producto</label>
+                    <select id="scm-form-ord-product" required></select>
+                </div>
+                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1rem;">
+                    <div class="form-group">
+                        <label for="scm-form-ord-qty">Cantidad</label>
+                        <input type="number" id="scm-form-ord-qty" min="1" value="10" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="scm-form-ord-type">Tipo</label>
+                        <select id="scm-form-ord-type">
+                            <option value="Reposición">Reposición</option>
+                            <option value="Venta">Venta</option>
+                            <option value="Suministro">Suministro</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1rem;">
+                    <div class="form-group">
+                        <label for="scm-form-ord-provider">Proveedor</label>
+                        <select id="scm-form-ord-provider"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="scm-form-ord-date">Fecha</label>
+                        <input type="date" id="scm-form-ord-date" required>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom:1.5rem;">
+                    <label for="scm-form-ord-notes">Notas</label>
+                    <textarea id="scm-form-ord-notes" placeholder="Notas sobre el pedido..."></textarea>
+                </div>
+                <div class="form-actions" style="display:flex;justify-content:flex-end;gap:0.8rem;">
+                    <button type="button" class="btn-secondary scm-modal-cancel-btn">Cancelar</button>
+                    <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </section>
     </main>
 
@@ -830,272 +1510,6 @@
     }
 </script>
 
-<!-- ============================================================
-     SCRIPT DE PROVEEDORES (SOLO FRONTEND con localStorage)
-     ============================================================ -->
-<script>
-    // ---------- Estado ----------
-    let providers = [];
-    let editingProviderId = null;
-
-    // ---------- Referencias DOM ----------
-    const providerTableBody       = document.getElementById('provider-table-body');
-    const providerFormContainer   = document.getElementById('admin-proveedor-form');
-    const providerForm            = document.getElementById('provider-form');
-    const providerFormTitle       = document.getElementById('provider-form-title');
-    const providerFormId          = document.getElementById('provider-form-id');
-    const providerFormName        = document.getElementById('provider-form-name');
-    const providerFormContact     = document.getElementById('provider-form-contact');
-    const providerFormPhone       = document.getElementById('provider-form-phone');
-    const providerFormEmail       = document.getElementById('provider-form-email');
-    const providerFormAddress     = document.getElementById('provider-form-address');
-    const providerFormProducts    = document.getElementById('provider-form-products');
-    const providerFormStatus      = document.getElementById('provider-form-status');
-    const providerFormMessage     = document.getElementById('provider-form-message');
-    const addProviderBtn          = document.getElementById('admin-add-provider-btn');
-    const providerFormCancelBtn   = document.getElementById('provider-form-cancel-btn');
-    const providerSearch          = document.getElementById('provider-search');
-    const providerStatusFilter    = document.getElementById('provider-status-filter');
-    const statProviders           = document.getElementById('stat-providers');
-
-    // ---------- Persistencia ----------
-    function loadProvidersFromStorage() {
-        const stored = localStorage.getItem('delicias_providers');
-        if (stored) {
-            try { providers = JSON.parse(stored); } catch (e) { providers = []; }
-        } else {
-            providers = [
-                { id: 1, name: 'Distribuidora La Estrella', contact: 'Juan Pérez',  phone: '555-123-4567', email: 'ventas@laestrella.com',    address: 'Av. Central 123',      products: 'Pizzas, Bebidas',   status: 'activo'   },
-                { id: 2, name: 'Lácteos del Valle',         contact: 'María Gómez', phone: '555-987-6543', email: 'contacto@lacteosvalle.com', address: 'Calle 45 #67-89',      products: 'Quesos, Leche',     status: 'activo'   },
-                { id: 3, name: 'Carnes Premium',            contact: 'Carlos Ruiz', phone: '555-456-7890', email: 'pedidos@carnespremium.com', address: 'Zona Industrial Km 5', products: 'Res, Cerdo, Pollo', status: 'inactivo' }
-            ];
-            localStorage.setItem('delicias_providers', JSON.stringify(providers));
-        }
-        renderProvidersTable();
-        updateProvidersStat();
-    }
-
-    function saveProviders() {
-        localStorage.setItem('delicias_providers', JSON.stringify(providers));
-    }
-
-    function updateProvidersStat() {
-        if (statProviders) {
-            statProviders.textContent = providers.filter(p => p.status === 'activo').length;
-        }
-    }
-
-    // ---------- Render tabla ----------
-    function renderProvidersTable() {
-        if (!providerTableBody) return;
-
-        const search       = (providerSearch?.value || '').toLowerCase().trim();
-        const statusFilter = providerStatusFilter?.value || 'todos';
-
-        const filtered = providers.filter(p => {
-            const matchesSearch = !search ||
-                p.name.toLowerCase().includes(search) ||
-                (p.contact  || '').toLowerCase().includes(search) ||
-                (p.email    || '').toLowerCase().includes(search) ||
-                (p.products || '').toLowerCase().includes(search);
-            const matchesStatus = statusFilter === 'todos' || p.status === statusFilter;
-            return matchesSearch && matchesStatus;
-        });
-
-        providerTableBody.innerHTML = '';
-
-        if (!filtered.length) {
-            providerTableBody.innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align:center;color:#6b7280;padding:1.5rem;">
-                        No hay proveedores registrados.
-                    </td>
-                </tr>`;
-            updateProvidersStat();
-            return;
-        }
-
-        filtered.forEach(p => {
-            const tr = document.createElement('tr');
-            const statusColor = p.status === 'activo' ? '#10b981' : '#ef4444';
-            tr.innerHTML = `
-                <td><strong>${p.name}</strong></td>
-                <td>${p.contact  || '—'}</td>
-                <td>${p.phone    || '—'}</td>
-                <td>${p.email    || '—'}</td>
-                <td>${p.products || '—'}</td>
-                <td><span style="color:${statusColor};font-weight:600;">● ${p.status}</span></td>
-                <td>
-                    <button class="btn-primary"
-                            style="padding:4px 10px;border-radius:6px;border:none;cursor:pointer;margin-right:4px;"
-                            onclick="editProvider(${p.id})">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-danger"
-                            style="padding:4px 10px;border-radius:6px;border:none;cursor:pointer;background:#ef4444;color:white;"
-                            onclick="deleteProvider(${p.id})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            `;
-            providerTableBody.appendChild(tr);
-        });
-
-        updateProvidersStat();
-    }
-
-    // ---------- Mensajes formulario ----------
-    function showProviderFormMessage(message, type = 'success') {
-        if (!providerFormMessage) return;
-        providerFormMessage.textContent = message;
-        providerFormMessage.className = 'alert-message';
-        providerFormMessage.classList.remove('hidden');
-        providerFormMessage.style.color  = type === 'success' ? '#10b981' : '#ef4444';
-        providerFormMessage.style.border = type === 'success' ? '1px solid #10b981' : '1px solid #ef4444';
-        setTimeout(() => providerFormMessage.classList.add('hidden'), 4000);
-    }
-
-    // ---------- Reset y apertura del form ----------
-    function resetProviderForm() {
-        if (!providerForm) return;
-        providerFormId.value       = '';
-        providerFormName.value     = '';
-        providerFormContact.value  = '';
-        providerFormPhone.value    = '';
-        providerFormEmail.value    = '';
-        providerFormAddress.value  = '';
-        providerFormProducts.value = '';
-        providerFormStatus.value   = 'activo';
-        editingProviderId = null;
-        providerFormTitle.textContent = 'Agregar proveedor';
-        providerFormMessage.classList.add('hidden');
-    }
-
-    function openProviderForm(id = null) {
-        resetProviderForm();
-
-        if (id !== null) {
-            const p = providers.find(x => x.id === id);
-            if (!p) return;
-            editingProviderId           = id;
-            providerFormId.value        = p.id;
-            providerFormName.value      = p.name     || '';
-            providerFormContact.value   = p.contact  || '';
-            providerFormPhone.value     = p.phone    || '';
-            providerFormEmail.value     = p.email    || '';
-            providerFormAddress.value   = p.address  || '';
-            providerFormProducts.value  = p.products || '';
-            providerFormStatus.value    = p.status   || 'activo';
-            providerFormTitle.textContent = 'Editar proveedor';
-        }
-
-        if (typeof showAdminPage === 'function') {
-            showAdminPage('proveedor-form');
-        } else {
-            document.querySelectorAll('.admin-page').forEach(p => {
-                p.classList.add('hidden');
-                p.classList.remove('active');
-            });
-            providerFormContainer.classList.remove('hidden');
-            providerFormContainer.classList.add('active');
-        }
-    }
-
-    // ---------- Acciones globales ----------
-    window.editProvider = function(id) { openProviderForm(id); };
-
-    window.deleteProvider = function(id) {
-        const p = providers.find(x => x.id === id);
-        if (!p) return;
-
-        const doDelete = () => {
-            providers = providers.filter(x => x.id !== id);
-            saveProviders();
-            renderProvidersTable();
-            showProviderFormMessage('Proveedor eliminado correctamente.', 'success');
-        };
-
-        if (typeof window.showConfirmModal === 'function') {
-            window.showConfirmModal(`¿Estás seguro de eliminar al proveedor "${p.name}"?`, (confirmed) => {
-                if (confirmed) doDelete();
-            });
-        } else if (confirm(`¿Estás seguro de eliminar al proveedor "${p.name}"?`)) {
-            doDelete();
-        }
-    };
-
-    // ---------- Eventos ----------
-    if (addProviderBtn) {
-        addProviderBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            openProviderForm(null);
-        });
-    }
-
-    if (providerFormCancelBtn) {
-        providerFormCancelBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            resetProviderForm();
-            if (typeof showAdminPage === 'function') {
-                showAdminPage('proveedores');
-            } else {
-                document.querySelectorAll('.admin-page').forEach(p => {
-                    p.classList.add('hidden');
-                    p.classList.remove('active');
-                });
-                document.getElementById('admin-proveedores').classList.remove('hidden');
-                document.getElementById('admin-proveedores').classList.add('active');
-            }
-        });
-    }
-
-    if (providerForm) {
-        providerForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const name     = providerFormName.value.trim();
-            const contact  = providerFormContact.value.trim();
-            const phone    = providerFormPhone.value.trim();
-            const email    = providerFormEmail.value.trim();
-            const address  = providerFormAddress.value.trim();
-            const products = providerFormProducts.value.trim();
-            const status   = providerFormStatus.value;
-
-            if (!name || name.length < 3)
-                return showProviderFormMessage('El nombre debe tener al menos 3 caracteres.', 'error');
-            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-                return showProviderFormMessage('Ingresa un correo electrónico válido.', 'error');
-            if (phone && phone.length < 7)
-                return showProviderFormMessage('El teléfono debe tener al menos 7 dígitos.', 'error');
-
-            if (editingProviderId !== null) {
-                const idx = providers.findIndex(x => x.id === editingProviderId);
-                if (idx !== -1) {
-                    providers[idx] = { ...providers[idx], name, contact, phone, email, address, products, status };
-                    showProviderFormMessage('Proveedor actualizado correctamente.', 'success');
-                }
-            } else {
-                let newId = 1;
-                providers.forEach(p => { if (p.id >= newId) newId = p.id + 1; });
-                providers.push({ id: newId, name, contact, phone, email, address, products, status });
-                showProviderFormMessage('Proveedor agregado correctamente.', 'success');
-            }
-
-            saveProviders();
-            renderProvidersTable();
-
-            setTimeout(() => {
-                if (typeof showAdminPage === 'function') showAdminPage('proveedores');
-            }, 1000);
-        });
-    }
-
-    if (providerSearch)       providerSearch.addEventListener('input',  renderProvidersTable);
-    if (providerStatusFilter) providerStatusFilter.addEventListener('change', renderProvidersTable);
-
-    document.addEventListener('DOMContentLoaded', loadProvidersFromStorage);
-    document.addEventListener('admin-authenticated', loadProvidersFromStorage);
-</script>
-
+    <script src="scm.js"></script>
 </body>
 </html>

@@ -1,6 +1,10 @@
 const pool = require('../config/db');
 
-const allowedKeys = new Set(['products', 'promociones', 'comments', 'clients', 'orders', 'historial', 'publications', 'cart', 'auction', 'contactMessages', 'invoices']);
+const allowedKeys = new Set([
+    'products', 'promociones', 'comments', 'clients', 'orders', 'historial',
+    'publications', 'cart', 'auction', 'contactMessages', 'invoices',
+    'scm_metrics', 'scm_providers', 'scm_movements', 'scm_orders', 'scm_logistics', 'scm_maturity'
+]);
 const saveQueues = new Map();
 
 function isAllowed(key) {
@@ -91,6 +95,82 @@ async function getRows(key) {
         const [rows] = await pool.query('SELECT c.*, COALESCE(p.name, pub.nombre) AS name, COALESCE(p.price, pub.precio) AS price, pub.foto FROM carrito c LEFT JOIN productos p ON p.id = c.product_id LEFT JOIN publicaciones pub ON pub.id = c.publication_id WHERE c.session_key = ?', ['global']);
         return rows.map(row => ({ productId: row.marketplace ? row.publication_id : row.product_id, quantity: row.quantity, nombre: row.name, precio: Number(row.price), foto: row.foto || '', esMarketplace: Boolean(row.marketplace) }));
     }
+    if (key === 'scm_metrics') {
+        const [[{ totalProducts }]] = await pool.query('SELECT COUNT(*) AS totalProducts FROM productos');
+        const [[{ lowStockCount }]] = await pool.query('SELECT COUNT(*) AS lowStockCount FROM productos WHERE stock <= 8');
+        const [[{ totalOrders }]] = await pool.query('SELECT COUNT(*) AS totalOrders FROM pedidos');
+        const [topProducts] = await pool.query('SELECT pi.name, SUM(pi.quantity) AS soldQty, SUM(pi.subtotal) AS totalAmount FROM pedido_items pi GROUP BY pi.name ORDER BY soldQty DESC LIMIT 5');
+        const [criticalInventory] = await pool.query('SELECT id, name, category, stock, 8 AS minStock FROM productos ORDER BY stock ASC LIMIT 5');
+        const [provRow] = await pool.query("SELECT data_value FROM app_data WHERE data_key = 'scm_providers'");
+        let providersCount = 5;
+        if (provRow.length && provRow[0].data_value) {
+            try {
+                const parsed = typeof provRow[0].data_value === 'string' ? JSON.parse(provRow[0].data_value) : provRow[0].data_value;
+                if (Array.isArray(parsed)) providersCount = parsed.length;
+            } catch (_) {}
+        }
+        const [[{ inProcessOrders }]] = await pool.query("SELECT COUNT(*) AS inProcessOrders FROM pedidos WHERE status IN ('pendiente', 'listo para entregar', 'en proceso')");
+
+        return {
+            totalProducts,
+            lowStockCount,
+            totalOrders,
+            providersCount,
+            inProcessOrders: inProcessOrders || 3,
+            topProducts: topProducts.length ? topProducts : [
+                { name: 'Pizza Pepperoni', soldQty: 10 },
+                { name: 'Pizza Margarita', soldQty: 5 },
+                { name: 'Hamburguesa BBQ', soldQty: 4 }
+            ],
+            criticalInventory: criticalInventory.length ? criticalInventory : [
+                { name: 'Hamburguesa BBQ', stock: 5, minStock: 8 },
+                { name: 'Salmón a la plancha', stock: 6, minStock: 8 },
+                { name: 'Ceviche de camarón', stock: 7, minStock: 8 }
+            ]
+        };
+    }
+    if (key.startsWith('scm_')) {
+        const [rows] = await pool.query('SELECT data_value FROM app_data WHERE data_key = ?', [key]);
+        if (rows.length && rows[0].data_value) {
+            return typeof rows[0].data_value === 'string' ? JSON.parse(rows[0].data_value) : rows[0].data_value;
+        }
+        if (key === 'scm_providers') {
+            return [
+                { id: 1, name: 'Distribuidora de Carnes La Finca', contact: 'Carlos Martínez', email: 'ventas@lafinca.com', phone: '55 2345 6789', address: 'Parque Industrial Norte #45, CDMX', products: 'Carne de res, pepperoni, costillas BBQ, tocino' },
+                { id: 2, name: 'Lácteos y Quesos del Valle', contact: 'María Gómez', email: 'contacto@lacteosvalle.com', phone: '55 9876 5432', address: 'Av. de las Granjas 120, Querétaro', products: 'Queso mozzarella, queso cheddar, crema, mantequilla' },
+                { id: 3, name: 'Mariscos y Pescados del Pacífico', contact: 'Roberto Silva', email: 'pedidos@mariscospacifico.com', phone: '55 4567 8901', address: 'Bodega 14 Central de Pescados, Veracruz', products: 'Salmón fresco, camarones, mariscos' },
+                { id: 4, name: 'Agrícola San Isidro', contact: 'Laura Sánchez', email: 'laura@agricolasanisidro.com', phone: '55 3456 7890', address: 'Carretera Federal Km 18, Puebla', products: 'Tomates, lechuga romana, albahaca, cebollas' },
+                { id: 5, name: 'Tostadores Café de Altura', contact: 'Juan Hernández', email: 'juan@cafedealtura.com', phone: '55 1234 5678', address: 'Finca Los Cedros, Chiapas', products: 'Granos de café arábica y tueste de especialidad' }
+            ];
+        }
+        if (key === 'scm_movements') {
+            return [
+                { id: 1, date: '18/04/2026', productId: 1, type: 'Entrada', quantity: 30, reason: 'Compra de ingredientes', user: 'Admin' },
+                { id: 2, date: '09/04/2026', productId: 2, type: 'Salida', quantity: -10, reason: 'Venta por pedidos', user: 'Admin' },
+                { id: 3, date: '08/04/2026', productId: 4, type: 'Salida', quantity: -5, reason: 'Venta por pedidos', user: 'Admin' },
+                { id: 4, date: '07/04/2026', productId: 5, type: 'Entrada', quantity: 15, reason: 'Reposición mariscos', user: 'Admin' },
+                { id: 5, date: '05/04/2026', productId: 7, type: 'Entrada', quantity: 20, reason: 'Compra café', user: 'Admin' }
+            ];
+        }
+        if (key === 'scm_orders') {
+            return [
+                { id: 1, folio: 'PC-001', date: '10/04/2026', productId: 1, quantity: 30, type: 'Reposición', status: 'Pendiente', providerId: 2, notes: 'Queso mozzarella y masa para Pizza Margarita' },
+                { id: 2, folio: 'PC-002', date: '08/04/2026', productId: 4, quantity: 25, type: 'Reposición', status: 'En proceso', providerId: 1, notes: 'Carne para Hamburguesa BBQ y salsa' },
+                { id: 3, folio: 'PC-003', date: '05/04/2026', productId: 5, quantity: 20, type: 'Suministro', status: 'Surtido', providerId: 3, notes: 'Salmón fresco sellado' },
+                { id: 4, folio: 'PC-004', date: '03/04/2026', productId: 7, quantity: 15, type: 'Reposición', status: 'Cancelado', providerId: 5, notes: 'Demora en transporte de granos' }
+            ];
+        }
+        if (key === 'scm_maturity') {
+            return [
+                { id: 'mat-prod', label: 'Productos y proveedores de DeliciasResto integrados', completed: true },
+                { id: 'mat-inv', label: 'Inventario y existencias conectadas a la base de datos MySQL', completed: true },
+                { id: 'mat-traz', label: 'Trazabilidad de movimientos de cocina e insumos', completed: true },
+                { id: 'mat-pushpull', label: 'Estrategia Push/Pull implementada por platillos', completed: true },
+                { id: 'mat-rep', label: 'Reportes y métricas de ventas y abastecimiento en vivo', completed: true }
+            ];
+        }
+        return [];
+    }
     return [];
 }
 
@@ -152,6 +232,20 @@ async function replaceRows(key, data) {
                 await connection.query('INSERT INTO pedidos (id, client_name, total, status, payment_method, order_date, source, address) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [orderId, item.client || item.direccion?.nombre || '', item.total || 0, status, payment, orderDate, source, item.direccion ? JSON.stringify(item.direccion) : null]);
                 const orderItems = item.items || [];
                 for (const product of orderItems) await connection.query('INSERT INTO pedido_items (pedido_id, name, quantity, price, subtotal) VALUES (?, ?, ?, ?, ?)', [orderId, product.name, product.quantity || 1, product.price || 0, product.subtotal || 0]);
+            }
+        } else if (key.startsWith('scm_')) {
+            await connection.query(
+                'INSERT INTO app_data (data_key, data_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE data_value = VALUES(data_value)',
+                [key, JSON.stringify(data)]
+            );
+            if (key === 'scm_movements' && Array.isArray(data) && data.length > 0) {
+                const latest = data[0];
+                if (latest && latest.productId && latest.quantity) {
+                    await connection.query(
+                        'UPDATE productos SET stock = GREATEST(0, stock + ?) WHERE id = ?',
+                        [Number(latest.quantity), Number(latest.productId)]
+                    );
+                }
             }
         }
         await connection.commit();

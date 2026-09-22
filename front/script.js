@@ -495,8 +495,6 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
         dashboard: document.getElementById('admin-dashboard'),
         productos: document.getElementById('admin-productos'),
         'product-form': document.getElementById('admin-product-form'),
-        proveedores: document.getElementById('admin-proveedores'),
-        'proveedor-form': document.getElementById('admin-proveedor-form'), 
         pedidos: document.getElementById('admin-pedidos'),
         promociones: document.getElementById('admin-promociones'),
         'promo-form': document.getElementById('admin-promo-form'),
@@ -506,7 +504,17 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
         'mi-actividad': document.getElementById('admin-mi-actividad'),
         'actividad-usuarios': document.getElementById('admin-actividad-usuarios'),
         usuarios: document.getElementById('admin-usuarios'),
-        reportes: document.getElementById('admin-reportes')
+        reportes: document.getElementById('admin-reportes'),
+        'scm-inicio': document.getElementById('admin-scm-inicio'),
+        'scm-productos': document.getElementById('admin-scm-productos'),
+        'scm-proveedores': document.getElementById('admin-scm-proveedores'),
+        'scm-inventario': document.getElementById('admin-scm-inventario'),
+        'scm-movimientos': document.getElementById('admin-scm-movimientos'),
+        'scm-logistica': document.getElementById('admin-scm-logistica'),
+        'scm-pedidos': document.getElementById('admin-scm-pedidos'),
+        'scm-madurez': document.getElementById('admin-scm-madurez'),
+        'scm-reportes': document.getElementById('admin-scm-reportes'),
+        configuracion: document.getElementById('admin-configuracion')
     };
 
     function showPage(pageId) {
@@ -638,6 +646,9 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
         if (pageId === 'promociones') renderPromotionsAdmin();
         if (pageId === 'mi-actividad') renderMyActivity();
         if (pageId === 'actividad-usuarios') renderActividadUsuarios();
+        if (pageId && pageId.startsWith('scm-')) {
+            if (typeof window.renderScmPage === 'function') window.renderScmPage(pageId);
+        }
     }
         async function renderActividadUsuarios() {
         var tbody = document.getElementById('usuarios-activity-table-body');
