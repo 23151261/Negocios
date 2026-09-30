@@ -261,10 +261,11 @@
     function renderScmView(pageId) {
         const scmSubmenu = document.getElementById('scm-submenu');
         const scmToggle = document.getElementById('scm-menu-toggle');
-        if (scmSubmenu && scmToggle) {
+        // Si el menú SCM está colapsado, expandirlo para mostrar la sección activa
+        if (scmSubmenu && scmToggle && scmSubmenu.classList.contains('collapsed')) {
             scmSubmenu.classList.remove('collapsed');
             scmToggle.classList.remove('collapsed');
-            scmToggle.classList.add('active-group');
+            scmToggle.setAttribute('aria-expanded', 'true');
         }
 
         switch (pageId) {
@@ -1233,16 +1234,18 @@
         if (crmToggle && crmSubmenu) {
             crmToggle.addEventListener('click', function (e) {
                 e.preventDefault();
-                crmSubmenu.classList.toggle('collapsed');
+                const isCollapsed = crmSubmenu.classList.toggle('collapsed');
                 crmToggle.classList.toggle('collapsed');
+                crmToggle.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
             });
         }
 
         if (scmToggle && scmSubmenu) {
             scmToggle.addEventListener('click', function (e) {
                 e.preventDefault();
-                scmSubmenu.classList.toggle('collapsed');
+                const isCollapsed = scmSubmenu.classList.toggle('collapsed');
                 scmToggle.classList.toggle('collapsed');
+                scmToggle.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
             });
         }
     });

@@ -7,6 +7,52 @@ document.addEventListener('DOMContentLoaded', function() {
     let cartBeforeLogin = null;
     let adminEmail = '';
 
+    // ===== MENÚ HAMBURGUESA =====
+    (function initHamburgerMenu() {
+        var btn = document.getElementById('hamburger-btn');
+        var navLinks = document.getElementById('nav-links');
+        if (!btn || !navLinks) return;
+
+        function openMenu() {
+            navLinks.classList.add('nav-open');
+            btn.classList.add('open');
+            btn.setAttribute('aria-expanded', 'true');
+            btn.setAttribute('aria-label', 'Cerrar menú de navegación');
+        }
+
+        function closeMenu() {
+            navLinks.classList.remove('nav-open');
+            btn.classList.remove('open');
+            btn.setAttribute('aria-expanded', 'false');
+            btn.setAttribute('aria-label', 'Abrir menú de navegación');
+        }
+
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (navLinks.classList.contains('nav-open')) {
+                closeMenu();
+            } else {
+                openMenu();
+            }
+        });
+
+        // Cerrar al hacer clic fuera del navbar
+        document.addEventListener('click', function(e) {
+            var navbar = btn.closest('.navbar, nav');
+            if (navbar && !navbar.contains(e.target)) {
+                closeMenu();
+            }
+        });
+
+        // Cerrar automáticamente al navegar (clic en un enlace del menú)
+        navLinks.addEventListener('click', function(e) {
+            var link = e.target.closest('a[data-page], a.login-btn');
+            if (link) {
+                closeMenu();
+            }
+        });
+    })();
+
     async function apiGet(key) {
         const response = await fetch(API_BASE + '/data/' + key);
         if (!response.ok) throw new Error('No se pudo cargar ' + key);
@@ -619,6 +665,10 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    window.showAdminPage = showAdminPage;
+    window.showPage = showPage;
+    window.openClientForm = openClientForm;
+
     function showAdminPage(pageId) {
         for (var key in adminPages) {
             if (adminPages[key]) {
@@ -646,6 +696,12 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
         if (pageId === 'promociones') renderPromotionsAdmin();
         if (pageId === 'mi-actividad') renderMyActivity();
         if (pageId === 'actividad-usuarios') renderActividadUsuarios();
+        if (pageId === 'reportes') updateDashboardStats();
+        if (pageId === 'usuarios') {
+            if (typeof window.loadUsersFromApi === 'function') window.loadUsersFromApi();
+            else if (typeof loadUsersFromApi === 'function') loadUsersFromApi();
+        }
+        if (pageId === 'configuracion') loadSystemConfig();
         if (pageId && pageId.startsWith('scm-')) {
             if (typeof window.renderScmPage === 'function') window.renderScmPage(pageId);
         }
@@ -1672,6 +1728,18 @@ async function renderMyActivity() {
         if (profileAddress) profileAddress.textContent = currentUser.address || 'Sin datos';
     }
 
+    function updateAdminSidebarInfo() {
+        var sidebarName = document.getElementById('sidebar-admin-name');
+        var sidebarEmail = document.getElementById('sidebar-admin-email');
+        var sidebarAvatar = document.getElementById('sidebar-admin-avatar');
+        if (sidebarName) sidebarName.textContent = currentUser.name || 'Administrador';
+        if (sidebarEmail) sidebarEmail.textContent = currentUser.email || '';
+        if (sidebarAvatar) {
+            var initials = (currentUser.name || 'AD').split(' ').map(function(n) { return n[0]; }).join('').substring(0, 2).toUpperCase();
+            sidebarAvatar.textContent = initials;
+        }
+    }
+
     function openProfileEditor() {
         var modal = document.getElementById('edit-profile-modal');
         if (!modal) return;
@@ -1736,6 +1804,14 @@ async function renderMyActivity() {
             btn.addEventListener('click', function() {
                 var id = parseInt(this.getAttribute('data-id'));
                 openProductForm(id);
+            });
+        });
+
+        tbody.querySelectorAll('.btn-edit').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var idx = parseInt(this.getAttribute('data-index'));
+                openClientForm(idx);
             });
         });
 
@@ -2094,8 +2170,9 @@ async function renderMyActivity() {
             html += '<td>$' + (Number(c.spent) || 0).toFixed(2) + '</td>';
             html += '<td>' + (c.registeredDate || '') + '</td>';
             html += '<td><div class="table-actions">';
-            html += '<button class="btn-view" data-index="' + originalIndex + '" aria-label="Ver detalle de ' + (c.name || 'cliente') + '"><i class="fas fa-eye"></i></button>';
-            html += '<button class="btn-delete" data-index="' + originalIndex + '" aria-label="Eliminar ' + (c.name || 'cliente') + '"><i class="fas fa-trash"></i></button>';
+            html += '<button class="btn-view" data-index="' + originalIndex + '" aria-label="Ver detalle de ' + (c.name || 'cliente') + '" title="Ver detalle"><i class="fas fa-eye"></i></button>';
+            html += '<button class="btn-edit" data-index="' + originalIndex + '" aria-label="Editar ' + (c.name || 'cliente') + '" title="Editar cliente"><i class="fas fa-edit"></i></button>';
+            html += '<button class="btn-delete" data-index="' + originalIndex + '" aria-label="Eliminar ' + (c.name || 'cliente') + '" title="Eliminar cliente"><i class="fas fa-trash"></i></button>';
             html += '</div></td></tr>';
         }
         tbody.innerHTML = html;
@@ -2152,6 +2229,10 @@ async function renderMyActivity() {
             msg.className = '';
         }
 
+        var passwordInput = document.getElementById('form-client-password');
+        var passwordConfirmInput = document.getElementById('form-client-password-confirm');
+        var labelPassword = document.querySelector('label[for="form-client-password"]');
+
         if (idx !== null && idx >= 0) {
             var c = clients[idx];
             if (title) title.textContent = 'Editar cliente';
@@ -2161,6 +2242,9 @@ async function renderMyActivity() {
             if (addressInput) addressInput.value = c.address || '';
             if (stageInput) stageInput.value = c.stage || 'prospecto';
             if (statusInput) statusInput.value = c.status || 'activo';
+            if (passwordInput) passwordInput.value = '';
+            if (passwordConfirmInput) passwordConfirmInput.value = '';
+            if (labelPassword) labelPassword.innerHTML = 'Contraseña <span style="color:#6b7280;font-weight:400;">(opcional)</span>';
         } else {
             if (title) title.textContent = 'Agregar cliente';
             nameInput.value = '';
@@ -2169,6 +2253,9 @@ async function renderMyActivity() {
             if (addressInput) addressInput.value = '';
             if (stageInput) stageInput.value = 'prospecto';
             if (statusInput) statusInput.value = 'activo';
+            if (passwordInput) passwordInput.value = '';
+            if (passwordConfirmInput) passwordConfirmInput.value = '';
+            if (labelPassword) labelPassword.innerHTML = 'Contraseña <span style="color:#e53935;">*</span>';
         }
 
         showAdminPage('client-form');
@@ -3754,6 +3841,23 @@ function eliminarPublicacion(id) {
                 return;
             }
 
+            var password = document.getElementById('form-client-password')?.value || '';
+            var passwordConfirm = document.getElementById('form-client-password-confirm')?.value || '';
+
+            if (editingClientId === null || editingClientId === undefined) {
+                if (!password || password.length < 6) return showFormMessage(msg, 'La contraseña debe tener al menos 6 caracteres.', 'error');
+                if (!/[A-Z]/.test(password)) return showFormMessage(msg, 'La contraseña debe contener al menos una mayúscula.', 'error');
+                if (!/\d/.test(password)) return showFormMessage(msg, 'La contraseña debe contener al menos un número.', 'error');
+                if (password !== passwordConfirm) return showFormMessage(msg, 'Las contraseñas no coinciden.', 'error');
+            } else {
+                if (password) {
+                    if (password.length < 6) return showFormMessage(msg, 'La contraseña debe tener al menos 6 caracteres.', 'error');
+                    if (!/[A-Z]/.test(password)) return showFormMessage(msg, 'La contraseña debe contener al menos una mayúscula.', 'error');
+                    if (!/\d/.test(password)) return showFormMessage(msg, 'La contraseña debe contener al menos un número.', 'error');
+                    if (password !== passwordConfirm) return showFormMessage(msg, 'Las contraseñas no coinciden.', 'error');
+                }
+            }
+
             if (editingClientId !== null && editingClientId >= 0) {
                 clients[editingClientId].name = name;
                 clients[editingClientId].email = email;
@@ -3761,6 +3865,7 @@ function eliminarPublicacion(id) {
                 clients[editingClientId].address = address;
                 clients[editingClientId].stage = stage;
                 clients[editingClientId].status = status;
+                if (password) clients[editingClientId].password = password;
                 clients[editingClientId].interactions = clients[editingClientId].interactions || [];
                 if (!clients[editingClientId].interactions.length) {
                     clients[editingClientId].interactions.push({ type: 'Registro', date: new Date().toISOString().slice(0, 10), note: 'Se actualizó la información del cliente.' });
@@ -3777,6 +3882,7 @@ function eliminarPublicacion(id) {
                     id: newId,
                     name: name,
                     email: email,
+                    password: password,
                     phone: phone,
                     address: address,
                     orders: 0,
@@ -4009,6 +4115,11 @@ function eliminarPublicacion(id) {
                 isLoggedIn = true;
                 isAdmin = true;
                 adminEmail = email;
+                try {
+                    sessionStorage.setItem('delicias_admin_token', authToken);
+                    sessionStorage.setItem('delicias_admin_user', JSON.stringify(currentUser));
+                } catch (_) {}
+                updateAdminSidebarInfo();
                 document.dispatchEvent(new CustomEvent('admin-authenticated'));
                 var topLogoutBtn = document.getElementById('admin-top-logout-btn');
                 if (topLogoutBtn) topLogoutBtn.style.display = 'flex';
@@ -4173,6 +4284,10 @@ function ejecutarLogoutAdmin() {
     adminEmail = '';
     authToken = '';
     window.deliciasAuthToken = '';
+    try {
+        sessionStorage.removeItem('delicias_admin_token');
+        sessionStorage.removeItem('delicias_admin_user');
+    } catch (_) {}
 
     var topLogoutBtn = document.getElementById('admin-top-logout-btn');
     if (topLogoutBtn) topLogoutBtn.style.display = 'none';
@@ -5661,6 +5776,33 @@ document.addEventListener('keydown', function(e) {
     showPage(document.body.classList.contains('admin-page-shell') ? 'login' : 'inicio');
     
     // 👇 MODIFICADO: Esperar a que loadApiData termine y luego actualizar el dashboard
+    
+    if (document.body.classList.contains('admin-page-shell')) {
+        try {
+            var storedAdminToken = sessionStorage.getItem('delicias_admin_token');
+            var storedAdminUser = sessionStorage.getItem('delicias_admin_user');
+            if (storedAdminToken && storedAdminUser) {
+                authToken = storedAdminToken;
+                window.deliciasAuthToken = storedAdminToken;
+                var parsedUser = JSON.parse(storedAdminUser);
+                currentUser.name = parsedUser.name || 'Administrador';
+                currentUser.email = parsedUser.email || 'admin@gmail.com';
+                currentUser.role = parsedUser.role || 'super_administrador';
+                isLoggedIn = true;
+                isAdmin = true;
+                adminEmail = currentUser.email;
+                updateAdminSidebarInfo();
+                var adminLoginPage = document.getElementById('page-login');
+                var adminMainPage = document.getElementById('page-admin');
+                if (adminLoginPage) adminLoginPage.classList.remove('active');
+                if (adminMainPage) adminMainPage.classList.add('active');
+                var topLogoutBtn = document.getElementById('admin-top-logout-btn');
+                if (topLogoutBtn) topLogoutBtn.style.display = 'flex';
+                document.dispatchEvent(new CustomEvent('admin-authenticated'));
+            }
+        } catch (_) {}
+    }
+
     loadApiData().then(function() {
         updateDashboardStats();
     }).catch(function(error) {

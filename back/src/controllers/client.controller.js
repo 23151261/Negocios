@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const bcrypt = require('bcryptjs');
 
 const clientFields = 'id, name, email, company, phone, address, stage, status, orders, spent, registered_date, last_interaction_date, created_at';
 
@@ -40,7 +41,7 @@ const getClientById = async (req, res) => {
 // Crear cliente
 const createClient = async (req, res) => {
     try {
-        const { name, email, company, phone, address, stage, status } = req.body;
+        const { name, email, company, phone, address, stage, status, password } = req.body;
 
         if (!name || !email || !phone) {
             return res.status(400).json({ error: 'Faltan campos obligatorios (nombre, email, teléfono)' });
@@ -84,7 +85,7 @@ const createClient = async (req, res) => {
 const updateClient = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, email, company, phone, address, stage, status } = req.body;
+        const { name, email, company, phone, address, stage, status, password } = req.body;
 
         const [existing] = await pool.query('SELECT * FROM clientes WHERE id = ?', [id]);
         if (existing.length === 0) {

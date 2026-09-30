@@ -90,11 +90,12 @@ const registerAdmin = async (req, res) => {
             [email]
         );
 
+        const actorName = req.user.name || req.user.email || 'Administrador';
         if (client.length > 0) {
             await connection.query(
                 `INSERT INTO interacciones (cliente_id, type, date, note, user)
                  VALUES (?, ?, ?, ?, ?)`,
-                [client[0].id, 'nota', new Date(), `Administrador ${name} creado por ${req.user.name}`, req.user.email]
+                [client[0].id, 'nota', new Date(), `Administrador ${name} creado por ${actorName}`, req.user.email]
             );
         } else {
             const [clientResult] = await connection.query(
@@ -107,7 +108,7 @@ const registerAdmin = async (req, res) => {
             await connection.query(
                 `INSERT INTO interacciones (cliente_id, type, date, note, user)
                  VALUES (?, ?, ?, ?, ?)`,
-                [clientResult.insertId, 'nota', new Date(), `Administrador ${name} creado por ${req.user.name}`, req.user.email]
+                [clientResult.insertId, 'nota', new Date(), `Administrador ${name} creado por ${actorName}`, req.user.email]
             );
         }
 
@@ -172,11 +173,12 @@ const deleteAdmin = async (req, res) => {
             [admin[0].email]
         );
 
+        const actorName = req.user.name || req.user.email || 'Administrador';
         if (client.length > 0) {
             await connection.query(
                 `INSERT INTO interacciones (cliente_id, type, date, note, user)
                  VALUES (?, ?, ?, ?, ?)`,
-                [client[0].id, 'nota', new Date(), `Administrador ${admin[0].name} eliminado por ${req.user.name}`, req.user.email]
+                [client[0].id, 'nota', new Date(), `Administrador ${admin[0].name} eliminado por ${actorName}`, req.user.email]
             );
         }
 
@@ -227,7 +229,7 @@ const login = async (req, res) => {
         }
 
         const token = jwt.sign(
-            { id: user.id, email: user.email, role: user.role || 'usuario' },
+            { id: user.id, name: user.name, email: user.email, role: user.role || 'usuario' },
             JWT_SECRET,
             { expiresIn: '24h' }
         );

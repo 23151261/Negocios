@@ -55,9 +55,9 @@ async function startServer() {
         await pool.query("ALTER TABLE usuarios ADD COLUMN role VARCHAR(30) NOT NULL DEFAULT 'usuario'");
     }
 
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@restogmail.com';
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@gmail.com';
     await pool.query(
-        "UPDATE usuarios SET role = 'super_administrador' WHERE email = ? AND role = 'usuario'",
+        "UPDATE usuarios SET role = 'super_administrador' WHERE email IN (?, 'admin@gmail.com', 'admin@restogmail.com') AND role != 'super_administrador'",
         [adminEmail]
     );
 

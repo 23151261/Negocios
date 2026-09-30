@@ -1,9 +1,11 @@
 const pool = require('../config/db');
+const bcrypt = require('bcryptjs');
 
 const allowedKeys = new Set([
     'products', 'promociones', 'comments', 'clients', 'orders', 'historial',
     'publications', 'cart', 'auction', 'contactMessages', 'invoices',
-    'scm_metrics', 'scm_providers', 'scm_movements', 'scm_orders', 'scm_logistics', 'scm_maturity'
+    'scm_metrics', 'scm_providers', 'scm_movements', 'scm_orders', 'scm_logistics', 'scm_maturity',
+    'system_config'
 ]);
 const saveQueues = new Map();
 
@@ -12,7 +14,19 @@ function isAllowed(key) {
 }
 
 function toDate(value) {
-    return value ? new Date(value) : new Date();
+    if (!value) return new Date();
+    if (value instanceof Date) {
+        return isNaN(value.getTime()) ? new Date() : value;
+    }
+    if (typeof value === 'string') {
+        const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (match) {
+            const d = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+            if (!isNaN(d.getTime())) return d;
+        }
+    }
+    const parsed = new Date(value);
+    return isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
 function toInteractionType(value) {
@@ -169,7 +183,29 @@ async function getRows(key) {
                 { id: 'mat-rep', label: 'Reportes y métricas de ventas y abastecimiento en vivo', completed: true }
             ];
         }
+        if (key === 'system_config') {
+            const [rows] = await pool.query("SELECT data_value FROM app_data WHERE data_key = 'system_config'");
+            if (rows.length && rows[0].data_value) {
+                return typeof rows[0].data_value === 'string' ? JSON.parse(rows[0].data_value) : rows[0].data_value;
+            }
+            return {
+                businessName: 'DeliciasResto / Artesanía MX',
+                currency: 'MXN',
+                stockAlert: true
+            };
+        }
         return [];
+    }
+    if (key === 'system_config') {
+        const [rows] = await pool.query("SELECT data_value FROM app_data WHERE data_key = 'system_config'");
+        if (rows.length && rows[0].data_value) {
+            return typeof rows[0].data_value === 'string' ? JSON.parse(rows[0].data_value) : rows[0].data_value;
+        }
+        return {
+            businessName: 'DeliciasResto / Artesanía MX',
+            currency: 'MXN',
+            stockAlert: true
+        };
     }
     return [];
 }
@@ -197,7 +233,16 @@ async function replaceRows(key, data) {
             await connection.query('DELETE FROM clientes');
             for (const item of data) {
                 const stored = storedByEmail.get(String(item.email || '').toLowerCase()) || {};
-                await connection.query('INSERT INTO clientes (id, name, email, password, company, phone, address, stage, status, orders, spent, registered_date, last_interaction_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [item.id, item.name, item.email, stored.password || null, item.company !== undefined ? item.company : (stored.company || ''), item.phone, item.address || '', item.stage || 'prospecto', item.status || 'activo', item.orders || 0, item.spent || 0, toDate(item.registeredDate), item.lastInteractionDate ? toDate(item.lastInteractionDate) : null]);
+                let finalPassword = stored.password || null;
+                if (item.password && typeof item.password === 'string' && item.password.trim()) {
+                    const trimmed = item.password.trim();
+                    if (trimmed.startsWith('$2a$') || trimmed.startsWith('$2b$')) {
+                        finalPassword = trimmed;
+                    } else {
+                        finalPassword = await bcrypt.hash(trimmed, 10);
+                    }
+                }
+                await connection.query('INSERT INTO clientes (id, name, email, password, company, phone, address, stage, status, orders, spent, registered_date, last_interaction_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [item.id, item.name, item.email, finalPassword, item.company !== undefined ? item.company : (stored.company || ''), item.phone, item.address || '', item.stage || 'prospecto', item.status || 'activo', item.orders || 0, item.spent || 0, toDate(item.registeredDate), item.lastInteractionDate ? toDate(item.lastInteractionDate) : null]);
                 for (const interaction of item.interactions || []) await connection.query('INSERT INTO interacciones (cliente_id, type, date, note, user) VALUES (?, ?, ?, ?, ?)', [item.id, toInteractionType(interaction.type), toDate(interaction.date), interaction.note || '', interaction.user || 'Administrador']);
             }
         } else if (key === 'contactMessages') {
@@ -205,7 +250,15 @@ async function replaceRows(key, data) {
             for (const item of data) await connection.query('INSERT INTO mensajes_contacto (name, email, message, created_at) VALUES (?, ?, ?, ?)', [item.name, item.email, item.message, toDate(item.date)]);
         } else if (key === 'invoices') {
             await connection.query('DELETE FROM facturas');
-            for (const item of data) await connection.query('INSERT INTO facturas (pedido_id, folio, rfc, razon_social, regimen, cp, uso_cfdi, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [item.pedidoId || item.pedido_id || null, item.folio || 'SIN-FOLIO', item.rfc || 'RFC NO ESPECIFICADO', item.razonSocial || item.razon_social || 'Sin razón social', item.regimen || 'Régimen General de Ley', item.cp || 'No especificado', item.uso || item.uso_cfdi || 'G01 - Adquisicion de mercancias', toDate(item.fecha || item.created_at)]);
+            for (const item of data) {
+                let validPedidoId = null;
+                const rawPedidoId = item.pedidoId || item.pedido_id;
+                if (rawPedidoId) {
+                    const [p] = await connection.query('SELECT id FROM pedidos WHERE id = ?', [String(rawPedidoId)]);
+                    if (p.length > 0) validPedidoId = p[0].id;
+                }
+                await connection.query('INSERT INTO facturas (pedido_id, folio, rfc, razon_social, regimen, cp, uso_cfdi, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [validPedidoId, item.folio || 'SIN-FOLIO', item.rfc || 'RFC NO ESPECIFICADO', item.razonSocial || item.razon_social || 'Sin razón social', item.regimen || 'Régimen General de Ley', item.cp || 'No especificado', item.uso || item.uso_cfdi || 'G01 - Adquisicion de mercancias', toDate(item.fecha || item.created_at)]);
+            }
         } else if (key === 'auction') {
             await connection.query('DELETE FROM ofertas_subasta');
             await connection.query('DELETE FROM subastas');
@@ -233,7 +286,7 @@ async function replaceRows(key, data) {
                 const orderItems = item.items || [];
                 for (const product of orderItems) await connection.query('INSERT INTO pedido_items (pedido_id, name, quantity, price, subtotal) VALUES (?, ?, ?, ?, ?)', [orderId, product.name, product.quantity || 1, product.price || 0, product.subtotal || 0]);
             }
-        } else if (key.startsWith('scm_')) {
+        } else if (key.startsWith('scm_') || key === 'system_config') {
             await connection.query(
                 'INSERT INTO app_data (data_key, data_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE data_value = VALUES(data_value)',
                 [key, JSON.stringify(data)]

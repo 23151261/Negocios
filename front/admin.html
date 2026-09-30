@@ -64,10 +64,10 @@
         <!-- ============ SIDEBAR ============ -->
         <aside class="admin-sidebar" aria-label="Menú de administración">
             <div class="admin-user">
-                <div class="admin-avatar" aria-hidden="true">AD</div>
+                <div class="admin-avatar" id="sidebar-admin-avatar" aria-hidden="true">AD</div>
                 <div>
-                    <div class="admin-name">Administrador</div>
-                    <div class="admin-email">admin@deliciasresto.com</div>
+                    <div class="admin-name" id="sidebar-admin-name">Administrador</div>
+                    <div class="admin-email" id="sidebar-admin-email">admin@deliciasresto.com</div>
                 </div>
             </div>
             <ul class="sidebar-menu">
@@ -75,11 +75,11 @@
 
                 <!-- SECCIÓN CRM -->
                 <li class="menu-group-header">
-                    <button type="button" class="menu-group-toggle" id="crm-menu-toggle" aria-expanded="true">
+                    <button type="button" class="menu-group-toggle collapsed" id="crm-menu-toggle" aria-expanded="false">
                         <span><i class="fas fa-users-cog"></i> CRM</span>
                         <i class="fas fa-chevron-down group-arrow"></i>
                     </button>
-                    <ul class="submenu" id="crm-submenu">
+                    <ul class="submenu collapsed" id="crm-submenu">
                         <li><a href="#" data-admin-page="dashboard"><i class="fas fa-chart-pie"></i> Dashboard CRM</a></li>
                         <li><a href="#" data-admin-page="clientes"><i class="fas fa-users"></i> Clientes</a></li>
                         <li><a href="#" data-admin-page="pedidos"><i class="fas fa-shopping-bag"></i> Pedidos</a></li>
@@ -93,11 +93,11 @@
 
                 <!-- SECCIÓN SCM (debajo de CRM) -->
                 <li class="menu-group-header">
-                    <button type="button" class="menu-group-toggle active-group" id="scm-menu-toggle" aria-expanded="true">
+                    <button type="button" class="menu-group-toggle collapsed" id="scm-menu-toggle" aria-expanded="false">
                         <span><i class="fas fa-boxes"></i> SCM</span>
                         <i class="fas fa-chevron-down group-arrow"></i>
                     </button>
-                    <ul class="submenu" id="scm-submenu">
+                    <ul class="submenu collapsed" id="scm-submenu">
                         <li><a href="#" data-admin-page="scm-inicio"><i class="fas fa-th-large"></i> Menú SCM</a></li>
                         <li><a href="#" data-admin-page="scm-productos"><i class="fas fa-box"></i> Productos</a></li>
                         <li><a href="#" data-admin-page="scm-proveedores"><i class="fas fa-truck"></i> Proveedores</a></li>
@@ -417,11 +417,11 @@
                     <div style="padding:1.5rem;max-width:600px;">
                         <div class="form-group" style="margin-bottom:1.2rem;">
                             <label><strong>Nombre del Negocio</strong></label>
-                            <input type="text" value="DeliciasResto / Artesanía MX" style="width:100%;padding:0.6rem;border-radius:10px;border:1px solid #cbd5e1;">
+                            <input type="text" id="config-business-name" value="DeliciasResto / Artesanía MX" style="width:100%;padding:0.6rem;border-radius:10px;border:1px solid #cbd5e1;">
                         </div>
                         <div class="form-group" style="margin-bottom:1.2rem;">
                             <label><strong>Moneda</strong></label>
-                            <select style="width:100%;padding:0.6rem;border-radius:10px;border:1px solid #cbd5e1;">
+                            <select id="config-currency" style="width:100%;padding:0.6rem;border-radius:10px;border:1px solid #cbd5e1;">
                                 <option value="MXN" selected>MXN - Peso Mexicano ($)</option>
                                 <option value="USD">USD - Dólar Estadounidense ($)</option>
                             </select>
@@ -430,12 +430,13 @@
                             <label><strong>Notificaciones de Stock Mínimo</strong></label>
                             <div style="margin-top:0.4rem;">
                                 <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
-                                    <input type="checkbox" checked style="width:18px;height:18px;accent-color:#0d9488;">
+                                    <input type="checkbox" id="config-stock-alert" checked style="width:18px;height:18px;accent-color:#0d9488;">
                                     <span>Alertar cuando un producto llegue a su stock mínimo (Estrategia PUSH)</span>
                                 </label>
                             </div>
                         </div>
-                        <button type="button" class="btn-primary" onclick="alert('Configuración guardada correctamente.')"><i class="fas fa-save"></i> Guardar cambios</button>
+                        <button type="button" class="btn-primary" id="config-save-btn"><i class="fas fa-save"></i> Guardar cambios</button>
+                        <div id="config-message" class="hidden alert-message" style="margin-top:1rem;"></div>
                     </div>
                 </div>
             </div>
@@ -1381,135 +1382,10 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() { renderUsersTable(); });
+    window.loadUsersFromApi = loadUsersFromApi;
     document.addEventListener('admin-authenticated', loadUsersFromApi);
 </script>
 
-<!-- ============================================================
-     SCRIPT DE CLIENTES CON CONTRASEÑA
-     ============================================================ -->
-<script>
-    function openClientForm(idx) {
-        if (idx === undefined) idx = null;
-        editingClientId = idx;
-        previousClientView = (adminPages && adminPages['client-detail'] && adminPages['client-detail'].classList.contains('active')) ? 'client-detail' : 'clientes';
-
-        var title = document.getElementById('client-form-title');
-        var nameInput = document.getElementById('form-client-name');
-        var emailInput = document.getElementById('form-client-email');
-        var phoneInput = document.getElementById('form-client-phone');
-        var addressInput = document.getElementById('form-client-address');
-        var stageInput = document.getElementById('form-client-stage');
-        var statusInput = document.getElementById('form-client-status');
-        var passwordInput = document.getElementById('form-client-password');
-        var passwordConfirmInput = document.getElementById('form-client-password-confirm');
-        var msg = document.getElementById('client-form-message');
-
-        if (!nameInput) return;
-        if (msg) { msg.classList.add('hidden'); msg.textContent = ''; msg.className = ''; }
-
-        if (idx !== null && idx >= 0) {
-            var c = clients[idx];
-            if (title) title.textContent = 'Editar cliente';
-            nameInput.value = c.name || '';
-            if (emailInput) emailInput.value = c.email || '';
-            if (phoneInput) phoneInput.value = c.phone || '';
-            if (addressInput) addressInput.value = c.address || '';
-            if (stageInput) stageInput.value = c.stage || 'prospecto';
-            if (statusInput) statusInput.value = c.status || 'activo';
-            if (passwordInput) passwordInput.value = '';
-            if (passwordConfirmInput) passwordConfirmInput.value = '';
-            var label = document.querySelector('label[for="form-client-password"]');
-            if (label) label.innerHTML = 'Contraseña <span style="color:#6b7280;font-weight:400;">(opcional)</span>';
-        } else {
-            if (title) title.textContent = 'Agregar cliente';
-            nameInput.value = '';
-            if (emailInput) emailInput.value = '';
-            if (phoneInput) phoneInput.value = '';
-            if (addressInput) addressInput.value = '';
-            if (stageInput) stageInput.value = 'prospecto';
-            if (statusInput) statusInput.value = 'activo';
-            if (passwordInput) passwordInput.value = '';
-            if (passwordConfirmInput) passwordConfirmInput.value = '';
-            var label2 = document.querySelector('label[for="form-client-password"]');
-            if (label2) label2.innerHTML = 'Contraseña <span style="color:#e53935;">*</span>';
-        }
-        showAdminPage('client-form');
-    }
-
-    var clientFormSaveBtn = document.getElementById('form-client-save-btn');
-    if (clientFormSaveBtn) {
-        clientFormSaveBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            var name = document.getElementById('form-client-name')?.value.trim() || '';
-            var email = document.getElementById('form-client-email')?.value.trim() || '';
-            var phone = document.getElementById('form-client-phone')?.value.trim() || '';
-            var address = document.getElementById('form-client-address')?.value.trim() || '';
-            var stage = document.getElementById('form-client-stage')?.value || 'prospecto';
-            var status = document.getElementById('form-client-status')?.value || 'activo';
-            var password = document.getElementById('form-client-password')?.value || '';
-            var passwordConfirm = document.getElementById('form-client-password-confirm')?.value || '';
-            var msg = document.getElementById('client-form-message');
-
-            if (!name || name.length < 3) return showFormMessage(msg, 'El nombre debe tener al menos 3 caracteres.', 'error');
-            var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!email || !emailRegex.test(email)) return showFormMessage(msg, 'Ingresa un correo electrónico válido.', 'error');
-            if (!phone || phone.length < 7) return showFormMessage(msg, 'El teléfono debe tener al menos 7 dígitos.', 'error');
-            if (!address || address.length < 5) return showFormMessage(msg, 'La dirección debe tener al menos 5 caracteres.', 'error');
-
-            if (editingClientId === null || editingClientId === undefined) {
-                if (!password || password.length < 6) return showFormMessage(msg, 'La contraseña debe tener al menos 6 caracteres.', 'error');
-                if (!/[A-Z]/.test(password)) return showFormMessage(msg, 'La contraseña debe contener al menos una mayúscula.', 'error');
-                if (!/\d/.test(password)) return showFormMessage(msg, 'La contraseña debe contener al menos un número.', 'error');
-                if (password !== passwordConfirm) return showFormMessage(msg, 'Las contraseñas no coinciden.', 'error');
-            } else {
-                if (password) {
-                    if (password.length < 6) return showFormMessage(msg, 'La contraseña debe tener al menos 6 caracteres.', 'error');
-                    if (!/[A-Z]/.test(password)) return showFormMessage(msg, 'La contraseña debe contener al menos una mayúscula.', 'error');
-                    if (!/\d/.test(password)) return showFormMessage(msg, 'La contraseña debe contener al menos un número.', 'error');
-                    if (password !== passwordConfirm) return showFormMessage(msg, 'Las contraseñas no coinciden.', 'error');
-                }
-            }
-
-            if (editingClientId !== null && editingClientId >= 0) {
-                clients[editingClientId].name = name;
-                clients[editingClientId].email = email;
-                clients[editingClientId].phone = phone;
-                clients[editingClientId].address = address;
-                clients[editingClientId].stage = stage;
-                clients[editingClientId].status = status;
-                if (password) clients[editingClientId].password = password;
-                clients[editingClientId].interactions = clients[editingClientId].interactions || [];
-                if (!clients[editingClientId].interactions.length) {
-                    clients[editingClientId].interactions.push({ type: 'Registro', date: new Date().toISOString().slice(0, 10), note: 'Se actualizó la información del cliente.' });
-                }
-                clients[editingClientId].lastInteractionDate = clients[editingClientId].lastInteractionDate || new Date().toISOString().slice(0, 10);
-                showFormMessage(msg, 'Cliente actualizado correctamente.', 'success');
-            } else {
-                var newId = 0;
-                for (var i = 0; i < clients.length; i++) if (clients[i].id > newId) newId = clients[i].id;
-                newId++;
-                var newClient = {
-                    id: newId, name, email, phone, address, password,
-                    orders: 0, spent: 0,
-                    registeredDate: new Date().toLocaleDateString('es-ES'),
-                    stage, status,
-                    lastInteractionDate: new Date().toISOString().slice(0, 10),
-                    interactions: [{ type: 'Registro', date: new Date().toISOString().slice(0, 10), note: 'Cliente agregado desde el formulario principal.' }]
-                };
-                clients.push(newClient);
-                showFormMessage(msg, 'Cliente creado correctamente.', 'success');
-            }
-
-            saveClients();
-            updateDashboardStats();
-            setTimeout(function() {
-                showAdminPage('clientes');
-                renderClientsTable();
-            }, 1500);
-        });
-    }
-</script>
-
-    <script src="scm.js"></script>
+<script src="scm.js"></script>
 </body>
 </html>
