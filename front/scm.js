@@ -7,57 +7,7 @@
 
 (function () {
     const API_BASE = 'http://localhost:5000/api/data';
-
-    const STORAGE_KEYS = {
-        PRODUCTS: 'delicias_scm_products',
-        PROVIDERS: 'delicias_scm_providers',
-        MOVEMENTS: 'delicias_scm_movements',
-        ORDERS: 'delicias_scm_orders',
-        MATURITY: 'delicias_scm_maturity'
-    };
-
-    // Datos predeterminados contextualizados para el restaurante DeliciasResto
-    const DEFAULT_RESTAURANT_PRODUCTS = [
-        { id: 1, name: 'Pizza Margarita', category: 'Pizzas', stock: 10, minStock: 8, strategy: 'PUSH', unitCost: 45.00, providerId: 2, desc: 'Pizza artesanal con tomate, mozzarella y albahaca fresca.' },
-        { id: 2, name: 'Pizza Pepperoni', category: 'Pizzas', stock: 10, minStock: 8, strategy: 'PUSH', unitCost: 52.00, providerId: 1, desc: 'Pizza con pepperoni americano, mozzarella y salsa casera.' },
-        { id: 3, name: 'Hamburguesa Clásica', category: 'Hamburguesas', stock: 8, minStock: 8, strategy: 'PUSH', unitCost: 40.00, providerId: 1, desc: 'Carne de res 100%, lechuga, tomate y queso.' },
-        { id: 4, name: 'Hamburguesa BBQ', category: 'Hamburguesas', stock: 5, minStock: 8, strategy: 'PUSH', unitCost: 48.00, providerId: 1, desc: 'Hamburguesa con cebolla caramelizada, tocino y salsa BBQ.' },
-        { id: 5, name: 'Salmón a la plancha', category: 'Pescados', stock: 6, minStock: 8, strategy: 'PULL', unitCost: 85.00, providerId: 3, desc: 'Salmón fresco del Pacífico sellado con vegetales.' },
-        { id: 6, name: 'Ceviche de camarón', category: 'Pescados', stock: 7, minStock: 8, strategy: 'PULL', unitCost: 65.00, providerId: 3, desc: 'Camarones frescos marinados en jugo de limón y cilantro.' },
-        { id: 7, name: 'Café de especialidad', category: 'Bebidas', stock: 20, minStock: 10, strategy: 'PUSH', unitCost: 15.00, providerId: 5, desc: 'Café de altura arábica con tueste medio de Chiapas.' },
-        { id: 8, name: 'Ensalada César', category: 'Ensaladas', stock: 9, minStock: 8, strategy: 'PULL', unitCost: 35.00, providerId: 4, desc: 'Lechuga romana fresca, pollo, parmesano y crutones.' }
-    ];
-
-    const DEFAULT_RESTAURANT_PROVIDERS = [
-        { id: 1, name: 'Distribuidora de Carnes La Finca', contact: 'Carlos Martínez', email: 'ventas@lafinca.com', phone: '55 2345 6789', address: 'Parque Industrial Norte #45, CDMX', products: 'Carne de res, pepperoni, costillas BBQ, tocino' },
-        { id: 2, name: 'Lácteos y Quesos del Valle', contact: 'María Gómez', email: 'contacto@lacteosvalle.com', phone: '55 9876 5432', address: 'Av. de las Granjas 120, Querétaro', products: 'Queso mozzarella, queso cheddar, crema, mantequilla' },
-        { id: 3, name: 'Mariscos y Pescados del Pacífico', contact: 'Roberto Silva', email: 'pedidos@mariscospacifico.com', phone: '55 4567 8901', address: 'Bodega 14 Central de Pescados, Veracruz', products: 'Salmón fresco, camarones, mariscos' },
-        { id: 4, name: 'Agrícola San Isidro', contact: 'Laura Sánchez', email: 'laura@agricolasanisidro.com', phone: '55 3456 7890', address: 'Carretera Federal Km 18, Puebla', products: 'Tomates, lechuga romana, albahaca, cebollas' },
-        { id: 5, name: 'Tostadores Café de Altura', contact: 'Juan Hernández', email: 'juan@cafedealtura.com', phone: '55 1234 5678', address: 'Finca Los Cedros, Chiapas', products: 'Granos de café arábica y tueste de especialidad' }
-    ];
-
-    const DEFAULT_RESTAURANT_MOVEMENTS = [
-        { id: 1, date: '18/04/2026', productId: 1, type: 'Entrada', quantity: 30, reason: 'Compra queso y masa', user: 'Admin' },
-        { id: 2, date: '09/04/2026', productId: 2, type: 'Salida', quantity: -10, reason: 'Venta por pedidos', user: 'Admin' },
-        { id: 3, date: '08/04/2026', productId: 4, type: 'Salida', quantity: -5, reason: 'Venta por pedidos', user: 'Admin' },
-        { id: 4, date: '07/04/2026', productId: 5, type: 'Entrada', quantity: 15, reason: 'Reposición mariscos', user: 'Admin' },
-        { id: 5, date: '05/04/2026', productId: 7, type: 'Entrada', quantity: 20, reason: 'Compra café', user: 'Admin' }
-    ];
-
-    const DEFAULT_RESTAURANT_ORDERS = [
-        { id: 1, folio: 'PC-001', date: '10/04/2026', productId: 1, quantity: 30, type: 'Reposición', status: 'Pendiente', providerId: 2, notes: 'Queso mozzarella y masa para Pizza Margarita' },
-        { id: 2, folio: 'PC-002', date: '08/04/2026', productId: 4, quantity: 25, type: 'Reposición', status: 'En proceso', providerId: 1, notes: 'Carne para Hamburguesa BBQ y salsa' },
-        { id: 3, folio: 'PC-003', date: '05/04/2026', productId: 5, quantity: 20, type: 'Suministro', status: 'Surtido', providerId: 3, notes: 'Salmón fresco sellado' },
-        { id: 4, folio: 'PC-004', date: '03/04/2026', productId: 7, quantity: 15, type: 'Reposición', status: 'Cancelado', providerId: 5, notes: 'Demora en transporte de granos' }
-    ];
-
-    const DEFAULT_RESTAURANT_MATURITY = [
-        { id: 'mat-prod', label: 'Productos y proveedores de DeliciasResto integrados', completed: true },
-        { id: 'mat-inv', label: 'Inventario y existencias conectadas a la base de datos MySQL', completed: true },
-        { id: 'mat-traz', label: 'Trazabilidad de movimientos de cocina e insumos', completed: true },
-        { id: 'mat-pushpull', label: 'Estrategia Push/Pull implementada por platillos', completed: true },
-        { id: 'mat-rep', label: 'Reportes y métricas de ventas y abastecimiento en vivo', completed: true }
-    ];
+    const API_ROOT = 'http://localhost:5000/api';
 
     // Estado en memoria
     let scmProducts = [];
@@ -65,7 +15,9 @@
     let scmMovements = [];
     let scmOrders = [];
     let scmMaturity = [];
+    let scmLevel = 'Inicial';
     let scmMetrics = null;
+    let scmAlerts = [];
 
     // Instancias de Chart.js
     let chartTopProducts = null;
@@ -74,156 +26,179 @@
 
     // Helpers de API
     async function apiGet(key) {
-        try {
-            const res = await fetch(`${API_BASE}/${key}`);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return await res.json();
-        } catch (e) {
-            console.warn(`[SCM API] Error al obtener ${key}:`, e.message);
-            return null;
-        }
+        const res = await fetch(`${API_BASE}/${key}`);
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || `No se pudo cargar ${key} (HTTP ${res.status})`);
+        return result;
     }
 
     async function apiPut(key, data) {
-        try {
-            const res = await fetch(`${API_BASE}/${key}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+        const token = window.deliciasAuthToken;
+        if (!token) throw new Error('Inicia sesión como administrador antes de guardar cambios SCM.');
+        const res = await fetch(`${API_BASE}/${key}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || `No se pudo guardar ${key} en SQL (HTTP ${res.status})`);
+        return result;
+    }
+
+    async function apiScmRequest(path, method = 'GET', data) {
+        const headers = {};
+        const options = { method, headers };
+        if (method !== 'GET') {
+            const token = window.deliciasAuthToken;
+            if (!token) throw new Error('Inicia sesión como administrador antes de guardar cambios SCM.');
+            headers['Content-Type'] = 'application/json';
+            headers.Authorization = `Bearer ${token}`;
+            if (data !== undefined) options.body = JSON.stringify(data);
+        }
+        const response = await fetch(`${API_ROOT}${path}`, options);
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || `No se pudo completar ${method} ${path} (HTTP ${response.status})`);
+        return result;
+    }
+
+    function showScmError(error) {
+        const content = document.querySelector('.admin-content');
+        if (!content) return;
+        let message = document.getElementById('scm-save-error');
+        if (!message) {
+            message = document.createElement('div');
+            message.id = 'scm-save-error';
+            message.setAttribute('role', 'alert');
+            message.style.cssText = 'margin:0 0 1rem;padding:0.85rem 1rem;border-radius:8px;background:#fee2e2;color:#991b1b;';
+            content.prepend(message);
+        }
+        message.textContent = `Error de persistencia SCM en SQL: ${error.message}`;
+    }
+
+    function clearScmError() {
+        document.getElementById('scm-save-error')?.remove();
+    }
+
+    function renderLowStockWarning() {
+        document.querySelectorAll('[data-scm-low-stock-warning]').forEach(warning => {
+            const list = warning.querySelector('[data-scm-low-stock-list]');
+            if (!list) return;
+
+            const closeButton = document.createElement('button');
+            closeButton.type = 'button';
+            closeButton.setAttribute('aria-label', 'Cerrar aviso');
+            closeButton.className = 'scm-warning-close';
+            closeButton.innerHTML = '&times;';
+            closeButton.addEventListener('click', () => {
+                warning.hidden = true;
             });
-            return res.ok;
-        } catch (e) {
-            console.warn(`[SCM API] Error al guardar ${key}:`, e.message);
+
+            const heading = document.createElement('h4');
+            heading.className = 'scm-low-stock-title';
+            heading.textContent = `Stock mínimo: ${scmAlerts.length} producto${scmAlerts.length === 1 ? '' : 's'} requiere${scmAlerts.length === 1 ? '' : 'n'} atención`;
+
+            list.replaceChildren();
+            warning.replaceChildren(closeButton, heading, list);
+            warning.hidden = scmAlerts.length === 0;
+
+            for (const alert of scmAlerts) {
+                const item = document.createElement('li');
+                item.className = 'scm-low-stock-item';
+
+                const details = document.createElement('div');
+                const productName = document.createElement('strong');
+                productName.textContent = alert.productName;
+                const stock = document.createElement('span');
+                stock.className = 'scm-low-stock-details';
+                stock.textContent = `Stock: ${alert.stock} / mínimo: ${alert.minStock} · Proveedor: ${alert.providerName}.`;
+                const orderStatus = document.createElement('span');
+                orderStatus.className = 'scm-low-stock-order';
+                orderStatus.textContent = alert.order
+                    ? `Pedido ${alert.order.folio}: ${alert.order.quantity} unidades · ${alert.order.status}${alert.order.autoGenerated ? ' (automático)' : ''}.`
+                    : alert.strategy === 'PULL'
+                        ? 'Aún no se ha solicitado; esta estrategia requiere pedido manual.'
+                        : 'Aún no hay un pedido de reposición registrado.';
+                details.append(productName, stock, orderStatus);
+
+                const action = document.createElement('button');
+                action.type = 'button';
+                action.className = alert.order ? 'btn-secondary scm-low-stock-action' : 'btn-primary scm-low-stock-action';
+                action.textContent = alert.order ? 'Ver pedidos' : 'Generar pedido';
+                action.addEventListener('click', () => {
+                    if (alert.order) {
+                        window.switchScmPage('scm-pedidos');
+                    } else {
+                        window.openScmOrderModal(alert.productId);
+                    }
+                });
+
+                item.append(details, action);
+                list.appendChild(item);
+            }
+        });
+    }
+
+    async function persistScm(saveOperation) {
+        try {
+            await saveOperation();
+            await loadScmData();
+            clearScmError();
+            return true;
+        } catch (error) {
+            console.error('[SCM SQL] No se pudieron guardar los cambios:', error);
+            showScmError(error);
+            try {
+                await loadScmData();
+            } catch (reloadError) {
+                console.error('[SCM SQL] No se pudieron recuperar los datos guardados:', reloadError);
+            }
             return false;
         }
     }
 
-    // Carga de datos desde la Base de Datos con respaldo local
+    // SQL es la fuente de verdad para todos los datos SCM.
     async function loadScmData() {
-        // 1. Cargar productos desde la base de datos MySQL
-        const dbProducts = await apiGet('products');
-        if (dbProducts && Array.isArray(dbProducts) && dbProducts.length > 0) {
-            // Unir atributos SCM (minStock, strategy, unitCost, providerId) con datos reales de la BD
-            const savedScmMeta = JSON.parse(localStorage.getItem('delicias_scm_prod_meta') || '{}');
-            scmProducts = dbProducts.map(p => {
-                const meta = savedScmMeta[p.id] || {};
-                const isFreshDish = p.category === 'Pescados' || p.category === 'Ensaladas';
-                return {
-                    id: p.id,
-                    name: p.name,
-                    category: p.category,
-                    price: p.price,
-                    stock: p.stock !== undefined ? p.stock : 10,
-                    minStock: meta.minStock || 8,
-                    strategy: meta.strategy || (isFreshDish ? 'PULL' : 'PUSH'),
-                    unitCost: meta.unitCost || Number((p.price * 0.4).toFixed(2)),
-                    providerId: meta.providerId || (p.category === 'Pizzas' ? 2 : p.category === 'Pescados' ? 3 : p.category === 'Bebidas' ? 5 : 1),
-                    desc: p.desc || p.description || ''
-                };
-            });
-        } else {
-            try {
-                scmProducts = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRODUCTS)) || DEFAULT_RESTAURANT_PRODUCTS;
-            } catch (_) { scmProducts = DEFAULT_RESTAURANT_PRODUCTS; }
-        }
-
-        // 2. Cargar proveedores desde la BD
-        const dbProviders = await apiGet('scm_providers');
-        if (dbProviders && Array.isArray(dbProviders) && dbProviders.length > 0) {
-            scmProviders = dbProviders;
-        } else {
-            try {
-                scmProviders = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROVIDERS)) || DEFAULT_RESTAURANT_PROVIDERS;
-            } catch (_) { scmProviders = DEFAULT_RESTAURANT_PROVIDERS; }
-            apiPut('scm_providers', scmProviders);
-        }
-
-        // 3. Cargar movimientos desde la BD
-        const dbMovements = await apiGet('scm_movements');
-        if (dbMovements && Array.isArray(dbMovements) && dbMovements.length > 0) {
-            scmMovements = dbMovements;
-        } else {
-            try {
-                scmMovements = JSON.parse(localStorage.getItem(STORAGE_KEYS.MOVEMENTS)) || DEFAULT_RESTAURANT_MOVEMENTS;
-            } catch (_) { scmMovements = DEFAULT_RESTAURANT_MOVEMENTS; }
-            apiPut('scm_movements', scmMovements);
-        }
-
-        // 4. Cargar pedidos SCM desde la BD
-        const dbOrders = await apiGet('scm_orders');
-        if (dbOrders && Array.isArray(dbOrders) && dbOrders.length > 0) {
-            scmOrders = dbOrders;
-        } else {
-            try {
-                scmOrders = JSON.parse(localStorage.getItem(STORAGE_KEYS.ORDERS)) || DEFAULT_RESTAURANT_ORDERS;
-            } catch (_) { scmOrders = DEFAULT_RESTAURANT_ORDERS; }
-            apiPut('scm_orders', scmOrders);
-        }
-
-        // 5. Cargar nivel de madurez desde la BD
-        const dbMaturity = await apiGet('scm_maturity');
-        if (dbMaturity && Array.isArray(dbMaturity) && dbMaturity.length > 0) {
-            scmMaturity = dbMaturity;
-        } else {
-            try {
-                scmMaturity = JSON.parse(localStorage.getItem(STORAGE_KEYS.MATURITY)) || DEFAULT_RESTAURANT_MATURITY;
-            } catch (_) { scmMaturity = DEFAULT_RESTAURANT_MATURITY; }
-            apiPut('scm_maturity', scmMaturity);
-        }
-
-        // 6. Cargar métricas calculadas en MySQL
-        scmMetrics = await apiGet('scm_metrics');
-
-        // Respaldar localmente
-        saveLocalCopy();
-    }
-
-    function saveLocalCopy() {
-        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(scmProducts));
-        localStorage.setItem(STORAGE_KEYS.PROVIDERS, JSON.stringify(scmProviders));
-        localStorage.setItem(STORAGE_KEYS.MOVEMENTS, JSON.stringify(scmMovements));
-        localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(scmOrders));
-        localStorage.setItem(STORAGE_KEYS.MATURITY, JSON.stringify(scmMaturity));
-
-        // Guardar metadata de productos
-        const meta = {};
-        scmProducts.forEach(p => {
-            meta[p.id] = { minStock: p.minStock, strategy: p.strategy, unitCost: p.unitCost, providerId: p.providerId };
+        const [
+            dbProducts,
+            dbProviders,
+            dbMovements,
+            dbOrders,
+            scmState,
+            scmMetricsData
+        ] = await Promise.all([
+            apiScmRequest('/productos'),
+            apiScmRequest('/proveedores'),
+            apiScmRequest('/inventario/movimientos'),
+            apiScmRequest('/pedidos'),
+            apiScmRequest('/scm/estado'),
+            apiGet('scm_metrics')
+        ]);
+        const scmAlertsData = await apiGet('scm_alerts');
+        scmProducts = dbProducts.map(product => {
+            return {
+                ...product,
+                minStock: product.minStock ?? null,
+                strategy: product.strategy || 'PUSH',
+                unitCost: product.unitCost ?? Number((product.price * 0.4).toFixed(2)),
+                desc: product.desc || product.description || ''
+            };
         });
-        localStorage.setItem('delicias_scm_prod_meta', JSON.stringify(meta));
-    }
-
-    async function syncScmProducts() {
-        saveLocalCopy();
-        // Guardar en MySQL la lista de productos
-        await apiPut('products', scmProducts.map(p => ({
-            id: p.id,
-            name: p.name,
-            category: p.category,
-            price: p.price || (p.unitCost ? Number((p.unitCost * 2.2).toFixed(2)) : 10),
-            desc: p.desc,
-            stock: p.stock,
-            status: p.stock > 0 ? 'disponible' : 'agotado'
-        })));
-    }
-
-    async function syncScmProviders() {
-        saveLocalCopy();
-        await apiPut('scm_providers', scmProviders);
-    }
-
-    async function syncScmMovements() {
-        saveLocalCopy();
-        await apiPut('scm_movements', scmMovements);
-    }
-
-    async function syncScmOrders() {
-        saveLocalCopy();
-        await apiPut('scm_orders', scmOrders);
+        scmProviders = dbProviders;
+        scmMovements = dbMovements;
+        scmOrders = dbOrders;
+        scmMaturity = scmState.checklist || [];
+        scmMetrics = scmMetricsData;
+        scmAlerts = scmAlertsData;
+        scmLevel = scmState.nivel_scm || 'Inicial';
+        renderLowStockWarning();
+        renderScmMaturityView();
+        clearScmError();
     }
 
     async function syncScmMaturity() {
-        saveLocalCopy();
         await apiPut('scm_maturity', scmMaturity);
     }
 
@@ -236,6 +211,17 @@
     function getProductName(id) {
         const prod = scmProducts.find(x => x.id === Number(id));
         return prod ? prod.name : 'Producto #' + id;
+    }
+
+    async function refreshScmOrders() {
+        try {
+            scmOrders = await apiScmRequest('/pedidos');
+            scmAlerts = await apiGet('scm_alerts');
+            renderLowStockWarning();
+            renderScmOrdersTable();
+        } catch (error) {
+            showScmError(error);
+        }
     }
 
     // ============================================================
@@ -284,7 +270,7 @@
                 renderScmMovementsTable();
                 break;
             case 'scm-pedidos':
-                renderScmOrdersTable();
+                refreshScmOrders();
                 break;
             case 'scm-logistica':
                 renderScmLogisticsView();
@@ -352,8 +338,8 @@
                 </td>
                 <td><strong>${p.name}</strong><br><small style="color:#64748b;">${getProviderName(p.providerId)}</small></td>
                 <td>${p.category}</td>
-                <td><span style="font-weight:700; color:${p.stock <= p.minStock ? '#dc2626' : '#0f172a'}">${p.stock}</span></td>
-                <td>${p.minStock}</td>
+                <td><span style="font-weight:700; color:${p.minStock !== null && p.stock <= p.minStock ? '#dc2626' : '#0f172a'}">${p.stock}</span></td>
+                <td>${p.minStock ?? 'Sin definir'}</td>
                 <td>
                     <span class="${isPush ? 'badge-push' : 'badge-pull'}">
                         <i class="fas ${isPush ? 'fa-arrow-down' : 'fa-arrow-up'}"></i> ${p.strategy}
@@ -403,7 +389,7 @@
                 document.getElementById('scm-form-prod-category').value = p.category || 'Pizzas';
                 if (provSelect) provSelect.value = p.providerId || '';
                 document.getElementById('scm-form-prod-stock').value = p.stock || 0;
-                document.getElementById('scm-form-prod-minstock').value = p.minStock || 8;
+                document.getElementById('scm-form-prod-minstock').value = p.minStock ?? '';
                 document.getElementById('scm-form-prod-strategy').value = p.strategy || 'PUSH';
                 document.getElementById('scm-form-prod-cost').value = p.unitCost || 0;
             }
@@ -418,8 +404,7 @@
         const p = scmProducts.find(x => x.id === id);
         if (!p) return;
         if (confirm(`¿Estás seguro de eliminar el platillo "${p.name}"?`)) {
-            scmProducts = scmProducts.filter(x => x.id !== id);
-            await syncScmProducts();
+            if (!await persistScm(() => apiScmRequest(`/productos/${id}`, 'DELETE'))) return;
             renderScmProductsTable();
         }
     };
@@ -493,8 +478,7 @@
         const pr = scmProviders.find(x => x.id === id);
         if (!pr) return;
         if (confirm(`¿Estás seguro de eliminar al proveedor "${pr.name}"?`)) {
-            scmProviders = scmProviders.filter(x => x.id !== id);
-            await syncScmProviders();
+            if (!await persistScm(() => apiScmRequest(`/proveedores/${id}`, 'DELETE'))) return;
             renderScmProvidersTable();
         }
     };
@@ -510,9 +494,13 @@
         const statusFilter = document.getElementById('scm-inventory-status-filter')?.value || 'todos';
 
         const filtered = scmProducts.filter(p => {
-            const isLow = p.stock <= p.minStock;
+            const isLow = p.minStock !== null && p.stock <= p.minStock;
+            const hasNoMinimum = p.minStock === null;
             const matchesSearch = !search || p.name.toLowerCase().includes(search);
-            const matchesStatus = statusFilter === 'todos' || (statusFilter === 'bajo' && isLow) || (statusFilter === 'normal' && !isLow);
+            const matchesStatus = statusFilter === 'todos'
+                || (statusFilter === 'bajo' && isLow)
+                || (statusFilter === 'normal' && !isLow && !hasNoMinimum)
+                || (statusFilter === 'sin-minimo' && hasNoMinimum);
             return matchesSearch && matchesStatus;
         });
 
@@ -523,15 +511,15 @@
         }
 
         filtered.forEach(p => {
-            const isLow = p.stock <= p.minStock;
+            const isLow = p.minStock !== null && p.stock <= p.minStock;
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><strong>${p.name}</strong><br><small style="color:#64748b;">${p.category}</small></td>
                 <td><span style="font-weight:700;font-size:1.05rem;color:${isLow ? '#dc2626' : '#0f172a'}">${p.stock}</span></td>
-                <td>${p.minStock}</td>
+                <td>${p.minStock ?? 'Sin definir'}</td>
                 <td>
-                    <span class="${isLow ? 'badge-stock-low' : 'badge-stock-normal'}">
-                        ● ${isLow ? 'Stock bajo' : 'Normal'}
+                    <span class="${p.minStock === null ? 'badge-stock-normal' : isLow ? 'badge-stock-low' : 'badge-stock-normal'}">
+                ● ${p.minStock === null ? 'Mínimo sin definir' : isLow ? 'Stock bajo' : 'Normal'}
                     </span>
                 </td>
                 <td>
@@ -662,7 +650,7 @@
                 <td><strong>${p.name}</strong></td>
                 <td>${p.category}</td>
                 <td><span style="font-weight:700;">${p.stock}</span></td>
-                <td>${p.minStock}</td>
+                <td>${p.minStock ?? 'Sin definir'}</td>
                 <td>
                     <span class="${isPush ? 'badge-push' : 'badge-pull'}">
                         ${p.strategy}
@@ -718,7 +706,10 @@
             tr.innerHTML = `
                 <td><strong>${o.folio}</strong></td>
                 <td>${o.date}</td>
-                <td><strong>${getProductName(o.productId)}</strong></td>
+                <td>
+                    <strong>${getProductName(o.productId)}</strong>
+                    ${o.autoGenerated ? '<br><small class="scm-auto-order-badge">Reposición automática por stock mínimo</small>' : ''}
+                </td>
                 <td>${o.quantity}</td>
                 <td>${o.type}</td>
                 <td><span class="${badgeClass}">${o.status}</span></td>
@@ -735,7 +726,7 @@
         });
     }
 
-    window.openScmOrderModal = function () {
+    window.openScmOrderModal = function (productId = null) {
         const modal = document.getElementById('scm-order-modal');
         const form = document.getElementById('scm-order-form');
         const prodSelect = document.getElementById('scm-form-ord-product');
@@ -765,6 +756,17 @@
         }
 
         document.getElementById('scm-form-ord-date').value = new Date().toISOString().split('T')[0];
+        if (productId !== null) {
+            const product = scmProducts.find(item => item.id === Number(productId));
+            if (product) {
+                prodSelect.value = String(product.id);
+                document.getElementById('scm-form-ord-qty').value = product.minStock;
+                document.getElementById('scm-form-ord-type').value = 'Reposición';
+                if (provSelect) provSelect.value = String(product.providerId || '');
+                document.getElementById('scm-form-ord-notes').value =
+                    `Reposición por stock mínimo: ${product.stock} unidades disponibles de un mínimo de ${product.minStock}.`;
+            }
+        }
         modal.classList.add('active');
     };
 
@@ -772,31 +774,7 @@
         const order = scmOrders.find(o => o.id === orderId);
         if (!order) return;
 
-        const oldStatus = order.status;
-        order.status = newStatus;
-
-        // Si se marca como surtido, sumar stock al producto en MySQL y generar movimiento
-        if (newStatus === 'Surtido' && oldStatus !== 'Surtido') {
-            const product = scmProducts.find(p => p.id === order.productId);
-            if (product) {
-                product.stock += Number(order.quantity);
-                await syncScmProducts();
-
-                const newMov = {
-                    id: Date.now(),
-                    date: new Date().toLocaleDateString('es-ES'),
-                    productId: order.productId,
-                    type: 'Entrada',
-                    quantity: Number(order.quantity),
-                    reason: 'Pedido surtido (' + order.folio + ')',
-                    user: 'Admin'
-                };
-                scmMovements.unshift(newMov);
-                await syncScmMovements();
-            }
-        }
-
-        await syncScmOrders();
+        if (!await persistScm(() => apiScmRequest(`/pedidos/${order.id}/estado`, 'PUT', { status: newStatus }))) return;
         renderScmOrdersTable();
     };
 
@@ -818,46 +796,40 @@
             container.appendChild(li);
         });
 
-        const total = scmMaturity.length;
-        const completed = scmMaturity.filter(i => i.completed).length;
-        const percentage = Math.round((completed / total) * 100);
-
         const levelBadge = document.getElementById('scm-maturity-current-badge');
         const descElem = document.getElementById('scm-maturity-desc');
+        const levelSelect = document.getElementById('scm-maturity-level-select');
         const step1 = document.getElementById('scm-step-1');
         const step2 = document.getElementById('scm-step-2');
         const step3 = document.getElementById('scm-step-3');
-
-        [step1, step2, step3].forEach(s => {
-            if (s) s.classList.remove('active', 'completed');
+        const levels = ['Inicial', 'En desarrollo', 'Optimizado'];
+        const selectedLevel = levels.includes(scmLevel) ? scmLevel : levels[0];
+        const currentIndex = levels.indexOf(selectedLevel);
+        const steps = [step1, step2, step3];
+        steps.forEach((step, index) => {
+            if (!step) return;
+            step.classList.toggle('active', index === currentIndex);
+            step.classList.toggle('completed', index < currentIndex);
         });
-
-        if (percentage < 40) {
+        if (levelBadge) levelBadge.textContent = selectedLevel;
+        if (levelSelect) levelSelect.value = selectedLevel;
+        if (selectedLevel === 'Inicial') {
             if (levelBadge) {
-                levelBadge.textContent = 'Inicial';
                 levelBadge.style.background = '#e2e8f0';
                 levelBadge.style.color = '#334155';
             }
-            if (step1) step1.classList.add('active');
             if (descElem) descElem.textContent = 'El sistema se encuentra en fase inicial conectando catálogos y almacén.';
-        } else if (percentage < 80) {
+        } else if (selectedLevel === 'En desarrollo') {
             if (levelBadge) {
-                levelBadge.textContent = 'En desarrollo';
                 levelBadge.style.background = '#dcfce7';
                 levelBadge.style.color = '#166534';
             }
-            if (step1) step1.classList.add('completed');
-            if (step2) step2.classList.add('active');
             if (descElem) descElem.textContent = 'La base de datos MySQL está integrada. Los pedidos, ventas y stock de DeliciasResto alimentan el flujo logístico.';
         } else {
             if (levelBadge) {
-                levelBadge.textContent = 'Optimizado';
                 levelBadge.style.background = '#ccfbf1';
                 levelBadge.style.color = '#115e59';
             }
-            if (step1) step1.classList.add('completed');
-            if (step2) step2.classList.add('completed');
-            if (step3) step3.classList.add('active');
             if (descElem) descElem.textContent = 'Operación logística optimizada con sincronización automática en MySQL y métricas precisas.';
         }
     }
@@ -865,7 +837,7 @@
     window.toggleMaturityItem = async function (index) {
         if (scmMaturity[index]) {
             scmMaturity[index].completed = !scmMaturity[index].completed;
-            await syncScmMaturity();
+            if (!await persistScm(syncScmMaturity)) return;
             renderScmMaturityView();
         }
     };
@@ -880,7 +852,7 @@
         const totalProducts = metrics ? metrics.totalProducts : scmProducts.length;
         const totalProviders = metrics ? metrics.providersCount : scmProviders.length;
         const pendingOrders = metrics ? metrics.inProcessOrders : scmOrders.filter(o => o.status === 'En proceso' || o.status === 'Pendiente').length;
-        const lowStockCount = metrics ? metrics.lowStockCount : scmProducts.filter(p => p.stock <= p.minStock).length;
+        const lowStockCount = metrics ? metrics.lowStockCount : scmProducts.filter(p => p.minStock !== null && p.stock <= p.minStock).length;
 
         const kpiProd = document.getElementById('scm-kpi-products');
         const kpiProv = document.getElementById('scm-kpi-providers');
@@ -897,7 +869,7 @@
         if (critTable) {
             const criticalList = (metrics && metrics.criticalInventory && metrics.criticalInventory.length)
                 ? metrics.criticalInventory
-                : scmProducts.filter(p => p.stock <= p.minStock);
+                : scmProducts.filter(p => p.minStock !== null && p.stock <= p.minStock);
 
             critTable.innerHTML = '';
             if (criticalList.length === 0) {
@@ -908,7 +880,7 @@
                     tr.innerHTML = `
                         <td><strong>${p.name}</strong><br><small style="color:#64748b;">${p.category || 'Cocina'}</small></td>
                         <td><span style="color:#ef4444;font-weight:700;">${p.stock}</span></td>
-                        <td>${p.minStock || 8}</td>
+                        <td>${p.minStock ?? 'Sin definir'}</td>
                     `;
                     critTable.appendChild(tr);
                 });
@@ -1047,18 +1019,20 @@
                 const unitCost = Number(document.getElementById('scm-form-prod-cost').value);
 
                 if (!name) return alert('Por favor ingresa el nombre del producto.');
-
-                if (id) {
-                    const idx = scmProducts.findIndex(x => x.id === Number(id));
-                    if (idx !== -1) {
-                        scmProducts[idx] = { ...scmProducts[idx], name, desc, category, providerId, stock, minStock, strategy, unitCost };
-                    }
-                } else {
-                    const newId = scmProducts.length ? Math.max(...scmProducts.map(p => p.id)) + 1 : 1;
-                    scmProducts.push({ id: newId, name, desc, category, providerId, stock, minStock, strategy, unitCost });
-                }
-
-                await syncScmProducts();
+                const current = scmProducts.find(product => product.id === Number(id));
+                const productData = {
+                    name,
+                    description: desc,
+                    category,
+                    providerId,
+                    stock,
+                    minStock,
+                    strategy,
+                    unitCost,
+                    price: current?.price || Number((unitCost * 2.2).toFixed(2)),
+                    image: current?.image || ''
+                };
+                if (!await persistScm(() => apiScmRequest(id ? `/productos/${id}` : '/productos', id ? 'PUT' : 'POST', productData))) return;
                 document.getElementById('scm-product-modal').classList.remove('active');
                 renderScmProductsTable();
             });
@@ -1078,17 +1052,12 @@
 
                 if (!name) return alert('Por favor ingresa el nombre del proveedor.');
 
-                if (id) {
-                    const idx = scmProviders.findIndex(x => x.id === Number(id));
-                    if (idx !== -1) {
-                        scmProviders[idx] = { ...scmProviders[idx], name, contact, email, phone, address };
-                    }
-                } else {
-                    const newId = scmProviders.length ? Math.max(...scmProviders.map(p => p.id)) + 1 : 1;
-                    scmProviders.push({ id: newId, name, contact, email, phone, address });
-                }
-
-                await syncScmProviders();
+                const provider = scmProviders.find(item => item.id === Number(id));
+                const providerData = {
+                    name, contact, email, phone, address,
+                    products: provider?.products || ''
+                };
+                if (!await persistScm(() => apiScmRequest(id ? `/proveedores/${id}` : '/proveedores', id ? 'PUT' : 'POST', providerData))) return;
                 document.getElementById('scm-provider-modal').classList.remove('active');
                 renderScmProvidersTable();
             });
@@ -1105,37 +1074,19 @@
                 const quantityInput = Number(document.getElementById('scm-form-mov-qty').value);
                 const reason = document.getElementById('scm-form-mov-reason').value;
                 const date = document.getElementById('scm-form-mov-date').value || new Date().toISOString().split('T')[0];
-                const user = document.getElementById('scm-form-mov-user').value.trim() || 'Admin';
 
                 if (!productId) return alert('Selecciona un producto.');
                 if (!quantityInput || quantityInput <= 0) return alert('La cantidad debe ser mayor a 0.');
 
                 const product = scmProducts.find(p => p.id === productId);
                 if (!product) return alert('Producto no encontrado.');
-
-                const signedQty = type === 'Entrada' ? quantityInput : -quantityInput;
-
-                if (type === 'Salida' && product.stock < quantityInput) {
-                    if (!confirm(`El stock actual (${product.stock}) es menor a la salida (${quantityInput}). ¿Deseas continuar?`)) {
-                        return;
-                    }
-                }
-
-                product.stock = Math.max(0, product.stock + signedQty);
-
-                const newMovement = {
-                    id: Date.now(),
-                    date,
+                if (!await persistScm(() => apiScmRequest('/inventario/movimiento', 'POST', {
                     productId,
                     type,
-                    quantity: signedQty,
+                    quantity: quantityInput,
                     reason,
-                    user
-                };
-
-                scmMovements.unshift(newMovement);
-                await syncScmProducts();
-                await syncScmMovements();
+                    date
+                }))) return;
 
                 document.getElementById('scm-movement-modal').classList.remove('active');
                 renderScmMovementsTable();
@@ -1157,21 +1108,14 @@
                 if (!productId) return alert('Selecciona un producto.');
                 if (!quantity || quantity <= 0) return alert('La cantidad debe ser mayor a cero.');
 
-                const folioNum = String(scmOrders.length + 1).padStart(3, '0');
-                const newOrder = {
-                    id: Date.now(),
-                    folio: `PC-${folioNum}`,
-                    date,
+                if (!await persistScm(() => apiScmRequest('/pedidos', 'POST', {
                     productId,
                     quantity,
                     type,
-                    status: 'Pendiente',
                     providerId,
+                    date,
                     notes
-                };
-
-                scmOrders.unshift(newOrder);
-                await syncScmOrders();
+                }))) return;
 
                 document.getElementById('scm-order-modal').classList.remove('active');
                 renderScmOrdersTable();
@@ -1191,13 +1135,22 @@
 
                 const prod = scmProducts.find(p => p.id === prodId);
                 if (prod) {
-                    prod.strategy = newStrategy;
-                    await syncScmProducts();
+                    if (!await persistScm(() => apiScmRequest(`/productos/${prodId}/estrategia`, 'PUT', { estrategia: newStrategy }))) return;
                     renderScmLogisticsView();
                     alert(`Estrategia actualizada a ${newStrategy} para "${prod.name}".`);
                 }
             });
         }
+
+        document.getElementById('scm-maturity-level-save')?.addEventListener('click', async function () {
+            const level = document.getElementById('scm-maturity-level-select')?.value;
+            if (!level) return;
+            if (!await persistScm(async () => {
+                const result = await apiScmRequest('/scm/nivel', 'PUT', { nivel_scm: level });
+                scmLevel = result.nivel_scm;
+            })) return;
+            renderScmMaturityView();
+        });
 
         const prodSelectStrat = document.getElementById('scm-strategy-product-select');
         if (prodSelectStrat) {
@@ -1223,7 +1176,12 @@
 
     // Inicialización
     document.addEventListener('DOMContentLoaded', async function () {
-        await loadScmData();
+        try {
+            await loadScmData();
+        } catch (error) {
+            console.error('[SCM SQL] No se pudieron cargar los datos:', error);
+            showScmError(error);
+        }
         setupFormListeners();
 
         const crmToggle = document.getElementById('crm-menu-toggle');

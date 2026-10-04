@@ -4,7 +4,12 @@ const { createInteraction, getInteractionsByClient, getAllInteractions } = requi
 
 const router = express.Router();
 
-router.use(verifyToken);
+function requireAdmin(req, res, next) {
+    if (['admin', 'super_administrador'].includes(req.user?.role)) return next();
+    return res.status(403).json({ error: 'Solo un administrador puede acceder al historial CRM' });
+}
+
+router.use(verifyToken, requireAdmin);
 
 router.post('/', createInteraction);
 router.get('/cliente/:clienteId', getInteractionsByClient);

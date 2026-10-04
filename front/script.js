@@ -2,10 +2,110 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const API_BASE = 'http://localhost:5000/api';
     let apiReady = false;
+    let cartReady = false;
+    let cartSaveVersion = 0;
+    const persistenceErrors = new Map();
     let authToken = '';
     let redirectAfterLogin = null;
-    let cartBeforeLogin = null;
     let adminEmail = '';
+    let crmMetrics = null;
+
+    function getGuestCartSessionId() {
+        const storageKey = 'delicias_cart_session';
+        try {
+            let sessionId = sessionStorage.getItem(storageKey);
+            if (!sessionId) {
+                sessionId = crypto.randomUUID();
+                sessionStorage.setItem(storageKey, sessionId);
+            }
+            return sessionId;
+        } catch (error) {
+            if (!window.deliciasGuestCartSession) {
+                window.deliciasGuestCartSession = crypto.randomUUID();
+            }
+            return window.deliciasGuestCartSession;
+        }
+    }
+
+    async function apiCartRequest(method, items, guestOnly) {
+        const headers = { 'X-Cart-Session': getGuestCartSessionId() };
+        const options = { method, headers };
+        if (window.deliciasAuthToken && !guestOnly && currentUser.role === 'usuario') {
+            headers.Authorization = 'Bearer ' + window.deliciasAuthToken;
+        }
+        if (items !== undefined) {
+            headers['Content-Type'] = 'application/json';
+            options.body = JSON.stringify(items);
+        }
+        const response = await fetch(API_BASE + '/carrito', options);
+        const result = await response.json().catch(function() { return {}; });
+        if (!response.ok) throw new Error(result.error || 'No se pudo completar la operación del carrito');
+        return result;
+    }
+
+    async function apiGetCart() {
+        return apiCartRequest('GET').then(function(items) {
+            if (!Array.isArray(items)) throw new Error('La API devolvió un carrito no válido');
+            return items;
+        });
+    }
+
+    async function apiSaveCart(items) {
+        if (!apiReady || !cartReady) {
+            return showPersistenceError('carrito', new Error('No se pudo validar la sesión del carrito.'));
+        }
+        try {
+            const result = await apiCartRequest('PUT', items);
+            if (!result || result.key !== 'cart' || !Array.isArray(result.data)) {
+                throw new Error('La API no confirmó el guardado del carrito.');
+            }
+            clearPersistenceError('carrito');
+            return true;
+        } catch (error) {
+            return showPersistenceError('carrito', error);
+        }
+    }
+
+    async function loadClientCartAfterLogin() {
+        cartReady = false;
+        try {
+            const result = await apiCartRequest('POST', undefined);
+            if (!result || result.key !== 'cart' || !Array.isArray(result.data)) {
+                throw new Error('La API no confirmó la transferencia del carrito.');
+            }
+            cart = result.data;
+            cartReady = true;
+            clearPersistenceError('carrito');
+            updateCartUI();
+            return true;
+        } catch (transferError) {
+            showPersistenceError('carrito', transferError);
+            try {
+                cart = await apiGetCart();
+                cartReady = true;
+                updateCartUI();
+            } catch (loadError) {
+                cart = [];
+                cartReady = false;
+                updateCartUI();
+                showPersistenceError('carrito', loadError);
+            }
+            return false;
+        }
+    }
+
+    async function loadGuestCartAfterLogout() {
+        cartReady = false;
+        try {
+            cart = await apiGetCart();
+            cartReady = true;
+            updateCartUI();
+        } catch (error) {
+            cart = [];
+            updateCartUI();
+            showPersistenceError('carrito', error);
+        }
+    }
 
     // ===== MENÚ HAMBURGUESA =====
     (function initHamburgerMenu() {
@@ -54,62 +154,145 @@ document.addEventListener('DOMContentLoaded', function() {
     })();
 
     async function apiGet(key) {
-        const response = await fetch(API_BASE + '/data/' + key);
-        if (!response.ok) throw new Error('No se pudo cargar ' + key);
+        const headers = {};
+        if (key === 'clients' && window.deliciasAuthToken) {
+            headers.Authorization = 'Bearer ' + window.deliciasAuthToken;
+        }
+        const response = await fetch(API_BASE + '/data/' + key, { headers: headers });
+        if (!response.ok) {
+            const result = await response.json().catch(function() { return {}; });
+            throw new Error(result.error || 'No se pudo cargar ' + key + ' (HTTP ' + response.status + ')');
+        }
         return response.json();
     }
 
+    async function apiCreateInteraction(interaction) {
+        const response = await fetch(API_BASE + '/interacciones', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + (window.deliciasAuthToken || '')
+            },
+            body: JSON.stringify(interaction)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'No se pudo guardar la interacción');
+        return result;
+    }
+
+    async function apiClientRequest(path, method = 'GET', payload) {
+        const headers = { Authorization: 'Bearer ' + (window.deliciasAuthToken || '') };
+        const options = { method, headers };
+        if (payload !== undefined) {
+            headers['Content-Type'] = 'application/json';
+            options.body = JSON.stringify(payload);
+        }
+        const response = await fetch(API_BASE + '/clientes' + path, options);
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'No se pudo completar la operación CRM');
+        return result;
+    }
+
+    function normalizeClientRecord(client) {
+        return {
+            ...client,
+            registeredDate: client.registeredDate || client.registered_date || '',
+            lastInteractionDate: client.lastInteractionDate || client.last_interaction_date || null,
+            interactions: Array.isArray(client.interactions) ? client.interactions : []
+        };
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, function(character) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[character];
+        });
+    }
+
+    async function loadCrmData() {
+        const [clientRows, metrics] = await Promise.all([
+            apiClientRequest(''),
+            apiClientRequest('/metricas')
+        ]);
+        clients = clientRows.map(normalizeClientRecord);
+        crmMetrics = metrics;
+        renderClientsTable();
+        updateDashboardStats();
+    }
+
+    async function refreshCrmMetrics() {
+        crmMetrics = await apiClientRequest('/metricas');
+        updateDashboardStats();
+    }
+
 function apiSave(key, value) {
-    console.log(`apiSave llamada con key: "${key}"`);
-    console.log(`Datos a guardar (${key}):`, value);
-    console.log(`Tipo de value:`, typeof value);
-    console.log(`Es array:`, Array.isArray(value));
-    
-    if (!value) {
-        console.warn(`El valor para "${key}" es null o undefined, usando array vacio`);
-        value = [];
+    if (!apiReady) {
+        return Promise.resolve(showPersistenceError(key, new Error('La base de datos todavía no está lista.')));
     }
-    
-    if (!Array.isArray(value)) {
-        console.warn(`El valor para "${key}" no es un array, convirtiendo...`);
-        value = [value];
+    if (value === undefined || value === null) {
+        return Promise.resolve(showPersistenceError(key, new Error('No hay datos para guardar.')));
     }
-    
-    console.log(`Enviando PUT a: ${API_BASE}/data/${key}`);
-    console.log(`Datos a enviar (${key}):`, JSON.stringify(value).substring(0, 200) + '...');
-    
+
     return fetch(API_BASE + '/data/' + key, {
         method: 'PUT',
-        headers: { 
+        headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + (window.deliciasAuthToken || '')
         },
         body: JSON.stringify(value)
     })
     .then(async function(response) {
-        console.log(`Respuesta de ${key}:`, response.status, response.statusText);
-        
-        const responseText = await response.text();
-        console.log(`Texto de respuesta (${key}):`, responseText);
-        
-        if (!response.ok) {
-            console.error(`Error HTTP ${response.status}:`, responseText);
-            return { success: false, error: `HTTP ${response.status}: ${responseText}` };
-        }
-        
+        let result;
         try {
-            const data = JSON.parse(responseText);
-            console.log(`${key} guardado correctamente:`, data);
-            return { success: true, data: data };
-        } catch (parseError) {
-            console.log(`No se pudo parsear JSON, pero la respuesta fue exitosa:`, responseText);
-            return { success: true, message: 'Guardado correctamente', raw: responseText };
+            result = await response.json();
+        } catch (error) {
+            return showPersistenceError(key, new Error('La API no confirmó que los datos se guardaron.'));
         }
+        if (!response.ok) {
+            return showPersistenceError(key, new Error(result.error || 'HTTP ' + response.status));
+        }
+        if (!result || result.key !== key) {
+            return showPersistenceError(key, new Error('La respuesta de guardado no es válida.'));
+        }
+        clearPersistenceError(key);
+        return true;
     })
     .catch(function(error) {
-        console.error(`Error en apiSave (${key}):`, error);
-        return { success: false, error: error.message };
+        return showPersistenceError(key, error);
     });
+}
+
+function showPersistenceError(key, error) {
+    console.error('No se guardó ' + key + ' en la base de datos:', error);
+    persistenceErrors.set(key, error.message);
+    let message = document.getElementById('database-save-error');
+    if (!message) {
+        message = document.createElement('div');
+        message.id = 'database-save-error';
+        message.setAttribute('role', 'alert');
+        message.style.cssText = 'position:fixed;z-index:10000;top:1rem;left:50%;transform:translateX(-50%);max-width:min(42rem,calc(100vw - 2rem));padding:0.9rem 1.2rem;border-radius:10px;background:#7f1d1d;color:#fff;box-shadow:0 8px 24px #0003;font:600 0.95rem/1.4 sans-serif;';
+        document.body.appendChild(message);
+    }
+    message.textContent = 'No se guardaron los cambios en MySQL. ' + Array.from(persistenceErrors.entries())
+        .map(function(entry) { return entry[0] + ': ' + entry[1]; }).join(' · ');
+    return false;
+}
+
+function clearPersistenceError(key) {
+    persistenceErrors.delete(key);
+    const message = document.getElementById('database-save-error');
+    if (!message) return;
+    if (!persistenceErrors.size) {
+        message.remove();
+        return;
+    }
+    message.textContent = 'No se guardaron los cambios en MySQL. ' + Array.from(persistenceErrors.entries())
+        .map(function(entry) { return entry[0] + ': ' + entry[1]; }).join(' · ');
 }
 
     async function apiAuth(path, payload) {
@@ -129,7 +312,7 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
     if (!currentUser || !currentUser.email) return;
     
     try {
-        await fetch(API_BASE + '/actividad/registrar', {
+        const response = await fetch(API_BASE + '/actividad/registrar', {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -144,8 +327,14 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
                 metadata: metadata || {}
             })
         });
+        const result = await response.json().catch(function() { return {}; });
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || 'La API no confirmó el registro de actividad.');
+        }
+        clearPersistenceError('actividad');
     } catch (error) {
         console.error('Error registrando actividad:', error);
+        showPersistenceError('actividad', error);
     }
 }
 
@@ -265,42 +454,35 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
     }
 
     function saveCart() {
-        return apiSave('cart', cart);
+        return apiSaveCart(cart);
+    }
+
+    function saveCartWithRollback(previousCart) {
+        var requestVersion = ++cartSaveVersion;
+        return saveCart().then(function(saved) {
+            if (!saved && requestVersion === cartSaveVersion) {
+                cart = previousCart;
+                updateCartUI();
+            }
+            return saved;
+        });
     }
 
     function saveComments() {
-        apiSave('comments', communityComments);
+        return apiSave('comments', communityComments);
     }
 
-    function saveClients() {
-        return apiSave('clients', clients);
+    function saveOrders() {
+        return apiSave('orders', orders);
     }
 
-    async function saveOrders() {
-        console.log('=== DIAGNÓSTICO DE SAVEORDERS ===');
-        console.log('Contenido de orders:', JSON.stringify(orders, null, 2));
-        console.log('Tipo de orders:', typeof orders);
-        console.log('Es array:', Array.isArray(orders));
-        console.log('Longitud:', orders.length);
-        
-        try {
-            console.log('Llamando a apiSave con key="orders"');
-            const result = await apiSave('orders', orders);
-            console.log('Resultado de apiSave:', result);
-            return result;
-        } catch (error) {
-            console.error('Error en saveOrders:', error);
-            return null;
-        }
+    function savePromociones() {
+        return apiSave('promociones', promociones);
     }
 
-        function savePromociones() {
-            apiSave('promociones', promociones);
-        }
-
-        function savePublications() {
-            apiSave('publications', userPublications);
-        }
+    function savePublications() {
+        return apiSave('publications', userPublications);
+    }
 
         function saveHistorial() {
             return apiSave('historial', historialCompras);
@@ -311,32 +493,32 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
         }
 
     function saveAuction() {
-        apiSave('auction', { ofertas: subastaOfertas, ofertaActual: subastaOfertaActual });
+        return apiSave('auction', { ofertas: subastaOfertas, ofertaActual: subastaOfertaActual });
     }
 
-        function saveContactMessages() {
-            apiSave('contactMessages', contactMessages);
-        }
+    function saveContactMessages() {
+        return apiSave('contactMessages', contactMessages);
+    }
 
         function saveInvoices() {
             return apiSave('invoices', invoices);
         }
 
         async function loadApiData() {
-            const keys = ['products', 'cart', 'comments', 'clients', 'orders', 'promociones', 'publications', 'historial', 'auction', 'contactMessages', 'invoices'];
-            try {
-                const values = await Promise.all(keys.map(apiGet));
-                const data = {};
-                keys.forEach(function(key, index) { data[key] = values[index]; });
+                const keys = ['products', 'comments', 'orders', 'promociones', 'publications', 'historial', 'auction', 'contactMessages', 'invoices'];
+                try {
+                    const [values, loadedCart] = await Promise.all([
+                        Promise.all(keys.map(apiGet)),
+                        apiGetCart()
+                    ]);
+                    const data = {};
+                    keys.forEach(function(key, index) { data[key] = values[index]; });
 
                 if (data.products !== null) products = data.products;
                 else apiSave('products', products);
-                if (data.cart !== null) cart = data.cart;
-                else apiSave('cart', cart);
+                cart = loadedCart;
                 if (data.comments !== null) communityComments = data.comments;
                 else apiSave('comments', communityComments);
-                if (data.clients !== null) clients = data.clients;
-                else apiSave('clients', clients);
                 if (data.orders !== null) orders = data.orders;
                 else apiSave('orders', orders);
                 if (data.promociones !== null) promociones = data.promociones;
@@ -354,6 +536,7 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
                 if (data.invoices !== null) invoices = data.invoices;
                 else apiSave('invoices', invoices);
 
+                cartReady = true;
                 apiReady = true;
                 renderCatalog(selectedCategory);
                 renderCommunityComments();
@@ -366,10 +549,24 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
                 renderPromotionsAdmin();
                 updateCartUI();
                 updateProfileUI();
+                persistenceErrors.clear();
+                const persistenceMessage = document.getElementById('database-save-error');
+                if (persistenceMessage) persistenceMessage.remove();
             } catch (error) {
-                console.error('API SQL no disponible; se mantienen los datos de respaldo:', error);
+                apiReady = false;
+                cartReady = false;
+                showPersistenceError('aplicación', error);
             }
+
         }
+
+        document.addEventListener('admin-authenticated', async function() {
+            try {
+                await loadCrmData();
+            } catch (error) {
+                console.error('No se pudieron cargar los clientes del CRM:', error);
+            }
+        });
 
         // ============================================================
         // FUNCIONES DE UTILIDAD
@@ -471,7 +668,6 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
     function verificarLoginAntesDeCheckout() {
         if (!isLoggedIn) {
             redirectAfterLogin = 'checkout';
-            cartBeforeLogin = cart;
             
             var feedback = document.getElementById('cart-feedback');
             if (feedback) {
@@ -491,19 +687,9 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
 
     function restaurarCarritoDespuesDeLogin() {
         var redirectTo = redirectAfterLogin;
-        var savedCart = cartBeforeLogin;
         
-        if (redirectTo === 'checkout' && savedCart) {
-            try {
-                if (savedCart && savedCart.length > 0) {
-                    cart = savedCart;
-                    saveCart();
-                    updateCartUI();
-                }
-            } catch (e) {}
-            
+        if (redirectTo === 'checkout') {
             redirectAfterLogin = null;
-            cartBeforeLogin = null;
             return true;
         }
         return false;
@@ -726,15 +912,15 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
 
             tbody.innerHTML = data.map(function(item) {
                 return '<tr>' +
-                    '<td>' + (item.fecha || '') + '</td>' +
-                    '<td><strong>' + (item.usuario_nombre || '') + '</strong></td>' +
-                    '<td>' + (item.tipo || '') + '</td>' +
-                    '<td>' + (item.descripcion || '') + '</td>' +
-                    '<td>' + (item.usuario_email || '') + '</td>' +
+                    '<td>' + escapeHtml(item.fecha || '') + '</td>' +
+                    '<td><strong>' + escapeHtml(item.usuario_nombre || '') + '</strong></td>' +
+                    '<td>' + escapeHtml(item.tipo || '') + '</td>' +
+                    '<td>' + escapeHtml(item.descripcion || '') + '</td>' +
+                    '<td>' + escapeHtml(item.usuario_email || '') + '</td>' +
                 '</tr>';
             }).join('');
         } catch (error) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:#c62828;">Error: ' + error.message + '</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:#c62828;">Error: ' + escapeHtml(error.message) + '</td></tr>';
         }
     }
     
@@ -767,16 +953,16 @@ async function renderMyActivity() {
             const descripcion = item.descripcion || '';
             const email = item.usuario_email || '';
             return '<tr>' +
-                '<td>' + fecha + '</td>' +
-                '<td><strong>' + usuario + '</strong></td>' +
-                '<td>' + tipo + '</td>' +
-                '<td>' + descripcion + '</td>' +
-                '<td>' + email + '</td>' +
+                '<td>' + escapeHtml(fecha) + '</td>' +
+                '<td><strong>' + escapeHtml(usuario) + '</strong></td>' +
+                '<td>' + escapeHtml(tipo) + '</td>' +
+                '<td>' + escapeHtml(descripcion) + '</td>' +
+                '<td>' + escapeHtml(email) + '</td>' +
             '</tr>';
         }).join('');
     } catch (error) {
         console.error('Error al cargar mi actividad:', error);
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:#c62828;">Error: ' + error.message + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:#c62828;">Error: ' + escapeHtml(error.message) + '</td></tr>';
     }
 }
 
@@ -813,7 +999,7 @@ async function renderMyActivity() {
             return;
         }
         tbody.innerHTML = activity.map(function(item) {
-            return '<tr><td>' + item.date + '</td><td><strong>' + item.client + '</strong></td><td>' + item.type + '</td><td>' + item.note + '</td><td>' + item.user + '</td></tr>';
+            return '<tr><td>' + escapeHtml(item.date) + '</td><td><strong>' + escapeHtml(item.client) + '</strong></td><td>' + escapeHtml(item.type) + '</td><td>' + escapeHtml(item.note) + '</td><td>' + escapeHtml(item.user) + '</td></tr>';
         }).join('');
     }
 
@@ -828,30 +1014,18 @@ async function renderMyActivity() {
     }
 
     function getClientRiskStatus(client) {
-        var lastPurchase = getClientLastPurchaseDate(client);
-        var lastInteraction = client.lastInteractionDate ? new Date(client.lastInteractionDate) : null;
-        if (lastPurchase && lastInteraction && lastInteraction > lastPurchase) {
-            lastPurchase = lastInteraction;
-        }
-        if (!lastPurchase) return 'at-risk';
-
-        var today = new Date();
+        var latestInteraction = client.lastInteractionDate
+            || (Array.isArray(client.interactions) && client.interactions[0]?.date);
+        var lastInteraction = latestInteraction ? parseStoredDate(latestInteraction) : null;
+        if (!lastInteraction) return 'at-risk';
         var ninetyDaysAgo = new Date();
-        ninetyDaysAgo.setDate(today.getDate() - 90);
-
-        if (lastPurchase >= ninetyDaysAgo) return 'active';
-        if (lastPurchase >= new Date(today.getFullYear(), today.getMonth() - 2, today.getDate())) return 'inactive';
-        return 'at-risk';
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+        return lastInteraction >= ninetyDaysAgo ? 'active' : 'at-risk';
     }
 
     function normalizeClientInteractions(client) {
         if (!client.interactions || !Array.isArray(client.interactions)) {
-            client.interactions = [
-                { type: 'Registro', date: client.registeredDate || new Date().toISOString().slice(0, 10), note: 'Cliente registrado en la base de datos.' }
-            ];
-        }
-        if (!client.lastInteractionDate && client.interactions.length) {
-            client.lastInteractionDate = client.interactions[0].date;
+            client.interactions = [];
         }
         if (!client.stage) client.stage = 'prospecto';
         if (!client.status) client.status = client.stage === 'inactivo' ? 'inactivo' : 'activo';
@@ -899,9 +1073,29 @@ async function renderMyActivity() {
         var riskList = document.getElementById('crm-risk-list');
         if (!riskList) return;
 
+        if (crmMetrics && Array.isArray(crmMetrics.clientsAtRisk)) {
+            if (!crmMetrics.clientsAtRisk.length) {
+                riskList.innerHTML = '<li><span>No hay clientes sin interacción reciente</span><span>OK</span></li>';
+                return;
+            }
+            riskList.innerHTML = crmMetrics.clientsAtRisk.slice(0, 10).map(function(client) {
+                var lastContact = client.lastInteractionDate
+                    ? 'Última interacción: ' + client.lastInteractionDate
+                    : 'Sin interacciones registradas';
+                return '<li><span>' + escapeHtml(client.name) + ' (' + escapeHtml(client.email) + ')</span><span>' + escapeHtml(lastContact) + '</span></li>';
+            }).join('');
+            return;
+        }
+
         var riskClients = clients.filter(function(client) {
             normalizeClientInteractions(client);
             return getClientRiskStatus(client) !== 'active';
+        }).sort(function(first, second) {
+            var firstDate = parseStoredDate(first.lastInteractionDate || first.interactions[0]?.date);
+            var secondDate = parseStoredDate(second.lastInteractionDate || second.interactions[0]?.date);
+            if (!firstDate) return secondDate ? -1 : 0;
+            if (!secondDate) return 1;
+            return firstDate - secondDate;
         }).slice(0, 4);
 
         if (!riskClients.length) {
@@ -920,21 +1114,19 @@ async function renderMyActivity() {
         var atRiskClients = 0;
         var monthlySales = 0;
         var monthlyOrders = 0;
-        var oneMonthAgo = new Date();
-        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-        var twoMonthsAgo = new Date();
-        twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
         var now = new Date();
 
         for (var j = 0; j < clients.length; j++) {
-            var lastPurchase = getClientLastPurchaseDate(clients[j]);
-            if (!lastPurchase || lastPurchase >= oneMonthAgo) {
-                activeClients++;
-            } else if (lastPurchase >= twoMonthsAgo) {
-                inactiveClients++;
-            } else {
-                atRiskClients++;
-            }
+            normalizeClientInteractions(clients[j]);
+            if (clients[j].status === 'activo') activeClients++;
+            if (clients[j].status === 'inactivo') inactiveClients++;
+            if (getClientRiskStatus(clients[j]) === 'at-risk') atRiskClients++;
+        }
+
+        if (crmMetrics) {
+            activeClients = Number(crmMetrics.activeClients) || 0;
+            inactiveClients = Number(crmMetrics.inactiveClients) || 0;
+            atRiskClients = Array.isArray(crmMetrics.clientsAtRisk) ? crmMetrics.clientsAtRisk.length : 0;
         }
 
         orders.forEach(function(order) {
@@ -946,16 +1138,22 @@ async function renderMyActivity() {
         });
 
         var statActiveClients = document.getElementById('stat-active-clients');
+        var statTotalClients = document.getElementById('stat-total-clients');
         var statInactiveClients = document.getElementById('stat-inactive-clients');
         var statAtRiskClients = document.getElementById('stat-at-risk-clients');
         var statInteractionsPerClient = document.getElementById('stat-interactions-per-client');
+        if (statTotalClients) statTotalClients.textContent = clients.length;
         if (statActiveClients) statActiveClients.textContent = activeClients;
         if (statInactiveClients) statInactiveClients.textContent = inactiveClients;
         if (statAtRiskClients) statAtRiskClients.textContent = atRiskClients;
-        var totalInteractions = clients.reduce(function(total, client) {
-            normalizeClientInteractions(client);
-            return total + client.interactions.length;
-        }, 0);
+        var totalInteractions = crmMetrics && Array.isArray(crmMetrics.interactionsByClient)
+            ? crmMetrics.interactionsByClient.reduce(function(total, client) {
+                return total + (Number(client.interactions) || 0);
+            }, 0)
+            : clients.reduce(function(total, client) {
+                normalizeClientInteractions(client);
+                return total + client.interactions.length;
+            }, 0);
         if (statInteractionsPerClient) statInteractionsPerClient.textContent = clients.length ? (totalInteractions / clients.length).toFixed(1) : '0';
         var statSalesMonth = document.getElementById('stat-sales-month');
         var reportSalesMonth = document.getElementById('report-sales-month');
@@ -971,13 +1169,12 @@ async function renderMyActivity() {
         if (canvas && typeof Chart !== 'undefined') {
             const ctx = canvas.getContext('2d');
             const chartData = {
-                labels: ['Activos', 'Inactivos', 'En riesgo'],
+                labels: ['Activos', 'Inactivos'],
                 datasets: [{
-                    data: [activeClients, inactiveClients, atRiskClients],
+                    data: [activeClients, inactiveClients],
                     backgroundColor: [
                         '#8b5cf6',
-                        '#f59e0b',
-                        '#ef4444'
+                        '#f59e0b'
                     ],
                     borderColor: '#ffffff',
                     borderWidth: 2
@@ -1165,13 +1362,16 @@ async function renderMyActivity() {
 
     var dropdownLogout = document.getElementById('dropdown-logout-btn');
     if (dropdownLogout) {
-        dropdownLogout.addEventListener('click', function(e) {
+        dropdownLogout.addEventListener('click', async function(e) {
             e.preventDefault();
             dropdownMenu.classList.remove('show');
             if (profileBtn) profileBtn.classList.remove('active');
             
             isLoggedIn = false;
             isAdmin = false;
+            authToken = '';
+            window.deliciasAuthToken = '';
+            await loadGuestCartAfterLogout();
             updateNavVisibility();
             showPage('inicio');
         });
@@ -1250,25 +1450,27 @@ async function renderMyActivity() {
         document.querySelectorAll('.cart-qty-dec').forEach(function(btn) {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
+                var previousCart = cart.map(function(item) { return { ...item }; });
                 var idx = parseInt(this.getAttribute('data-index'));
                 if (cart[idx] && cart[idx].quantity > 1) {
                     cart[idx].quantity--;
                 } else {
                     cart.splice(idx, 1);
                 }
-                saveCart();
                 updateCartUI();
+                saveCartWithRollback(previousCart);
             });
         });
 
         document.querySelectorAll('.cart-qty-inc').forEach(function(btn) {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
+                var previousCart = cart.map(function(item) { return { ...item }; });
                 var idx = parseInt(this.getAttribute('data-index'));
                 if (cart[idx]) {
                     cart[idx].quantity++;
-                    saveCart();
                     updateCartUI();
+                    saveCartWithRollback(previousCart);
                 }
             });
         });
@@ -1276,10 +1478,11 @@ async function renderMyActivity() {
         document.querySelectorAll('.cart-item-remove').forEach(function(btn) {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
+                var previousCart = cart.map(function(item) { return { ...item }; });
                 var idx = parseInt(this.getAttribute('data-index'));
                 cart.splice(idx, 1);
-                saveCart();
                 updateCartUI();
+                saveCartWithRollback(previousCart);
             });
         });
 
@@ -1290,7 +1493,6 @@ async function renderMyActivity() {
         }
         if (cartTotalAmount) cartTotalAmount.textContent = '$' + total.toFixed(2);
         if (checkoutBtn) checkoutBtn.disabled = false;
-        saveCart();
     }
 
     function obtenerProductoCarrito(item) {
@@ -1330,6 +1532,7 @@ async function renderMyActivity() {
 
     function addToCart(productId, quantity) {
         if (quantity === undefined) quantity = 1;
+        var previousCart = cart.map(function(item) { return { ...item }; });
         var existing = null;
         for (var i = 0; i < cart.length; i++) {
             if (cart[i].productId === productId) {
@@ -1342,18 +1545,21 @@ async function renderMyActivity() {
         } else {
             cart.push({ productId: productId, quantity: quantity });
         }
-        saveCart();
         updateCartUI();
-        setTimeout(function() { openCart(); }, 300);
+        return saveCartWithRollback(previousCart).then(function(saved) {
+            if (saved) setTimeout(function() { openCart(); }, 300);
+            return saved;
+        });
     }
 
     function clearCart() {
         if (cart.length === 0) return;
-        showConfirmModal('¿Estás seguro de que quieres vaciar tu carrito?', function(confirmed) {
+        showConfirmModal('¿Estás seguro de que quieres vaciar tu carrito?', async function(confirmed) {
             if (confirmed) {
+                var previousCart = cart.slice();
                 cart = [];
-                saveCart();
                 updateCartUI();
+                if (!await saveCartWithRollback(previousCart)) return;
                 var feedback = document.getElementById('cart-feedback');
                 if (feedback) {
                     feedback.textContent = 'Carrito vaciado correctamente.';
@@ -1376,7 +1582,6 @@ async function renderMyActivity() {
         
         if (!isLoggedIn) {
             redirectAfterLogin = 'checkout';
-            cartBeforeLogin = cart;
             
             var feedback = document.getElementById('cart-feedback');
             if (feedback) {
@@ -1825,15 +2030,21 @@ async function renderMyActivity() {
                 if (productName === 'Sin nombre' || productName === '') {
                     productName = 'este producto';
                 }
-                showConfirmModal('Eliminar el producto "' + productName + '"?', function(confirmed) {
+                showConfirmModal('Eliminar el producto "' + productName + '"?', async function(confirmed) {
                     if (confirmed) {
                         var idx = -1;
                         for (var k = 0; k < products.length; k++) {
                             if (products[k].id === id) { idx = k; break; }
                         }
                         if (idx !== -1) {
-                            products.splice(idx, 1);
-                            saveProducts();
+                            var deletedProduct = products.splice(idx, 1)[0];
+                            if (!await saveProducts()) {
+                                products.splice(idx, 0, deletedProduct);
+                                renderProductTable();
+                                renderCatalog(selectedCategory);
+                                updateDashboardStats();
+                                return;
+                            }
                             renderProductTable();
                             renderCatalog(selectedCategory);
                             updateDashboardStats();
@@ -1924,33 +2135,41 @@ async function renderMyActivity() {
     // FUNCIONES DE ADMIN - CLIENTES
     // ============================================================
 
-    function openClientDetail(idx) {
+    async function openClientDetail(idx) {
         if (idx === undefined || idx === null || !clients[idx]) return;
 
         var c = normalizeClientInteractions(clients[idx]);
         var content = document.getElementById('client-detail-content');
         if (!content) return;
 
+        try {
+            Object.assign(c, normalizeClientRecord(await apiClientRequest('/' + encodeURIComponent(c.id))));
+        } catch (error) {
+            console.error('No se pudo cargar el detalle del cliente:', error);
+            alert('No se pudo cargar el detalle del cliente: ' + error.message);
+            return;
+        }
+
         var interactions = (c.interactions || []).slice(0, 5);
         var timelineHtml = interactions.map(function(item, interactionIndex) {
             var colors = ['green', 'purple', 'amber', 'blue', 'rose'];
             var date = item.date || c.registeredDate || 'Sin fecha';
-            return '<div class="timeline-item"><div class="timeline-dot ' + colors[interactionIndex % colors.length] + '"></div><div class="timeline-content"><strong>' + (item.type || 'Interacción') + '</strong><p>' + (item.note || 'Sin detalle.') + '</p><small>' + date + '</small></div></div>';
+            return '<div class="timeline-item"><div class="timeline-dot ' + colors[interactionIndex % colors.length] + '"></div><div class="timeline-content"><strong>' + escapeHtml(item.type || 'Interacción') + '</strong><p>' + escapeHtml(item.note || 'Sin detalle.') + '</p><small>' + escapeHtml(date) + ' · ' + escapeHtml(item.usuario_nombre || item.user || 'Usuario sin identificar') + '</small></div></div>';
         }).join('');
 
         if (!timelineHtml) {
-            timelineHtml = '<div class="timeline-item"><div class="timeline-dot amber"></div><div class="timeline-content"><strong>Sin interacciones</strong><p>Aún no hay contacto registrado para este cliente.</p><small>' + (c.registeredDate || 'Sin fecha') + '</small></div></div>';
+            timelineHtml = '<div class="timeline-item"><div class="timeline-dot amber"></div><div class="timeline-content"><strong>Sin interacciones</strong><p>Aún no hay contacto registrado para este cliente.</p><small>' + escapeHtml(c.registeredDate || 'Sin fecha') + '</small></div></div>';
         }
 
         content.innerHTML = `
             <div class="client-detail-shell">
                 <div class="client-detail-header-card">
                     <div class="client-detail-identity">
-                        <div class="client-detail-avatar">${(c.name || 'Sin nombre').split(' ').map(function(part) { return part.charAt(0).toUpperCase(); }).slice(0,2).join('')}</div>
+                        <div class="client-detail-avatar">${escapeHtml((c.name || 'Sin nombre').split(' ').map(function(part) { return part.charAt(0).toUpperCase(); }).slice(0,2).join(''))}</div>
                         <div>
-                            <div class="client-detail-badge">${getClientStageLabel(c.stage || 'prospecto')}</div>
-                            <h4>${(c.name || 'Sin nombre')}</h4>
-                            <p>${(c.email || 'No registrado')}</p>
+                            <div class="client-detail-badge">${escapeHtml(getClientStageLabel(c.stage || 'prospecto'))}</div>
+                            <h4>${escapeHtml(c.name || 'Sin nombre')}</h4>
+                            <p>${escapeHtml(c.email || 'No registrado')}</p>
                         </div>
                     </div>
                     <div class="client-detail-header-actions">
@@ -1962,7 +2181,7 @@ async function renderMyActivity() {
                 <div class="client-detail-summary">
                     <div class="client-detail-metric">
                         <span>Pedidos</span>
-                        <strong>${(c.orders || 0)}</strong>
+                        <strong>${Number(c.orders) || 0}</strong>
                     </div>
                     <div class="client-detail-metric">
                         <span>Gastado</span>
@@ -1970,11 +2189,11 @@ async function renderMyActivity() {
                     </div>
                     <div class="client-detail-metric">
                         <span>Teléfono</span>
-                        <strong>${(c.phone || 'No registrado')}</strong>
+                        <strong>${escapeHtml(c.phone || 'No registrado')}</strong>
                     </div>
                     <div class="client-detail-metric">
                         <span>Etapa</span>
-                        <strong>${getClientStageLabel(c.stage || 'prospecto')}</strong>
+                        <strong>${escapeHtml(getClientStageLabel(c.stage || 'prospecto'))}</strong>
                     </div>
                 </div>
 
@@ -1985,10 +2204,11 @@ async function renderMyActivity() {
                                 <h5><i class="fas fa-address-card"></i> Información personal</h5>
                             </div>
                             <div class="client-detail-info-list">
-                                <div class="info-row"><span>Correo</span><strong>${(c.email || 'No registrado')}</strong></div>
-                                <div class="info-row"><span>Teléfono</span><strong>${(c.phone || 'No registrado')}</strong></div>
-                                <div class="info-row"><span>Dirección</span><strong>${(c.address || 'No registrada')}</strong></div>
-                                <div class="info-row"><span>Registro</span><strong>${(c.registeredDate || 'Sin fecha')}</strong></div>
+                                <div class="info-row"><span>Correo</span><strong>${escapeHtml(c.email || 'No registrado')}</strong></div>
+                                <div class="info-row"><span>Teléfono</span><strong>${escapeHtml(c.phone || 'No registrado')}</strong></div>
+                                <div class="info-row"><span>Dirección</span><strong>${escapeHtml(c.address || 'No registrada')}</strong></div>
+                                <div class="info-row"><span>Empresa</span><strong>${escapeHtml(c.company || 'No registrada')}</strong></div>
+                                <div class="info-row"><span>Registro</span><strong>${escapeHtml(c.registeredDate || 'Sin fecha')}</strong></div>
                             </div>
                         </div>
 
@@ -2036,6 +2256,12 @@ async function renderMyActivity() {
                             </div>
                             <div class="segment-box">
                                 <span class="segment-pill">${getClientStageLabel(c.stage || 'prospecto')}</span>
+                                <label for="client-detail-stage">Etapa CRM</label>
+                                <select id="client-detail-stage" data-client-id="${c.id}">
+                                    ${['prospecto', 'activo', 'frecuente', 'inactivo'].map(function(stage) {
+                                        return '<option value="' + stage + '"' + (c.stage === stage ? ' selected' : '') + '>' + getClientStageLabel(stage) + '</option>';
+                                    }).join('')}
+                                </select>
                                 <p>${getClientRiskStatus(c) === 'active' ? 'Cliente reciente con buena actividad.' : getClientRiskStatus(c) === 'inactive' ? 'Cliente con actividad moderada; requiere seguimiento.' : 'Cliente sin interacción reciente; necesita reactivación.'}</p>
                             </div>
                         </div>
@@ -2049,9 +2275,27 @@ async function renderMyActivity() {
         var noteBtn = document.getElementById('client-detail-note-btn');
         var followUpBtn = document.getElementById('client-detail-followup-btn');
         var interactionForm = document.getElementById('client-interaction-form');
+        var detailStageSelect = document.getElementById('client-detail-stage');
+
+        if (detailStageSelect) {
+            detailStageSelect.addEventListener('change', async function() {
+                var previousStage = c.stage;
+                detailStageSelect.disabled = true;
+                try {
+                    Object.assign(c, normalizeClientRecord(await apiClientRequest('/' + encodeURIComponent(c.id) + '/etapa', 'PUT', { stage: detailStageSelect.value })));
+                    renderClientsTable();
+                    await refreshCrmMetrics();
+                } catch (error) {
+                    detailStageSelect.value = previousStage;
+                    alert('No se pudo actualizar la etapa CRM: ' + error.message);
+                } finally {
+                    detailStageSelect.disabled = false;
+                }
+            });
+        }
 
         if (interactionForm) {
-            interactionForm.addEventListener('submit', function(event) {
+            interactionForm.addEventListener('submit', async function(event) {
                 event.preventDefault();
                 var type = document.getElementById('interaction-type').value;
                 var date = document.getElementById('interaction-date').value;
@@ -2061,17 +2305,32 @@ async function renderMyActivity() {
                     showFormMessage(message, 'Completa la fecha y la descripción.', 'error');
                     return;
                 }
-                clients[idx].interactions = clients[idx].interactions || [];
-                clients[idx].interactions.unshift({
-                    type: type.charAt(0).toUpperCase() + type.slice(1),
-                    date: date,
-                    note: description,
-                    user: adminEmail || 'Administrador'
+                var interactionClientId = clients[idx].id;
+                try {
+                    var interaction = await apiCreateInteraction({
+                        clienteId: interactionClientId,
+                        type,
+                        date,
+                        note: description
+                    });
+                    clients[idx].interactions = clients[idx].interactions || [];
+                    clients[idx].interactions.unshift(interaction);
+                    clients[idx].lastInteractionDate = date;
+                    crmMetrics = null;
+                } catch (error) {
+                    showFormMessage(message, error.message, 'error');
+                    return;
+                }
+                try {
+                    await loadCrmData();
+                } catch (error) {
+                    showFormMessage(message, 'La interacción se guardó, pero no se pudo actualizar la vista: ' + error.message, 'error');
+                    return;
+                }
+                var refreshedIndex = clients.findIndex(function(client) {
+                    return String(client.id) === String(interactionClientId);
                 });
-                clients[idx].lastInteractionDate = date;
-                saveClients();
-                openClientDetail(idx);
-                updateDashboardStats();
+                if (refreshedIndex >= 0) openClientDetail(refreshedIndex);
                 renderClientsTable();
             });
         }
@@ -2086,19 +2345,37 @@ async function renderMyActivity() {
         });
 
         if (noteBtn) {
-            noteBtn.addEventListener('click', function() {
+            noteBtn.addEventListener('click', async function() {
                 var interactionText = window.prompt('Describe la nueva interacción con este cliente:', 'Llamada de seguimiento');
                 if (!interactionText || !interactionText.trim()) return;
-                clients[idx].interactions = clients[idx].interactions || [];
-                clients[idx].interactions.unshift({
-                    type: 'Nota',
-                    date: new Date().toISOString().slice(0, 10),
-                    note: interactionText.trim()
+                const date = new Date().toISOString().slice(0, 10);
+                var interactionClientId = clients[idx].id;
+                try {
+                    var interaction = await apiCreateInteraction({
+                        clienteId: interactionClientId,
+                        type: 'nota',
+                        date,
+                        note: interactionText.trim()
+                    });
+                    clients[idx].interactions = clients[idx].interactions || [];
+                    clients[idx].interactions.unshift(interaction);
+                    clients[idx].lastInteractionDate = date;
+                    crmMetrics = null;
+                } catch (error) {
+                    alert(error.message);
+                    return;
+                }
+                try {
+                    await loadCrmData();
+                } catch (error) {
+                    renderClientsTable();
+                    alert('La nota se guardó, pero no se pudo actualizar la vista: ' + error.message);
+                    return;
+                }
+                var refreshedIndex = clients.findIndex(function(client) {
+                    return String(client.id) === String(interactionClientId);
                 });
-                clients[idx].lastInteractionDate = new Date().toISOString().slice(0, 10);
-                saveClients();
-                openClientDetail(idx);
-                updateDashboardStats();
+                if (refreshedIndex >= 0) openClientDetail(refreshedIndex);
                 renderClientsTable();
             });
         }
@@ -2115,12 +2392,17 @@ async function renderMyActivity() {
             deleteBtn.addEventListener('click', function() {
                 var index = parseInt(this.getAttribute('data-client-index'));
                 var clientName = (clients[index] && clients[index].name && clients[index].name !== 'Sin nombre') ? clients[index].name : 'este cliente';
-                showConfirmModal('Eliminar a ' + clientName + '?', function(confirmed) {
+                showConfirmModal('Eliminar a ' + clientName + '?', async function(confirmed) {
                     if (confirmed) {
-                        clients.splice(index, 1);
-                        saveClients();
-                        showAdminPage('clientes');
-                        renderClientsTable();
+                        try {
+                            await apiClientRequest('/' + encodeURIComponent(clients[index].id), 'DELETE');
+                            clients.splice(index, 1);
+                            showAdminPage('clientes');
+                            renderClientsTable();
+                            await refreshCrmMetrics();
+                        } catch (error) {
+                            alert('No se pudo eliminar al cliente: ' + error.message);
+                        }
 
                         if (isAdmin) {
                             registrarActividadUsuario(
@@ -2145,7 +2427,7 @@ async function renderMyActivity() {
         var statusFilter = document.getElementById('client-status-filter')?.value || 'todos';
         var stageFilter = document.getElementById('client-stage-filter')?.value || 'todas';
         var filteredClients = clients.map(normalizeClientInteractions).filter(function(client) {
-            var searchable = [client.name, client.email, client.phone].join(' ').toLowerCase();
+            var searchable = [client.name, client.email, client.phone, client.company].join(' ').toLowerCase();
             var status = client.status || 'activo';
             return (!search || searchable.indexOf(search) !== -1) &&
                 (statusFilter === 'todos' || status === statusFilter) &&
@@ -2153,7 +2435,7 @@ async function renderMyActivity() {
         });
 
         if (filteredClients.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:#6b4f7a;">No hay clientes registrados</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:2rem; color:#6b4f7a;">No hay clientes registrados</td></tr>';
             return;
         }
 
@@ -2161,18 +2443,22 @@ async function renderMyActivity() {
         for (var i = 0; i < filteredClients.length; i++) {
             var c = filteredClients[i];
             var originalIndex = clients.indexOf(c);
-            var stageBadge = '<span class="status-badge ' + (c.stage === 'frecuente' ? 'status-available' : c.stage === 'inactivo' ? 'status-inactive' : c.stage === 'activo' ? 'status-warning' : 'status-out-of-stock') + '">' + getClientStageLabel(c.stage || 'prospecto') + '</span>';
-            var statusBadge = '<span class="status-badge ' + (c.status === 'inactivo' ? 'status-inactive' : 'status-available') + '">Estado: ' + (c.status === 'inactivo' ? 'Inactivo' : 'Activo') + '</span>';
-            html += '<tr><td><div style="display:flex; flex-direction:column; gap:0.3rem;"><strong>' + (c.name || 'Sin nombre') + '</strong>' + stageBadge + statusBadge + '</div></td>';
-            html += '<td>' + (c.email || '') + '</td>';
-            html += '<td>' + (c.phone || '') + '</td>';
+            var statusBadge = '<span class="status-badge ' + (c.status === 'inactivo' ? 'status-inactive' : 'status-available') + '">Estado: ' + escapeHtml(c.status === 'inactivo' ? 'Inactivo' : 'Activo') + '</span>';
+            html += '<tr><td><div style="display:flex; flex-direction:column; gap:0.3rem;"><strong>' + escapeHtml(c.name || 'Sin nombre') + '</strong>' + statusBadge + '</div></td>';
+            html += '<td>' + escapeHtml(c.email || '') + '</td>';
+            html += '<td>' + escapeHtml(c.phone || '') + '</td>';
+            html += '<td>' + escapeHtml(c.company || '—') + '</td>';
+            html += '<td><select class="client-stage-select" data-client-id="' + c.id + '" aria-label="Etapa CRM de ' + (c.name || 'cliente') + '">' +
+                ['prospecto', 'activo', 'frecuente', 'inactivo'].map(function(stage) {
+                    return '<option value="' + stage + '"' + (c.stage === stage ? ' selected' : '') + '>' + getClientStageLabel(stage) + '</option>';
+                }).join('') + '</select></td>';
             html += '<td>' + (c.orders || 0) + '</td>';
             html += '<td>$' + (Number(c.spent) || 0).toFixed(2) + '</td>';
-            html += '<td>' + (c.registeredDate || '') + '</td>';
+            html += '<td>' + escapeHtml(c.registeredDate || '') + '</td>';
             html += '<td><div class="table-actions">';
-            html += '<button class="btn-view" data-index="' + originalIndex + '" aria-label="Ver detalle de ' + (c.name || 'cliente') + '" title="Ver detalle"><i class="fas fa-eye"></i></button>';
-            html += '<button class="btn-edit" data-index="' + originalIndex + '" aria-label="Editar ' + (c.name || 'cliente') + '" title="Editar cliente"><i class="fas fa-edit"></i></button>';
-            html += '<button class="btn-delete" data-index="' + originalIndex + '" aria-label="Eliminar ' + (c.name || 'cliente') + '" title="Eliminar cliente"><i class="fas fa-trash"></i></button>';
+            html += '<button class="btn-view" data-index="' + originalIndex + '" aria-label="Ver detalle de ' + escapeHtml(c.name || 'cliente') + '" title="Ver detalle"><i class="fas fa-eye"></i></button>';
+            html += '<button class="btn-edit" data-index="' + originalIndex + '" aria-label="Editar ' + escapeHtml(c.name || 'cliente') + '" title="Editar cliente"><i class="fas fa-edit"></i></button>';
+            html += '<button class="btn-delete" data-index="' + originalIndex + '" aria-label="Eliminar ' + escapeHtml(c.name || 'cliente') + '" title="Eliminar cliente"><i class="fas fa-trash"></i></button>';
             html += '</div></td></tr>';
         }
         tbody.innerHTML = html;
@@ -2185,15 +2471,40 @@ async function renderMyActivity() {
             });
         });
 
+        tbody.querySelectorAll('.client-stage-select').forEach(function(select) {
+            select.addEventListener('change', async function() {
+                var client = clients.find(function(item) { return String(item.id) === select.dataset.clientId; });
+                if (!client) return;
+                var previousStage = client.stage;
+                select.disabled = true;
+                try {
+                    var updated = await apiClientRequest('/' + encodeURIComponent(client.id) + '/etapa', 'PUT', { stage: select.value });
+                    Object.assign(client, normalizeClientRecord(updated));
+                    renderClientsTable();
+                    await refreshCrmMetrics();
+                } catch (error) {
+                    select.value = previousStage;
+                    alert('No se pudo actualizar la etapa CRM: ' + error.message);
+                } finally {
+                    select.disabled = false;
+                }
+            });
+        });
+
         tbody.querySelectorAll('.btn-delete').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 var idx = parseInt(this.getAttribute('data-index'));
                 var clientName = (clients[idx] && clients[idx].name && clients[idx].name !== 'Sin nombre') ? clients[idx].name : 'este cliente';
-                showConfirmModal('Eliminar a ' + clientName + '?', function(confirmed) {
+                showConfirmModal('Eliminar a ' + clientName + '?', async function(confirmed) {
                     if (confirmed) {
-                        clients.splice(idx, 1);
-                        saveClients();
-                        renderClientsTable();
+                        try {
+                            await apiClientRequest('/' + encodeURIComponent(clients[idx].id), 'DELETE');
+                            clients.splice(idx, 1);
+                            renderClientsTable();
+                            await refreshCrmMetrics();
+                        } catch (error) {
+                            showFormMessage(document.getElementById('client-form-message'), error.message, 'error');
+                        }
 
                         if (isAdmin) {
                             registrarActividadUsuario(
@@ -2216,6 +2527,7 @@ async function renderMyActivity() {
         var nameInput = document.getElementById('form-client-name');
         var emailInput = document.getElementById('form-client-email');
         var phoneInput = document.getElementById('form-client-phone');
+        var companyInput = document.getElementById('form-client-company');
         var addressInput = document.getElementById('form-client-address');
         var stageInput = document.getElementById('form-client-stage');
         var statusInput = document.getElementById('form-client-status');
@@ -2231,7 +2543,6 @@ async function renderMyActivity() {
 
         var passwordInput = document.getElementById('form-client-password');
         var passwordConfirmInput = document.getElementById('form-client-password-confirm');
-        var labelPassword = document.querySelector('label[for="form-client-password"]');
 
         if (idx !== null && idx >= 0) {
             var c = clients[idx];
@@ -2239,23 +2550,23 @@ async function renderMyActivity() {
             nameInput.value = c.name || '';
             if (emailInput) emailInput.value = c.email || '';
             if (phoneInput) phoneInput.value = c.phone || '';
+            if (companyInput) companyInput.value = c.company || '';
             if (addressInput) addressInput.value = c.address || '';
             if (stageInput) stageInput.value = c.stage || 'prospecto';
             if (statusInput) statusInput.value = c.status || 'activo';
             if (passwordInput) passwordInput.value = '';
             if (passwordConfirmInput) passwordConfirmInput.value = '';
-            if (labelPassword) labelPassword.innerHTML = 'Contraseña <span style="color:#6b7280;font-weight:400;">(opcional)</span>';
         } else {
             if (title) title.textContent = 'Agregar cliente';
             nameInput.value = '';
             if (emailInput) emailInput.value = '';
             if (phoneInput) phoneInput.value = '';
+            if (companyInput) companyInput.value = '';
             if (addressInput) addressInput.value = '';
             if (stageInput) stageInput.value = 'prospecto';
             if (statusInput) statusInput.value = 'activo';
             if (passwordInput) passwordInput.value = '';
             if (passwordConfirmInput) passwordConfirmInput.value = '';
-            if (labelPassword) labelPassword.innerHTML = 'Contraseña <span style="color:#e53935;">*</span>';
         }
 
         showAdminPage('client-form');
@@ -2302,15 +2613,20 @@ async function renderMyActivity() {
         tbody.innerHTML = html;
 
         tbody.querySelectorAll('.order-action-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', async function() {
                 var orderId = String(this.getAttribute('data-order-id') || '');
                 var order = null;
                 for (var j = 0; j < orders.length; j++) {
                     if (String(orders[j].id) === orderId) { order = orders[j]; break; }
                 }
                 if (!order) return;
+                var previousStatus = order.status;
                 order.status = getNextOrderStatus(order.status);
-                saveOrders();
+                if (!await saveOrders()) {
+                    order.status = previousStatus;
+                    renderOrdersTable();
+                    return;
+                }
                 renderOrdersTable();
 
                 if (isAdmin) {
@@ -2368,10 +2684,15 @@ async function renderMyActivity() {
                 if (promoName === 'Sin nombre' || promoName === '') {
                     promoName = 'esta promoción';
                 }
-                showConfirmModal('Eliminar la promoción "' + promoName + '"?', function(confirmed) {
+                showConfirmModal('Eliminar la promoción "' + promoName + '"?', async function(confirmed) {
                     if (confirmed) {
-                        promociones.splice(index, 1);
-                        savePromociones();
+                        var deletedPromotion = promociones.splice(index, 1)[0];
+                        if (!await savePromociones()) {
+                            promociones.splice(index, 0, deletedPromotion);
+                            renderPromotionsAdmin();
+                            renderPublicPromotions();
+                            return;
+                        }
                         renderPromotionsAdmin();
                         renderPublicPromotions();
 
@@ -2425,7 +2746,7 @@ async function renderMyActivity() {
         form.scrollIntoView({ behavior: 'smooth' });
     }
 
-    function savePromoForm() {
+    async function savePromoForm() {
         var name = document.getElementById('promo-form-name')?.value.trim() || '';
         var discount = document.getElementById('promo-form-discount')?.value.trim() || '';
         var products = document.getElementById('promo-form-products')?.value.trim() || '';
@@ -2482,14 +2803,20 @@ async function renderMyActivity() {
             estado: status 
         };
 
+        var previousPromo = index === '' ? null : promociones[parseInt(index)];
         if (index === '') {
             promociones.push(promoData);
-            showFormMessage(msg, 'Promoción creada exitosamente.', 'success');
         } else {
             promociones[parseInt(index)] = promoData;
-            showFormMessage(msg, 'Promoción actualizada exitosamente.', 'success');
         }
 
+        if (!await savePromociones()) {
+            if (index === '') promociones.pop();
+            else promociones[parseInt(index)] = previousPromo;
+            return;
+        }
+
+        showFormMessage(msg, index === '' ? 'Promoción creada exitosamente.' : 'Promoción actualizada exitosamente.', 'success');
         if (isAdmin) {
             if (index === '') {
                 registrarActividadUsuario(
@@ -2506,7 +2833,6 @@ async function renderMyActivity() {
             }
         }
 
-        savePromociones();
         renderPromotionsAdmin();
         renderPublicPromotions();
 
@@ -2574,7 +2900,7 @@ async function renderMyActivity() {
         if (count) count.textContent = communityComments.length;
     }
 
-    function addCommunityComment(name, text) {
+    async function addCommunityComment(name, text) {
         var now = new Date();
         var dateStr = now.getDate().toString().padStart(2, '0') + '/' + 
                       (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
@@ -2591,7 +2917,10 @@ async function renderMyActivity() {
         };
         
         communityComments.unshift(newComment);
-        saveComments();
+        if (!await saveComments()) {
+            communityComments.shift();
+            return false;
+        }
         renderCommunityComments();
         registrarActividadUsuario('comentario', 'Publicó un comentario: "' + text.substring(0, 50) + '"', { comentario: text });
         var feedback = document.getElementById('community-feedback');
@@ -2708,7 +3037,7 @@ async function renderMyActivity() {
         }
     }
 
-    function guardarEdicionComentario() {
+    async function guardarEdicionComentario() {
         if (editingCommentId === null) return;
         
         var comment = null;
@@ -2724,6 +3053,7 @@ async function renderMyActivity() {
         var nuevoTexto = textarea ? textarea.value || '' : '';
         var feedback = document.getElementById('edit-comment-feedback');
 
+        var previousComment = { text: comment.text, edited: comment.edited, date: comment.date };
         comment.text = nuevoTexto.trim() || '';
         comment.edited = true;
         
@@ -2734,7 +3064,11 @@ async function renderMyActivity() {
                       now.getHours().toString().padStart(2, '0') + ':' + 
                       now.getMinutes().toString().padStart(2, '0') + ' (editado)';
         
-        saveComments();
+        if (!await saveComments()) {
+            Object.assign(comment, previousComment);
+            if (feedback) showFormMessage(feedback, 'No se pudo guardar la edición en la base de datos.', 'error');
+            return;
+        }
         renderMisComentarios();
         renderCommunityComments();
         
@@ -2749,7 +3083,7 @@ async function renderMyActivity() {
     }
 
     function eliminarComentario(id) {
-        showConfirmModal('¿Eliminar este comentario?', function(confirmed) {
+        showConfirmModal('¿Eliminar este comentario?', async function(confirmed) {
             if (confirmed) {
                 var idx = -1;
                 for (var i = 0; i < communityComments.length; i++) {
@@ -2759,8 +3093,13 @@ async function renderMyActivity() {
                     }
                 }
                 if (idx !== -1) {
-                    communityComments.splice(idx, 1);
-                    saveComments();
+                    var deletedComment = communityComments.splice(idx, 1)[0];
+                    if (!await saveComments()) {
+                        communityComments.splice(idx, 0, deletedComment);
+                        renderMisComentarios();
+                        renderCommunityComments();
+                        return;
+                    }
                     renderMisComentarios();
                     renderCommunityComments(); 
                     registrarActividadUsuario('comentario_eliminado', 'Eliminó un comentario de la comunidad', {});
@@ -2776,7 +3115,7 @@ async function renderMyActivity() {
         });
     }
 
-    function publicarComentarioDesdeMisComentarios(text) {
+    async function publicarComentarioDesdeMisComentarios(text) {
         var now = new Date();
         var dateStr = now.getDate().toString().padStart(2, '0') + '/' + 
                       (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
@@ -2793,7 +3132,10 @@ async function renderMyActivity() {
         };
         
         communityComments.unshift(newComment);
-        saveComments();
+        if (!await saveComments()) {
+            communityComments.shift();
+            return false;
+        }
         renderMisComentarios();
         renderCommunityComments();
         
@@ -2851,17 +3193,17 @@ async function renderMyActivity() {
         container.innerHTML = html;
 
         container.querySelectorAll('.comprar-marketplace-btn').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
+            btn.addEventListener('click', async function(e) {
                 e.stopPropagation();
                 var id = parseInt(this.getAttribute('data-id'));
                 var nombre = this.getAttribute('data-nombre') || 'Producto';
                 var precio = parseFloat(this.getAttribute('data-precio')) || 0;
-                agregarProductoMarketplaceAlCarrito(id, nombre, precio);
+                await agregarProductoMarketplaceAlCarrito(id, nombre, precio);
             });
         });
     }
 
-    function agregarProductoMarketplaceAlCarrito(id, nombre, precio) {
+    async function agregarProductoMarketplaceAlCarrito(id, nombre, precio) {
         id = Number(id);
         precio = Number(precio);
         nombre = String(nombre || '').trim();
@@ -2869,6 +3211,7 @@ async function renderMyActivity() {
             return;
         }
 
+        var previousCart = cart.map(function(item) { return { ...item }; });
         var existing = null;
         for (var i = 0; i < cart.length; i++) {
             if (cart[i].productId === id && cart[i].esMarketplace) {
@@ -2889,8 +3232,8 @@ async function renderMyActivity() {
             });
         }
         
-        saveCart();
         updateCartUI();
+        if (!await saveCartWithRollback(previousCart)) return false;
         
         var feedback = document.createElement('div');
         feedback.style.cssText = 'position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:#4caf50; color:white; padding:12px 24px; border-radius:40px; font-weight:600; z-index:9999; box-shadow:0 4px 20px rgba(0,0,0,0.2); animation:fadeIn 0.3s ease;';
@@ -2908,13 +3251,14 @@ async function renderMyActivity() {
         setTimeout(function() {
             openCart();
         }, 400);
+        return true;
     }
 
     // ============================================================
     // FUNCIÓN PARA PUBLICAR PRODUCTO
     // ============================================================
 
-    function publicarProducto() {
+    async function publicarProducto() {
         console.log('🔍 Función publicarProducto() ejecutada');
         
         var nombreInput = document.getElementById('publicar-nombre');
@@ -2996,7 +3340,12 @@ async function renderMyActivity() {
         console.log('✅ Nuevo producto creado:', newPublication);
 
         userPublications.push(newPublication);
-        savePublications();
+        if (!await savePublications()) {
+            userPublications.pop();
+            renderMisPublicaciones();
+            renderMarketplace();
+            return;
+        }
         
         registrarActividadUsuario('publicacion', 'Publicó el producto "' + nombre + '" en el marketplace', { producto: nombre, precio: precioNum });
         
@@ -3131,7 +3480,7 @@ function eliminarPublicacion(id) {
     }
     if (!pub) return;
 
-    showConfirmModal('¿Eliminar la publicación "' + (pub.nombre || 'Producto') + '"?', function(confirmed) {
+    showConfirmModal('¿Eliminar la publicación "' + (pub.nombre || 'Producto') + '"?', async function(confirmed) {
         if (confirmed) {
             var idx = -1;
             for (var i = 0; i < userPublications.length; i++) {
@@ -3143,7 +3492,12 @@ function eliminarPublicacion(id) {
             if (idx !== -1) {
                 var nombrePub = pub.nombre || 'Producto';
                 userPublications.splice(idx, 1);
-                savePublications();
+                if (!await savePublications()) {
+                    userPublications.splice(idx, 0, pub);
+                    renderMisPublicaciones();
+                    renderMarketplace();
+                    return;
+                }
                 renderMisPublicaciones();
                 registrarActividadUsuario(
                     'publicacion_eliminada',
@@ -3277,7 +3631,7 @@ function eliminarPublicacion(id) {
         }
     }
 
-    function realizarOfertaSubasta() {
+    async function realizarOfertaSubasta() {
         if (!subastaActiva) {
             const feedback = document.getElementById('subasta-feedback-main');
             if (feedback) {
@@ -3323,9 +3677,19 @@ function eliminarPublicacion(id) {
             timestamp: timestamp
         };
         
+        var previousBid = subastaOfertaActual;
         subastaOfertas.push(nuevaOferta);
         subastaOfertaActual = ofertaValor;
-        saveAuction();
+        if (!await saveAuction()) {
+            subastaOfertas.pop();
+            subastaOfertaActual = previousBid;
+            if (feedback) {
+                feedback.style.display = 'block';
+                feedback.textContent = 'No se pudo guardar la oferta en la base de datos.';
+                feedback.className = 'subasta-feedback error';
+            }
+            return;
+        }
         registrarActividadUsuario('oferta', 'Hizo una oferta de $' + ofertaValor.toFixed(2) + ' en la subasta', { monto: ofertaValor });
         
         const ofertaActual = document.getElementById('subasta-oferta-actual-main');
@@ -3556,7 +3920,7 @@ function eliminarPublicacion(id) {
 
     var addToCartBtn = document.getElementById('add-to-cart-btn');
     if (addToCartBtn) {
-        addToCartBtn.addEventListener('click', function() {
+        addToCartBtn.addEventListener('click', async function() {
             if (currentProductId === null) return;
             var product = null;
             for (var i = 0; i < products.length; i++) {
@@ -3567,7 +3931,7 @@ function eliminarPublicacion(id) {
             }
             if (!product) return;
 
-            addToCart(currentProductId, currentQty);
+            if (!await addToCart(currentProductId, currentQty)) return;
 
             var feedback = document.getElementById('cart-feedback');
             var total = (product.price * currentQty).toFixed(2);
@@ -3624,7 +3988,7 @@ function eliminarPublicacion(id) {
 
     var productForm = document.getElementById('product-form');
     if (productForm) {
-        productForm.addEventListener('submit', function(e) {
+        productForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             var name = document.getElementById('form-product-name')?.value.trim() || '';
             var category = document.getElementById('form-product-category')?.value || 'Pizzas';
@@ -3674,6 +4038,7 @@ function eliminarPublicacion(id) {
                 return;
             }
 
+            var previousProducts = products.map(function(product) { return { ...product }; });
             if (editingProductId) {
                 var idx = -1;
                 for (var i = 0; i < products.length; i++) {
@@ -3682,7 +4047,6 @@ function eliminarPublicacion(id) {
                 if (idx !== -1) {
                     products[idx] = { ...products[idx], name: name, category: category, price: price, desc: desc, stock: stock, status: status, image: image };
                 }
-                showFormMessage(msg, 'Producto actualizado correctamente.', 'success');
             } else {
                 var newId = 0;
                 for (var j = 0; j < products.length; j++) {
@@ -3690,8 +4054,16 @@ function eliminarPublicacion(id) {
                 }
                 newId++;
                 products.push({ id: newId, name: name, category: category, price: price, desc: desc, image: image, badge: null, badgeText: null, stock: stock, status: status });
-                showFormMessage(msg, 'Producto agregado correctamente.', 'success');
             }
+
+            if (!await saveProducts()) {
+                products = previousProducts;
+                renderProductTable();
+                renderCatalog(selectedCategory);
+                updateDashboardStats();
+                return;
+            }
+            showFormMessage(msg, editingProductId ? 'Producto actualizado correctamente.' : 'Producto agregado correctamente.', 'success');
 
             // 👇 REGISTRAR ACTIVIDAD DEL ADMIN (AQUÍ, FUERA DEL IF/ELSE)
             if (isAdmin) {
@@ -3711,7 +4083,6 @@ function eliminarPublicacion(id) {
             }
             // 👆 HASTA AQUÍ
 
-            saveProducts();
             renderProductTable();
             renderCatalog(selectedCategory);
             updateDashboardStats();
@@ -3791,13 +4162,14 @@ function eliminarPublicacion(id) {
         });
     }
 
-    var clientFormSaveBtn = document.getElementById('form-client-save-btn');
-    if (clientFormSaveBtn) {
-        clientFormSaveBtn.addEventListener('click', function(e) {
+    var clientForm = document.getElementById('client-form');
+    if (clientForm) {
+        clientForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             var name = document.getElementById('form-client-name')?.value.trim() || '';
             var email = document.getElementById('form-client-email')?.value.trim() || '';
             var phone = document.getElementById('form-client-phone')?.value.trim() || '';
+            var company = document.getElementById('form-client-company')?.value.trim() || '';
             var address = document.getElementById('form-client-address')?.value.trim() || '';
             var stage = document.getElementById('form-client-stage')?.value || 'prospecto';
             var status = document.getElementById('form-client-status')?.value || 'activo';
@@ -3832,11 +4204,7 @@ function eliminarPublicacion(id) {
                 return;
             }
 
-            if (!address) {
-                showFormMessage(msg, 'La dirección es requerida.', 'error');
-                return;
-            }
-            if (address.length < 5) {
+            if (address && address.length < 5) {
                 showFormMessage(msg, 'La dirección debe tener al menos 5 caracteres.', 'error');
                 return;
             }
@@ -3844,85 +4212,49 @@ function eliminarPublicacion(id) {
             var password = document.getElementById('form-client-password')?.value || '';
             var passwordConfirm = document.getElementById('form-client-password-confirm')?.value || '';
 
-            if (editingClientId === null || editingClientId === undefined) {
-                if (!password || password.length < 6) return showFormMessage(msg, 'La contraseña debe tener al menos 6 caracteres.', 'error');
+            if (password) {
+                if (password.length < 6) return showFormMessage(msg, 'La contraseña debe tener al menos 6 caracteres.', 'error');
                 if (!/[A-Z]/.test(password)) return showFormMessage(msg, 'La contraseña debe contener al menos una mayúscula.', 'error');
                 if (!/\d/.test(password)) return showFormMessage(msg, 'La contraseña debe contener al menos un número.', 'error');
                 if (password !== passwordConfirm) return showFormMessage(msg, 'Las contraseñas no coinciden.', 'error');
-            } else {
-                if (password) {
-                    if (password.length < 6) return showFormMessage(msg, 'La contraseña debe tener al menos 6 caracteres.', 'error');
-                    if (!/[A-Z]/.test(password)) return showFormMessage(msg, 'La contraseña debe contener al menos una mayúscula.', 'error');
-                    if (!/\d/.test(password)) return showFormMessage(msg, 'La contraseña debe contener al menos un número.', 'error');
-                    if (password !== passwordConfirm) return showFormMessage(msg, 'Las contraseñas no coinciden.', 'error');
-                }
             }
 
-            if (editingClientId !== null && editingClientId >= 0) {
-                clients[editingClientId].name = name;
-                clients[editingClientId].email = email;
-                clients[editingClientId].phone = phone;
-                clients[editingClientId].address = address;
-                clients[editingClientId].stage = stage;
-                clients[editingClientId].status = status;
-                if (password) clients[editingClientId].password = password;
-                clients[editingClientId].interactions = clients[editingClientId].interactions || [];
-                if (!clients[editingClientId].interactions.length) {
-                    clients[editingClientId].interactions.push({ type: 'Registro', date: new Date().toISOString().slice(0, 10), note: 'Se actualizó la información del cliente.' });
-                }
-                clients[editingClientId].lastInteractionDate = clients[editingClientId].lastInteractionDate || new Date().toISOString().slice(0, 10);
-                showFormMessage(msg, 'Cliente actualizado correctamente.', 'success');
-            } else {
-                var newId = 0;
-                for (var i = 0; i < clients.length; i++) {
-                    if (clients[i].id > newId) newId = clients[i].id;
-                }
-                newId++;
-                var newClient = {
-                    id: newId,
-                    name: name,
-                    email: email,
-                    password: password,
-                    phone: phone,
-                    address: address,
-                    orders: 0,
-                    spent: 0,
-                    registeredDate: new Date().toLocaleDateString('es-ES'),
-                    stage: stage,
-                    status: status,
-                    lastInteractionDate: new Date().toISOString().slice(0, 10),
-                    interactions: [{
-                        type: 'Registro',
-                        date: new Date().toISOString().slice(0, 10),
-                        note: 'Cliente agregado desde el formulario principal.'
-                    }]
-                };
-                clients.push(newClient);
-                showFormMessage(msg, 'Cliente creado correctamente.', 'success');
-            }
-
-            if (isAdmin) {
-                if (editingClientId !== null && editingClientId >= 0) {
-                    registrarActividadUsuario(
-                        'cliente_editado',
-                        'Editó al cliente: ' + name,
-                        { cliente: name, email: email, telefono: phone }
-                    );
+            var payload = { name: name, email: email, phone: phone, company: company, address: address, stage: stage, status: status };
+            if (password) payload.password = password;
+            var isEditing = editingClientId !== null && editingClientId !== undefined;
+            var targetClient = isEditing ? clients[editingClientId] : null;
+            var saveButton = document.getElementById('form-client-save-btn');
+            if (saveButton) saveButton.disabled = true;
+            try {
+                var savedClient = await apiClientRequest(
+                    isEditing ? '/' + encodeURIComponent(targetClient.id) : '',
+                    isEditing ? 'PUT' : 'POST',
+                    payload
+                );
+                savedClient = normalizeClientRecord(savedClient);
+                if (isEditing) {
+                    Object.assign(targetClient, savedClient);
                 } else {
+                    clients.unshift(savedClient);
+                }
+                showFormMessage(msg, isEditing ? 'Cliente actualizado correctamente.' : 'Cliente creado correctamente.', 'success');
+                if (isAdmin) {
                     registrarActividadUsuario(
-                        'cliente_creado',
-                        'Agregó al cliente: ' + name,
+                        isEditing ? 'cliente_editado' : 'cliente_creado',
+                        (isEditing ? 'Editó al cliente: ' : 'Agregó al cliente: ') + name,
                         { cliente: name, email: email, telefono: phone }
                     );
                 }
+                await refreshCrmMetrics();
+                window.setTimeout(function() {
+                    showAdminPage('clientes');
+                    renderClientsTable();
+                }, 700);
+            } catch (error) {
+                showFormMessage(msg, error.message, 'error');
+            } finally {
+                if (saveButton) saveButton.disabled = false;
             }
-
-            saveClients();
-            updateDashboardStats();
-            setTimeout(function() {
-                showAdminPage('clientes');
-                renderClientsTable();
-            }, 1500);
         });
     }
 
@@ -4009,11 +4341,13 @@ function eliminarPublicacion(id) {
                 return;
             }
 
+            var customerCartTransferred = false;
             try {
                 const result = await apiAuth('register', { name: name, email: email, password: password });
                 currentUser.name = result.user.name;
                 currentUser.email = result.user.email;
                 currentUser.role = result.user.role || 'usuario'; 
+                customerCartTransferred = await loadClientCartAfterLogin();
             } catch (error) {
                 showFormMessage(msg, error.message, 'error');
                 return;
@@ -4034,22 +4368,16 @@ function eliminarPublicacion(id) {
             document.getElementById('registro-password').value = '';
             
             var redirectTo = redirectAfterLogin;
-            var savedCart = cartBeforeLogin;
             
-            if (redirectTo === 'checkout' && savedCart) {
-                if (savedCart && savedCart.length > 0) {
-                    cart = savedCart;
-                    saveCart();
-                    updateCartUI();
-                }
-                
+            if (redirectTo === 'checkout') {
                 redirectAfterLogin = null;
-                cartBeforeLogin = null;
                 
-                setTimeout(function() {
-                    updateNavVisibility();
-                    processPayment();
-                }, 1500);
+                if (!customerCartTransferred) {
+                    showFormMessage(msg, 'Se creó tu cuenta, pero no se pudo transferir el carrito. Tus productos siguen guardados como invitado.', 'error');
+                    return;
+                }
+                updateNavVisibility();
+                processPayment();
             } else {
                 setTimeout(function() {
                     updateNavVisibility();
@@ -4139,11 +4467,13 @@ function eliminarPublicacion(id) {
             // ============================================
             // LOGIN DE USUARIO NORMAL
             // ============================================
+            var customerCartTransferred = false;
             try {
                 const result = await apiAuth('login', { email: email, password: password });
                 currentUser.name = result.user.name;
                 currentUser.email = result.user.email;
                 currentUser.role = result.user.role;
+                customerCartTransferred = await loadClientCartAfterLogin();
             } catch (error) {
                 showFormMessage(msg, error.message, 'error');
                 return;
@@ -4157,22 +4487,16 @@ function eliminarPublicacion(id) {
             document.getElementById('login-password').value = '';
 
             var redirectTo = redirectAfterLogin;
-            var savedCart = cartBeforeLogin;
 
-            if (redirectTo === 'checkout' && savedCart) {
-                if (savedCart && savedCart.length > 0) {
-                    cart = savedCart;
-                    saveCart();
-                    updateCartUI();
-                }
-
+            if (redirectTo === 'checkout') {
                 redirectAfterLogin = null;
-                cartBeforeLogin = null;
 
-                setTimeout(function() {
-                    updateNavVisibility();
-                    processPayment();
-                }, 1500);
+                if (!customerCartTransferred) {
+                    showFormMessage(msg, 'No se pudo transferir el carrito a tu cuenta. Tus productos siguen guardados como invitado.', 'error');
+                    return;
+                }
+                updateNavVisibility();
+                processPayment();
             } else {
                 setTimeout(function() {
                     updateNavVisibility();
@@ -4214,7 +4538,6 @@ function eliminarPublicacion(id) {
             document.getElementById('login-email').value = '';
             document.getElementById('login-password').value = '';
             redirectAfterLogin = null;
-            cartBeforeLogin = null;
             setTimeout(function() {
                 updateNavVisibility();
                 var adminLoginPage = document.getElementById('page-login');
@@ -4238,12 +4561,13 @@ function eliminarPublicacion(id) {
 
     var logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', function() {
+        logoutBtn.addEventListener('click', async function() {
             isLoggedIn = false;
             isAdmin = false;
             adminEmail = '';
             authToken = '';
             window.deliciasAuthToken = '';
+            await loadGuestCartAfterLogout();
             var msg = document.getElementById('profile-message');
             if (msg) showFormMessage(msg, 'Has cerrado sesión exitosamente.', 'success');
             updateNavVisibility();
@@ -4340,42 +4664,31 @@ function ejecutarLogoutAdmin() {
                 return;
             }
 
+            try {
+                if (isAdmin) {
+                    var client = clients.find(function(item) {
+                        return String(item.email || '').toLowerCase() === String(previousEmail || '').toLowerCase();
+                    });
+                    var adminProfile = { name: name, email: email, phone: phone, address: address, company: client?.company || '', stage: client?.stage || 'prospecto', status: client?.status || 'activo' };
+                    var savedClient = await apiClientRequest(
+                        client ? '/' + encodeURIComponent(client.id) : '',
+                        client ? 'PUT' : 'POST',
+                        adminProfile
+                    );
+                    if (client) Object.assign(client, normalizeClientRecord(savedClient));
+                    else clients.unshift(normalizeClientRecord(savedClient));
+                    await refreshCrmMetrics();
+                } else {
+                    await apiClientRequest('/perfil', 'PUT', { name: name, email: email, phone: phone, address: address });
+                }
+            } catch (error) {
+                showFormMessage(feedback, error.message, 'error');
+                return;
+            }
             currentUser.name = name;
             currentUser.email = email;
             currentUser.phone = phone;
             currentUser.address = address;
-            var client = clients.find(function(item) {
-                return String(item.email || '').toLowerCase() === String(previousEmail || '').toLowerCase();
-            });
-            if (client) {
-                client.name = name;
-                client.email = email;
-                client.phone = phone;
-                client.address = address;
-            } else {
-                var nextClientId = clients.reduce(function(maxId, item) {
-                    return Math.max(maxId, Number(item.id) || 0);
-                }, 0) + 1;
-                clients.push({
-                    id: nextClientId,
-                    name: name,
-                    email: email,
-                    phone: phone,
-                    address: address,
-                    orders: 0,
-                    spent: 0,
-                    registeredDate: new Date().toLocaleDateString('es-ES'),
-                    stage: 'prospecto',
-                    status: 'activo',
-                    lastInteractionDate: new Date().toISOString().slice(0, 10),
-                    interactions: []
-                });
-            }
-            var saved = await saveClients();
-            if (!saved) {
-                showFormMessage(feedback, 'No se pudo guardar el perfil en la base de datos.', 'error');
-                return;
-            }
             saveCurrentUser();
             updateProfileUI();
             updateNavVisibility();
@@ -4398,7 +4711,7 @@ function ejecutarLogoutAdmin() {
 
     var sendContactBtn = document.getElementById('send-contact-btn');
     if (sendContactBtn) {
-        sendContactBtn.addEventListener('click', function() {
+        sendContactBtn.addEventListener('click', async function() {
             var name = document.getElementById('contact-name')?.value.trim() || '';
             var email = document.getElementById('contact-email')?.value.trim() || '';
             var message = document.getElementById('contact-message')?.value.trim() || '';
@@ -4433,13 +4746,17 @@ function ejecutarLogoutAdmin() {
                 return;
             }
 
-            contactMessages.unshift({
+            var submittedMessage = {
                 name: name,
                 email: email,
                 message: message,
                 date: new Date().toISOString()
-            });
-            saveContactMessages();
+            };
+            contactMessages.unshift(submittedMessage);
+            if (!await saveContactMessages()) {
+                contactMessages.shift();
+                return;
+            }
             if (feedback) showFormMessage(feedback, 'Mensaje enviado.', 'success');
             document.getElementById('contact-name').value = '';
             document.getElementById('contact-email').value = '';
@@ -4484,7 +4801,7 @@ function ejecutarLogoutAdmin() {
 
     var communityForm = document.getElementById('community-form');
     if (communityForm) {
-        communityForm.addEventListener('submit', function(e) {
+        communityForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             var nameInput = document.getElementById('community-name');
             var commentInput = document.getElementById('community-comment');
@@ -4503,7 +4820,7 @@ function ejecutarLogoutAdmin() {
                 return;
             }
             
-            addCommunityComment(name, text);
+            if (!await addCommunityComment(name, text)) return;
             if (nameInput) nameInput.value = '';
             if (commentInput) commentInput.value = '';
         });
@@ -4527,7 +4844,7 @@ function ejecutarLogoutAdmin() {
 
     var misComentariosForm = document.getElementById('mis-comentarios-form');
     if (misComentariosForm) {
-        misComentariosForm.addEventListener('submit', function(e) {
+        misComentariosForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             var textInput = document.getElementById('mis-comentarios-text');
             var text = textInput ? textInput.value.trim() || '' : '';
@@ -4543,7 +4860,7 @@ function ejecutarLogoutAdmin() {
                 return;
             }
             
-            publicarComentarioDesdeMisComentarios(text);
+            if (!await publicarComentarioDesdeMisComentarios(text)) return;
             if (textInput) textInput.value = '';
         });
     }
@@ -4611,7 +4928,7 @@ function ejecutarLogoutAdmin() {
     // FUNCIONES DE CAMPAÑA
     // ============================================================
 
-    function addCampaignProductToCart() {
+    async function addCampaignProductToCart() {
         var campaignProduct = null;
         for (var i = 0; i < products.length; i++) {
             if (products[i].name === 'Pizza Pepperoni' || products[i].id === 2) {
@@ -4646,6 +4963,7 @@ function ejecutarLogoutAdmin() {
             return;
         }
         
+        var previousCart = cart.map(function(item) { return { ...item }; });
         var existing = null;
         for (var j = 0; j < cart.length; j++) {
             if (cart[j].productId === campaignProduct.id) {
@@ -4660,8 +4978,8 @@ function ejecutarLogoutAdmin() {
             cart.push({ productId: campaignProduct.id, quantity: 1 });
         }
         
-        saveCart();
         updateCartUI();
+        if (!await saveCartWithRollback(previousCart)) return;
         
         var feedback = document.getElementById('campaign-feedback');
         if (feedback) {
@@ -4976,6 +5294,8 @@ function ejecutarLogoutAdmin() {
             const product = obtenerProductoCarrito(cart[i]);
             if (product) {
                 items.push({
+                    productId: cart[i].esMarketplace ? null : cart[i].productId,
+                    inventoryTracked: !cart[i].esMarketplace,
                     name: product.name,
                     quantity: cart[i].quantity,
                     price: product.price,
@@ -5633,7 +5953,7 @@ function cerrarModalSeguimiento() {
     clienteSeguimientoIndex = null;
 }
 
-function guardarSeguimiento() {
+async function guardarSeguimiento() {
     const titulo = document.getElementById('seguimiento-titulo').value.trim();
     const fecha = document.getElementById('seguimiento-fecha').value;
     const hora = document.getElementById('seguimiento-hora').value;
@@ -5685,15 +6005,20 @@ function guardarSeguimiento() {
     // Guardar en el cliente
     if (clienteSeguimientoIndex !== null && clients[clienteSeguimientoIndex]) {
         const cliente = clients[clienteSeguimientoIndex];
-        cliente.interactions = cliente.interactions || [];
-        cliente.interactions.unshift({
-            type: 'Seguimiento',
-            date: fechaFormateada + ' a las ' + horaFormateada,
-            note: `${titulo}\n${duracion}\n${tipo}\n${descripcion}\n${enlace || 'Sin enlace'}`,
-            user: adminEmail || 'Administrador'
-        });
-        cliente.lastInteractionDate = new Date().toISOString().slice(0, 10);
-        saveClients();
+        try {
+            const interaction = await apiCreateInteraction({
+                clienteId: cliente.id,
+                type: 'reunion',
+                date: fecha,
+                note: `${titulo}\n${horaFormateada}\n${duracion}\n${tipo}\n${descripcion}\n${enlace || 'Sin enlace'}`
+            });
+            cliente.interactions = cliente.interactions || [];
+            cliente.interactions.unshift(interaction);
+            if (fecha <= new Date().toISOString().slice(0, 10)) cliente.lastInteractionDate = fecha;
+        } catch (error) {
+            showFormMessage(msg, error.message, 'error');
+            return;
+        }
         
         showFormMessage(msg, 'Seguimiento programado correctamente para ' + fechaFormateada + ' a las ' + horaFormateada, 'success');
         

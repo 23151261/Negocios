@@ -118,10 +118,13 @@
 
         <!-- ============ CONTENIDO ADMIN ============ -->
         <div class="admin-content">
-
             <!-- ===== DASHBOARD ===== -->
             <div id="admin-dashboard" class="admin-page active">
+                <div id="scm-low-stock-warning" class="scm-low-stock-warning" data-scm-low-stock-warning role="status" aria-live="polite" hidden>
+                    <ul id="scm-low-stock-warning-list" data-scm-low-stock-list></ul>
+                </div>
                 <div class="admin-dashboard-grid">
+                    <div class="stat-card"><div class="stat-icon"><i class="fas fa-users"></i></div><div class="stat-number" id="stat-total-clients">0</div><div class="stat-label">Total de clientes</div></div>
                     <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-friends"></i></div><div class="stat-number" id="stat-active-clients">0</div><div class="stat-label">Clientes activos</div></div>
                     <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-clock"></i></div><div class="stat-number" id="stat-inactive-clients">0</div><div class="stat-label">Clientes inactivos</div></div>
                     <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-times"></i></div><div class="stat-number" id="stat-at-risk-clients">0</div><div class="stat-label">En riesgo de desaparecer</div></div>
@@ -134,6 +137,10 @@
                     </h3>
                     <div style="max-width: 400px; margin: 0 auto;">
                         <canvas id="clientesChart"></canvas>
+                    </div>
+                    <div style="max-width:600px;margin:1.5rem auto 0;">
+                        <h4 style="margin-bottom:0.5rem;color:var(--text-primary);">Clientes sin interacción reciente</h4>
+                        <ul id="crm-risk-list" style="padding-left:1.25rem;margin:0;"></ul>
                     </div>
                 </div>
             </div>
@@ -202,7 +209,8 @@
                     <form id="product-form" onsubmit="return false;">
                         <div class="form-group"><label for="form-product-name">Nombre</label><input id="form-product-name" required></div>
                         <div class="form-row">
-                            <div class="form-group"><label for="form-product-category">Categoría</label><select id="form-product-category"><option>Pizzas</option><option>Hamburguesas</option><option>Pescados</option><option>Bebidas</option><option>Ensaladas</option></select></div>
+                            <div class="form-group"><label for="form-product-category">Categoría</label><select id="form-product-category"><option>Pizzas</option><option>Hamburguesas</option><option>Pescados</option><option>Bebidas</option><option>Ensaladas</option></select>                            </div>
+
                             <div class="form-group"><label for="form-product-price">Precio</label><input type="number" step="0.01" id="form-product-price"></div>
                         </div>
                         <div class="form-group"><label for="form-product-desc">Descripción</label><textarea id="form-product-desc"></textarea></div>
@@ -285,7 +293,7 @@
                         <select id="client-stage-filter"><option value="todas">Todas las etapas</option><option value="prospecto">Prospecto</option><option value="activo">Activo</option><option value="frecuente">Frecuente</option><option value="inactivo">Inactivo</option></select>
                     </div>
                     <table class="product-table">
-                        <thead><tr><th>Cliente</th><th>Email</th><th>Teléfono</th><th>Pedidos</th><th>Total</th><th>Registro</th><th>Acciones</th></tr></thead>
+                        <thead><tr><th>Cliente</th><th>Email</th><th>Teléfono</th><th>Empresa</th><th>Etapa CRM</th><th>Pedidos</th><th>Total</th><th>Registro</th><th>Acciones</th></tr></thead>
                         <tbody id="clients-table-body"></tbody>
                     </table>
                 </div>
@@ -296,16 +304,16 @@
                 <div class="product-form-container">
                     <h3 id="client-form-title">Agregar cliente</h3>
                     <form id="client-form" onsubmit="return false;">
-                        <div class="form-group"><label for="form-client-name">Nombre</label><input id="form-client-name" placeholder="Nombre"></div>
-                        <div class="form-group"><label for="form-client-email">Correo</label><input id="form-client-email" placeholder="Correo"></div>
-                        <div class="form-group"><label for="form-client-phone">Teléfono</label><input id="form-client-phone" placeholder="Teléfono"></div>
+                        <div class="form-group"><label for="form-client-name">Nombre</label><input id="form-client-name" placeholder="Nombre" maxlength="100" required></div>
+                        <div class="form-group"><label for="form-client-email">Correo</label><input type="email" id="form-client-email" placeholder="Correo" maxlength="150" required></div>
+                        <div class="form-group"><label for="form-client-phone">Teléfono</label><input type="tel" id="form-client-phone" placeholder="Teléfono" maxlength="30" required></div>
+                        <div class="form-group"><label for="form-client-company">Empresa</label><input id="form-client-company" placeholder="Empresa (opcional)" maxlength="150"></div>
                         <div class="form-group">
-                            <label for="form-client-password">Contraseña <span style="color:#e53935;">*</span></label>
-                            <input type="password" id="form-client-password" placeholder="Contraseña (mínimo 6 caracteres)">
-                            <small style="color: #6b7280; display: block; margin-top: 4px;">La contraseña debe tener al menos 6 caracteres, una mayúscula y un número</small>
+                            <label for="form-client-password">Contraseña de acceso (opcional)</label>
+                            <input type="password" id="form-client-password" placeholder="Mínimo 6 caracteres para habilitar acceso">
                         </div>
                         <div class="form-group">
-                            <label for="form-client-password-confirm">Confirmar contraseña <span style="color:#e53935;">*</span></label>
+                            <label for="form-client-password-confirm">Confirmar contraseña</label>
                             <input type="password" id="form-client-password-confirm" placeholder="Confirmar contraseña">
                         </div>
                         <div class="form-row">
@@ -504,6 +512,10 @@
                         </button>
                     </div>
 
+                    <div id="scm-low-stock-warning-products" class="scm-low-stock-warning" data-scm-low-stock-warning role="status" aria-live="polite" hidden>
+                        <ul id="scm-low-stock-warning-products-list" data-scm-low-stock-list></ul>
+                    </div>
+
                     <div class="table-header">
                         <div class="search-box">
                             <input type="text" id="scm-product-search" placeholder="Buscar producto...">
@@ -593,6 +605,7 @@
                                 <option value="todos">Todos los estados</option>
                                 <option value="normal">Normal</option>
                                 <option value="bajo">Stock bajo</option>
+                                <option value="sin-minimo">Sin mínimo definido</option>
                             </select>
                         </div>
                     </div>
@@ -812,6 +825,12 @@
                     <div>
                         <span style="font-size:0.9rem;color:#64748b;margin-right:0.5rem;">Nivel actual:</span>
                         <span id="scm-maturity-current-badge" style="padding:0.4rem 0.9rem;border-radius:20px;font-weight:700;font-size:0.85rem;background:#dcfce7;color:#166534;">En desarrollo</span>
+                        <select id="scm-maturity-level-select" aria-label="Nivel de madurez SCM" style="margin-left:0.5rem;padding:0.4rem;border:1px solid #cbd5e1;border-radius:6px;">
+                            <option>Inicial</option>
+                            <option>En desarrollo</option>
+                            <option>Optimizado</option>
+                        </select>
+                        <button class="btn-primary" id="scm-maturity-level-save" type="button">Guardar nivel</button>
                     </div>
                 </div>
 
@@ -832,7 +851,7 @@
 
                 <div class="scm-checklist-container">
                     <h4 style="font-size:1.1rem;color:#1e293b;margin-bottom:0.5rem;"><i class="fas fa-tasks" style="color:#0d9488;"></i> Checklist de avance</h4>
-                    <p style="font-size:0.85rem;color:#64748b;">Marca las fases completadas para actualizar automáticamente el nivel de madurez.</p>
+                    <p style="font-size:0.85rem;color:#64748b;">Marca las fases completadas y guarda el nivel de madurez de la organización.</p>
 
                     <ul class="scm-checklist-list" id="scm-checklist-items"></ul>
 
@@ -947,23 +966,23 @@
             </div>
             <form id="scm-product-form" onsubmit="return false;">
                 <input type="hidden" id="scm-form-prod-id">
-                <div class="form-group" style="margin-bottom:1rem;">
+                <div class="form-group">
                     <label for="scm-form-prod-name">Nombre</label>
                     <input type="text" id="scm-form-prod-name" placeholder="Nombre del producto" required>
                 </div>
-                <div class="form-group" style="margin-bottom:1rem;">
+                <div class="form-group">
                     <label for="scm-form-prod-desc">Descripción</label>
                     <textarea id="scm-form-prod-desc" placeholder="Descripción..."></textarea>
                 </div>
-                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1rem;">
+                <div class="scm-form-row">
                     <div class="form-group">
                         <label for="scm-form-prod-category">Categoría</label>
-                        <select id="scm-form-prod-category">
-                            <option value="Cerámica">Cerámica</option>
-                            <option value="Textil">Textil</option>
-                            <option value="Decoración">Decoración</option>
-                            <option value="Joyería">Joyería</option>
-                            <option value="General">General</option>
+                        <select id="scm-form-prod-category" required>
+                            <option value="Pizzas">Pizzas</option>
+                            <option value="Hamburguesas">Hamburguesas</option>
+                            <option value="Pescados">Pescados</option>
+                            <option value="Bebidas">Bebidas</option>
+                            <option value="Ensaladas">Ensaladas</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -971,17 +990,17 @@
                         <select id="scm-form-prod-provider"></select>
                     </div>
                 </div>
-                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1rem;">
+                <div class="scm-form-row">
                     <div class="form-group">
                         <label for="scm-form-prod-stock">Stock actual</label>
                         <input type="number" id="scm-form-prod-stock" value="0" min="0" required>
                     </div>
                     <div class="form-group">
                         <label for="scm-form-prod-minstock">Stock mínimo</label>
-                        <input type="number" id="scm-form-prod-minstock" value="5" min="0" required>
+                        <input type="number" id="scm-form-prod-minstock" min="1" placeholder="Define el mínimo" required>
                     </div>
                 </div>
-                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1.5rem;">
+                <div class="scm-form-row">
                     <div class="form-group">
                         <label for="scm-form-prod-strategy">Estrategia logística</label>
                         <select id="scm-form-prod-strategy">
@@ -994,7 +1013,7 @@
                         <input type="number" step="0.01" id="scm-form-prod-cost" value="0.00">
                     </div>
                 </div>
-                <div class="form-actions" style="display:flex;justify-content:flex-end;gap:0.8rem;">
+                <div class="scm-form-actions">
                     <button type="button" class="btn-secondary scm-modal-cancel-btn">Cancelar</button>
                     <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Guardar</button>
                 </div>

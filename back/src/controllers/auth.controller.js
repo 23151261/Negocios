@@ -4,20 +4,30 @@ const pool = require('../config/db');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
+function validateCredentials(name, email, password) {
+    if (typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 100
+        || typeof email !== 'string' || email.trim().length > 150
+        || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+        || typeof password !== 'string' || password.length < 6 || password.length > 128) {
+        return false;
+    }
+    return true;
+}
+
 const register = async (req, res) => {
     let connection;
     try {
-        const { name, email, password } = req.body;
-
-        if (!name || !email || !password) {
-            return res.status(400).json({ error: 'Faltan campos obligatorios' });
+        const { name, email, password } = req.body || {};
+        if (!validateCredentials(name, email, password)) {
+            return res.status(400).json({ error: 'Ingresa nombre, correo válido y contraseña de 6 a 128 caracteres' });
         }
+        const normalizedEmail = email.trim().toLowerCase();
 
         connection = await pool.getConnection();
         await connection.beginTransaction();
 
-        const [existingClients] = await connection.query('SELECT id FROM clientes WHERE email = ?', [email]);
-        const [existingAdmins] = await connection.query('SELECT id FROM usuarios WHERE email = ?', [email]);
+        const [existingClients] = await connection.query('SELECT id FROM clientes WHERE email = ?', [normalizedEmail]);
+        const [existingAdmins] = await connection.query('SELECT id FROM usuarios WHERE email = ?', [normalizedEmail]);
         if (existingClients.length > 0 || existingAdmins.length > 0) {
             await connection.rollback();
             return res.status(400).json({ error: 'El email ya está registrado' });
@@ -28,18 +38,18 @@ const register = async (req, res) => {
             `INSERT INTO clientes
                 (name, email, company, password, phone, address, stage, status, orders, spent, registered_date, last_interaction_date)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [name, email, '', hashedPassword, '', '', 'prospecto', 'activo', 0, 0, new Date(), new Date()]
+            [name.trim(), normalizedEmail, '', hashedPassword, '', '', 'prospecto', 'activo', 0, 0, new Date(), new Date()]
         );
         await connection.query(
             `INSERT INTO interacciones (cliente_id, type, date, note, user)
              VALUES (?, ?, ?, ?, ?)`,
-            [clientResult.insertId, 'registro', new Date(), 'Usuario registrado en la plataforma.', email]
+            [clientResult.insertId, 'registro', new Date(), 'Usuario registrado en la plataforma.', normalizedEmail]
         );
 
         await connection.commit();
 
         const token = jwt.sign(
-            { id: clientResult.insertId, email, role: 'usuario' },
+            { id: clientResult.insertId, email: normalizedEmail, role: 'usuario' },
             JWT_SECRET,
             { expiresIn: '24h' }
         );
@@ -47,7 +57,7 @@ const register = async (req, res) => {
         res.status(201).json({
             message: 'Usuario registrado',
             token,
-            user: { id: clientResult.insertId, name, email, role: 'usuario' }
+            user: { id: clientResult.insertId, name: name.trim(), email: normalizedEmail, role: 'usuario' }
         });
     } catch (error) {
         if (connection) await connection.rollback();
@@ -65,15 +75,16 @@ const registerAdmin = async (req, res) => {
             return res.status(403).json({ error: 'No tienes permisos para crear administradores' });
         }
 
-        const { name, email, password } = req.body;
-        if (!name || !email || !password) {
-            return res.status(400).json({ error: 'Faltan campos obligatorios' });
+        const { name, email, password } = req.body || {};
+        if (!validateCredentials(name, email, password)) {
+            return res.status(400).json({ error: 'Ingresa nombre, correo válido y contraseña de 6 a 128 caracteres' });
         }
+        const normalizedEmail = email.trim().toLowerCase();
 
         connection = await pool.getConnection();
         await connection.beginTransaction();
 
-        const [existing] = await connection.query('SELECT id FROM usuarios WHERE email = ?', [email]);
+        const [existing] = await connection.query('SELECT id FROM usuarios WHERE email = ?', [normalizedEmail]);
         if (existing.length > 0) {
             await connection.rollback();
             return res.status(400).json({ error: 'El email ya está registrado' });
@@ -82,12 +93,12 @@ const registerAdmin = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const [result] = await connection.query(
             'INSERT INTO usuarios (name, email, password, role) VALUES (?, ?, ?, ?)',
-            [name, email, hashedPassword, 'admin']
+            [name.trim(), normalizedEmail, hashedPassword, 'admin']
         );
 
         const [client] = await connection.query(
             'SELECT id FROM clientes WHERE email = ?',
-            [email]
+            [normalizedEmail]
         );
 
         const actorName = req.user.name || req.user.email || 'Administrador';
@@ -102,7 +113,7 @@ const registerAdmin = async (req, res) => {
                 `INSERT INTO clientes
                     (name, email, company, password, phone, address, stage, status, orders, spent, registered_date, last_interaction_date)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [name, email, '', hashedPassword, '', '', 'prospecto', 'activo', 0, 0, new Date(), new Date()]
+                [name.trim(), normalizedEmail, '', hashedPassword, '', '', 'prospecto', 'activo', 0, 0, new Date(), new Date()]
             );
             
             await connection.query(
@@ -116,7 +127,7 @@ const registerAdmin = async (req, res) => {
 
         res.status(201).json({
             message: 'Administrador registrado',
-            user: { id: result.insertId, name, email, role: 'admin' }
+            user: { id: result.insertId, name: name.trim(), email: normalizedEmail, role: 'admin' }
         });
     } catch (error) {
         if (connection) await connection.rollback();
@@ -205,18 +216,21 @@ const deleteAdmin = async (req, res) => {
 
 const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password } = req.body || {};
 
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Faltan campos obligatorios' });
+        if (typeof email !== 'string' || email.trim().length > 150
+            || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+            || typeof password !== 'string' || password.length > 128) {
+            return res.status(400).json({ error: 'Correo o contraseña no válidos' });
         }
+        const normalizedEmail = email.trim().toLowerCase();
 
         const [admins] = await pool.query(
             "SELECT * FROM usuarios WHERE email = ? AND role IN ('admin', 'super_administrador')",
-            [email]
+            [normalizedEmail]
         );
         const [clients] = admins.length === 0
-            ? await pool.query('SELECT * FROM clientes WHERE email = ? AND password IS NOT NULL', [email])
+            ? await pool.query('SELECT * FROM clientes WHERE email = ? AND password IS NOT NULL', [normalizedEmail])
             : [[]];
         const user = admins[0] || clients[0];
         if (!user) {

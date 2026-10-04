@@ -5,22 +5,33 @@ const { verifyToken } = require('../middleware/auth.middleware');
 
 const LIMITE_ACTIVIDAD_POR_USUARIO = 25;
 
+function isAdmin(role) {
+    return ['admin', 'super_administrador'].includes(role);
+}
+
 // ============================================================
 // POST /registrar → Registra una actividad (con FIFO de 25)
 // ============================================================
 router.post('/registrar', verifyToken, async (req, res) => {
     try {
-        const {
-            usuario_email,
-            usuario_nombre,
-            usuario_role,
-            tipo,
-            descripcion,
-            metadata
-        } = req.body;
+        const { tipo, descripcion, metadata } = req.body || {};
+        const usuario_email = req.user.email;
+        const usuario_nombre = req.user.name || 'Usuario';
+        const usuario_role = req.user.role || 'usuario';
 
-        if (!usuario_email || !tipo || !descripcion) {
-            return res.status(400).json({ error: 'Faltan campos obligatorios' });
+        if (typeof usuario_email !== 'string' || typeof tipo !== 'string'
+            || !tipo.trim() || tipo.length > 80
+            || typeof descripcion !== 'string' || !descripcion.trim() || descripcion.length > 1000) {
+            return res.status(400).json({ error: 'Tipo y descripción válidos son obligatorios' });
+        }
+        let serializedMetadata;
+        try {
+            serializedMetadata = JSON.stringify(metadata || {});
+        } catch (error) {
+            return res.status(400).json({ error: 'Los metadatos de actividad no son válidos' });
+        }
+        if (serializedMetadata.length > 8000) {
+            return res.status(400).json({ error: 'Los metadatos de actividad exceden el tamaño permitido' });
         }
 
         // 1. Insertar el nuevo registro
@@ -30,11 +41,11 @@ router.post('/registrar', verifyToken, async (req, res) => {
              VALUES (?, ?, ?, ?, ?, ?)`,
             [
                 usuario_email,
-                usuario_nombre || 'Usuario',
-                usuario_role || 'usuario',
-                tipo,
-                descripcion,
-                JSON.stringify(metadata || {})
+                usuario_nombre,
+                usuario_role,
+                tipo.trim(),
+                descripcion.trim(),
+                serializedMetadata
             ]
         );
 
@@ -65,6 +76,9 @@ router.post('/registrar', verifyToken, async (req, res) => {
 // ============================================================
 router.get('/usuarios', verifyToken, async (req, res) => {
     try {
+        if (!isAdmin(req.user.role)) {
+            return res.status(403).json({ error: 'Solo un administrador puede consultar la actividad de usuarios' });
+        }
         const [rows] = await pool.query(`
             SELECT a.*
             FROM actividad_usuarios a
@@ -129,6 +143,10 @@ router.get('/mi-actividad', verifyToken, async (req, res) => {
 // ============================================================
 router.get('/usuarios/:email', verifyToken, async (req, res) => {
     try {
+        if (!isAdmin(req.user.role)
+            && String(req.user.email || '').toLowerCase() !== String(req.params.email || '').toLowerCase()) {
+            return res.status(403).json({ error: 'No tienes permisos para consultar la actividad de este usuario' });
+        }
         const [rows] = await pool.query(
             'SELECT * FROM actividad_usuarios WHERE usuario_email = ? ORDER BY fecha DESC',
             [req.params.email]

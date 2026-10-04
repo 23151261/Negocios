@@ -15,42 +15,80 @@ function toInteractionType(value) {
     }[normalized] || null;
 }
 
+function isValidDate(value) {
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
 // Registrar interacción
 const createInteraction = async (req, res) => {
+    let connection;
     try {
-        const { clienteId, type, date, note } = req.body;
-        const user = req.user.email || 'Administrador';
+        const { clienteId, type, date, note } = req.body || {};
+        const user = req.user.email || 'Usuario';
+        const staffUserId = ['admin', 'super_administrador'].includes(req.user.role)
+            ? Number(req.user.id)
+            : null;
 
         const interactionType = toInteractionType(type);
-        if (!clienteId || !interactionType || !date || !note) {
+        if (!Number.isSafeInteger(Number(clienteId)) || Number(clienteId) <= 0
+            || !interactionType
+            || !isValidDate(date)
+            || typeof note !== 'string'
+            || !note.trim()) {
             return res.status(400).json({ error: 'Faltan campos obligatorios' });
         }
 
-        const [client] = await pool.query('SELECT id FROM clientes WHERE id = ?', [clienteId]);
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        const [client] = await connection.query('SELECT id FROM clientes WHERE id = ? FOR UPDATE', [Number(clienteId)]);
         if (client.length === 0) {
+            await connection.rollback();
             return res.status(404).json({ error: 'Cliente no encontrado' });
         }
 
-        const [result] = await pool.query(
-            `INSERT INTO interacciones (cliente_id, type, date, note, user) VALUES (?, ?, ?, ?, ?)`,
-            [clienteId, interactionType, date, note, user]
+        const [result] = await connection.query(
+            `INSERT INTO interacciones (cliente_id, type, date, note, user, usuario_id) VALUES (?, ?, ?, ?, ?, ?)`,
+            [Number(clienteId), interactionType, date, note.trim(), user, staffUserId]
         );
 
-        await pool.query('UPDATE clientes SET last_interaction_date = ? WHERE id = ?', [date, clienteId]);
+        await connection.query(
+            'UPDATE clientes SET last_interaction_date = IF(? <= CURDATE() AND (last_interaction_date IS NULL OR last_interaction_date < ?), ?, last_interaction_date) WHERE id = ?',
+            [date, date, date, Number(clienteId)]
+        );
+        await connection.commit();
 
-        const newInteraction = { id: result.insertId, clienteId, type: interactionType, date, note, user };
+        const newInteraction = {
+            id: result.insertId,
+            clienteId: Number(clienteId),
+            type: interactionType,
+            date,
+            note: note.trim(),
+            user,
+            usuario_id: staffUserId
+        };
         res.status(201).json(newInteraction);
     } catch (error) {
+        if (connection) await connection.rollback();
         console.error(error);
         res.status(500).json({ error: 'Error al registrar interacción' });
+    } finally {
+        if (connection) connection.release();
     }
 };
 
 // Obtener interacciones de un cliente
 const getInteractionsByClient = async (req, res) => {
     try {
-        const { clienteId } = req.params;
-        const [rows] = await pool.query('SELECT * FROM interacciones WHERE cliente_id = ? ORDER BY date DESC', [clienteId]);
+        const clienteId = Number(req.params.clienteId || req.params.id);
+        if (!Number.isSafeInteger(clienteId) || clienteId <= 0) {
+            return res.status(400).json({ error: 'ID de cliente inválido' });
+        }
+        const [rows] = await pool.query(
+            'SELECT i.*, u.name AS usuario_nombre FROM interacciones i LEFT JOIN usuarios u ON u.id = i.usuario_id WHERE i.cliente_id = ? ORDER BY i.date DESC, i.id DESC',
+            [clienteId]
+        );
         res.json(rows);
     } catch (error) {
         console.error(error);
