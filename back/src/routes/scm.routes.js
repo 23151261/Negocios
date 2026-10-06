@@ -1,5 +1,6 @@
 const express = require('express');
 const { verifyToken } = require('../middleware/auth.middleware');
+const { productImageUpload } = require('../middleware/imageUpload.middleware');
 const scm = require('../controllers/scm.controller');
 
 const router = express.Router();
@@ -11,9 +12,10 @@ function requireAdmin(req, res, next) {
 
 router.get('/productos', scm.getProducts);
 router.get('/productos/:id/movimientos', scm.getProductMovements);
-router.post('/productos', verifyToken, requireAdmin, scm.createProduct);
+router.post('/productos', verifyToken, requireAdmin, productImageUpload, scm.createProduct);
+router.post('/productos/:id/imagen', verifyToken, requireAdmin, productImageUpload, scm.uploadProductImage);
 router.put('/productos/:id/estrategia', verifyToken, requireAdmin, scm.updateStrategy);
-router.put('/productos/:id', verifyToken, requireAdmin, scm.updateProduct);
+router.put('/productos/:id', verifyToken, requireAdmin, productImageUpload, scm.updateProduct);
 router.delete('/productos/:id', verifyToken, requireAdmin, scm.deleteProduct);
 
 router.get('/proveedores', scm.getProviders);

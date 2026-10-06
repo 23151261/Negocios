@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 const bcrypt = require('bcryptjs');
 
-const clientFields = 'id, name, email, company, phone, address, stage, status, orders, spent, registered_date AS registeredDate, last_interaction_date AS lastInteractionDate, created_at AS createdAt';
+const clientFields = 'id, name, email, company, phone, address, imagen_url AS imageUrl, stage, status, orders, spent, registered_date AS registeredDate, last_interaction_date AS lastInteractionDate, created_at AS createdAt';
 const clientStages = new Set(['prospecto', 'activo', 'frecuente', 'inactivo']);
 const clientStatuses = new Set(['activo', 'inactivo']);
 
@@ -36,7 +36,6 @@ const getClients = async (req, res) => {
         const [rows] = await pool.query(`SELECT ${clientFields} FROM clientes ORDER BY id DESC`);
         res.json(rows);
     } catch (error) {
-        console.error(error);
         res.status(500).json({ error: 'Error al obtener clientes' });
     }
 };
@@ -64,7 +63,6 @@ const getClientById = async (req, res) => {
 
         res.json(client);
     } catch (error) {
-        console.error(error);
         res.status(500).json({ error: 'Error al obtener cliente' });
     }
 };
@@ -107,9 +105,10 @@ const createClient = async (req, res) => {
         const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
 
         const [result] = await pool.query(
-            `INSERT INTO clientes (name, email, company, password, phone, address, stage, status, registered_date, last_interaction_date)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [name.trim(), normalizedEmail, company || '', hashedPassword, phone.trim(), address || '', stage || 'prospecto', status || 'activo', registeredDate, null]
+            `INSERT INTO clientes (name, email, company, password, phone, address, imagen_url, stage, status, registered_date, last_interaction_date)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [name.trim(), normalizedEmail, company || '', hashedPassword, phone.trim(), address || '',
+             req.file ? `/uploads/clientes/${req.file.filename}` : null, stage || 'prospecto', status || 'activo', registeredDate, null]
         );
 
         const newClient = { 
@@ -119,6 +118,7 @@ const createClient = async (req, res) => {
             company: company || '',
             phone: String(phone).trim(),
             address: address || '', 
+            imageUrl: req.file ? `/uploads/clientes/${req.file.filename}` : null,
             stage: stage || 'prospecto', 
             status: status || 'activo', 
             orders: 0, 
@@ -129,7 +129,6 @@ const createClient = async (req, res) => {
         };
         res.status(201).json(newClient);
     } catch (error) {
-        console.error(error);
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(409).json({ error: 'El correo ya está registrado para otro cliente' });
         }
@@ -184,6 +183,7 @@ const updateClient = async (req, res) => {
             company: company !== undefined ? company : current.company,
             phone: phone !== undefined ? String(phone).trim() : current.phone,
             address: address !== undefined ? address : current.address,
+            imageUrl: req.file ? `/uploads/clientes/${req.file.filename}` : current.imagen_url,
             stage: stage !== undefined ? stage : current.stage,
             status: status !== undefined ? status : current.status
         };
@@ -194,8 +194,8 @@ const updateClient = async (req, res) => {
         );
         if (duplicate.length) return res.status(409).json({ error: 'El correo ya está registrado para otro cliente' });
 
-        const assignments = ['name = ?', 'email = ?', 'company = ?', 'phone = ?', 'address = ?', 'stage = ?', 'status = ?'];
-        const values = [updates.name, normalizedEmail, updates.company, updates.phone, updates.address, updates.stage, updates.status];
+        const assignments = ['name = ?', 'email = ?', 'company = ?', 'phone = ?', 'address = ?', 'imagen_url = ?', 'stage = ?', 'status = ?'];
+        const values = [updates.name, normalizedEmail, updates.company, updates.phone, updates.address, updates.imageUrl, updates.stage, updates.status];
         if (password) {
             assignments.push('password = ?');
             values.push(await bcrypt.hash(password, 10));
@@ -210,7 +210,6 @@ const updateClient = async (req, res) => {
         const [updated] = await pool.query(`SELECT ${clientFields} FROM clientes WHERE id = ?`, [id]);
         res.json(updated[0]);
     } catch (error) {
-        console.error(error);
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(409).json({ error: 'El correo ya está registrado para otro cliente' });
         }
@@ -233,7 +232,6 @@ const updateClientStage = async (req, res) => {
         const [rows] = await pool.query(`SELECT ${clientFields} FROM clientes WHERE id = ?`, [id]);
         res.json(rows[0]);
     } catch (error) {
-        console.error(error);
         res.status(500).json({ error: 'Error al actualizar la etapa CRM' });
     }
 };
@@ -272,11 +270,30 @@ const updateOwnClientProfile = async (req, res) => {
         const [rows] = await pool.query(`SELECT ${clientFields} FROM clientes WHERE id = ?`, [clientId]);
         res.json(rows[0]);
     } catch (error) {
-        console.error(error);
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(409).json({ error: 'El correo ya está registrado para otro cliente' });
         }
         res.status(500).json({ error: 'Error al actualizar el perfil' });
+    }
+};
+
+const updateOwnClientImage = async (req, res) => {
+    if (req.user?.role !== 'usuario') {
+        return res.status(403).json({ error: 'Este endpoint es solo para cuentas de cliente' });
+    }
+    if (!req.file) return res.status(400).json({ error: 'Selecciona una imagen JPG, PNG o WEBP' });
+    const clientId = Number(req.user.id);
+    if (!validClientId(clientId)) return res.status(401).json({ error: 'Sesión de cliente inválida' });
+    try {
+        const [result] = await pool.query(
+            'UPDATE clientes SET imagen_url=? WHERE id=?',
+            [`/uploads/clientes/${req.file.filename}`, clientId]
+        );
+        if (!result.affectedRows) return res.status(404).json({ error: 'Perfil de cliente no encontrado' });
+        const [rows] = await pool.query(`SELECT ${clientFields} FROM clientes WHERE id=?`, [clientId]);
+        res.json(rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'No se pudo guardar la imagen del perfil' });
     }
 };
 
@@ -311,7 +328,6 @@ const getClientMetrics = async (req, res) => {
             clientsAtRisk: atRisk
         });
     } catch (error) {
-        console.error(error);
         res.status(500).json({ error: 'Error al obtener metricas CRM' });
     }
 };
@@ -341,9 +357,8 @@ const deleteClient = async (req, res) => {
         }
         res.json({ message: 'Cliente eliminado correctamente' });
     } catch (error) {
-        console.error(error);
         res.status(500).json({ error: 'Error al eliminar cliente' });
     }
 };
 
-module.exports = { getClients, getClientById, createClient, updateClient, updateClientStage, updateOwnClientProfile, getClientMetrics, deleteClient };
+module.exports = { getClients, getClientById, createClient, updateClient, updateClientStage, updateOwnClientProfile, updateOwnClientImage, getClientMetrics, deleteClient };

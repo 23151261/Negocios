@@ -184,8 +184,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const headers = { Authorization: 'Bearer ' + (window.deliciasAuthToken || '') };
         const options = { method, headers };
         if (payload !== undefined) {
-            headers['Content-Type'] = 'application/json';
-            options.body = JSON.stringify(payload);
+            if (payload instanceof FormData) {
+                options.body = payload;
+            } else {
+                headers['Content-Type'] = 'application/json';
+                options.body = JSON.stringify(payload);
+            }
         }
         const response = await fetch(API_BASE + '/clientes' + path, options);
         const result = await response.json();
@@ -196,10 +200,17 @@ document.addEventListener('DOMContentLoaded', function() {
     function normalizeClientRecord(client) {
         return {
             ...client,
+            imageUrl: client.imageUrl || client.imagen_url || null,
             registeredDate: client.registeredDate || client.registered_date || '',
             lastInteractionDate: client.lastInteractionDate || client.last_interaction_date || null,
             interactions: Array.isArray(client.interactions) ? client.interactions : []
         };
+    }
+
+    function clientImageSource(imageUrl) {
+        if (!imageUrl) return '';
+        if (/^(https?:|blob:)/i.test(imageUrl)) return imageUrl;
+        return 'http://localhost:5000' + (imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl);
     }
 
     function escapeHtml(value) {
@@ -212,6 +223,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 "'": '&#39;'
             }[character];
         });
+    }
+
+    function showAppNotice(message, type = 'error') {
+        var app = document.querySelector('.app');
+        if (!app) return;
+        var notice = document.getElementById('app-operation-notice');
+        if (!notice) {
+            notice = document.createElement('div');
+            notice.id = 'app-operation-notice';
+            notice.style.cssText = 'margin:0 0 1rem;padding:0.85rem 1rem;border-radius:8px;';
+            app.prepend(notice);
+        }
+        notice.setAttribute('role', type === 'success' ? 'status' : 'alert');
+        notice.style.background = type === 'success' ? '#f0fdf4' : '#fef2f2';
+        notice.style.color = type === 'success' ? '#047857' : '#991b1b';
+        notice.textContent = message;
     }
 
     async function loadCrmData() {
@@ -268,7 +295,6 @@ function apiSave(key, value) {
 }
 
 function showPersistenceError(key, error) {
-    console.error('No se guardó ' + key + ' en la base de datos:', error);
     persistenceErrors.set(key, error.message);
     let message = document.getElementById('database-save-error');
     if (!message) {
@@ -333,7 +359,6 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
         }
         clearPersistenceError('actividad');
     } catch (error) {
-        console.error('Error registrando actividad:', error);
         showPersistenceError('actividad', error);
     }
 }
@@ -564,7 +589,7 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
             try {
                 await loadCrmData();
             } catch (error) {
-                console.error('No se pudieron cargar los clientes del CRM:', error);
+                showAppNotice('No se pudieron cargar los clientes del CRM: ' + error.message);
             }
         });
 
@@ -854,6 +879,14 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
     window.showAdminPage = showAdminPage;
     window.showPage = showPage;
     window.openClientForm = openClientForm;
+    window.refreshMainProductCatalog = async function() {
+        products = await apiGet('products');
+        buildCategoryMenu();
+        renderCatalog(selectedCategory);
+        renderProductTable();
+        updateDashboardStats();
+        updateCartUI();
+    };
 
     function showAdminPage(pageId) {
         for (var key in adminPages) {
@@ -961,7 +994,6 @@ async function renderMyActivity() {
             '</tr>';
         }).join('');
     } catch (error) {
-        console.error('Error al cargar mi actividad:', error);
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:#c62828;">Error: ' + escapeHtml(error.message) + '</td></tr>';
     }
 }
@@ -1764,8 +1796,6 @@ async function renderMyActivity() {
     // ============================================================
 
     function showDetailFix(id) {
-        console.log('🔍 showDetailFix llamado con id:', id);
-        
         var product = null;
         for (var i = 0; i < products.length; i++) {
             if (products[i].id === id) {
@@ -1775,12 +1805,9 @@ async function renderMyActivity() {
         }
         
         if (!product) {
-            console.error('❌ Producto no encontrado con id:', id);
-            alert('Producto no encontrado');
+            showAppNotice('No se encontró el producto. Actualiza el catálogo e inténtalo de nuevo.');
             return;
         }
-        
-        console.log('✅ Producto encontrado:', product);
         
         currentProductId = id;
         currentQty = 1;
@@ -1902,7 +1929,6 @@ async function renderMyActivity() {
         container.querySelectorAll('.view-detail-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 var id = parseInt(this.getAttribute('data-id'));
-                console.log('🖱️ Click en "Ver detalle" para producto ID:', id);
                 showDetailFix(id);
             });
         });
@@ -1952,6 +1978,14 @@ async function renderMyActivity() {
         document.getElementById('edit-profile-email').value = currentUser.email || '';
         document.getElementById('edit-profile-phone').value = currentUser.phone || '';
         document.getElementById('edit-profile-address').value = currentUser.address || '';
+        var imageInput = document.getElementById('edit-profile-image');
+        if (imageInput) imageInput.value = '';
+        var preview = document.getElementById('edit-profile-image-preview');
+        if (preview) {
+            preview.innerHTML = currentUser.imageUrl
+                ? '<img src="' + escapeHtml(clientImageSource(currentUser.imageUrl)) + '" alt="Imagen de perfil">'
+                : '<div class="empty-preview"><i class="fas fa-image" aria-hidden="true"></i>Vista previa</div>';
+        }
         document.getElementById('edit-profile-feedback').classList.add('hidden');
         modal.style.display = 'flex';
     }
@@ -2145,8 +2179,7 @@ async function renderMyActivity() {
         try {
             Object.assign(c, normalizeClientRecord(await apiClientRequest('/' + encodeURIComponent(c.id))));
         } catch (error) {
-            console.error('No se pudo cargar el detalle del cliente:', error);
-            alert('No se pudo cargar el detalle del cliente: ' + error.message);
+            showAppNotice('No se pudo cargar el detalle del cliente: ' + error.message);
             return;
         }
 
@@ -2165,7 +2198,9 @@ async function renderMyActivity() {
             <div class="client-detail-shell">
                 <div class="client-detail-header-card">
                     <div class="client-detail-identity">
-                        <div class="client-detail-avatar">${escapeHtml((c.name || 'Sin nombre').split(' ').map(function(part) { return part.charAt(0).toUpperCase(); }).slice(0,2).join(''))}</div>
+                        ${c.imageUrl
+                            ? '<img class="client-detail-avatar" src="' + escapeHtml(clientImageSource(c.imageUrl)) + '" alt="Imagen de ' + escapeHtml(c.name || 'cliente') + '">'
+                            : '<div class="client-detail-avatar">' + escapeHtml((c.name || 'Sin nombre').split(' ').map(function(part) { return part.charAt(0).toUpperCase(); }).slice(0,2).join('')) + '</div>'}
                         <div>
                             <div class="client-detail-badge">${escapeHtml(getClientStageLabel(c.stage || 'prospecto'))}</div>
                             <h4>${escapeHtml(c.name || 'Sin nombre')}</h4>
@@ -2220,7 +2255,7 @@ async function renderMyActivity() {
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label for="interaction-type">Tipo</label>
-                                        <select id="interaction-type" required><option value="llamada">Llamada</option><option value="correo">Correo</option><option value="reunion">Reunión</option></select>
+                                        <select id="interaction-type" required><option value="nota">Nota</option><option value="llamada">Llamada</option><option value="correo">Correo</option><option value="reunion">Reunión</option></select>
                                     </div>
                                     <div class="form-group">
                                         <label for="interaction-date">Fecha</label>
@@ -2287,7 +2322,7 @@ async function renderMyActivity() {
                     await refreshCrmMetrics();
                 } catch (error) {
                     detailStageSelect.value = previousStage;
-                    alert('No se pudo actualizar la etapa CRM: ' + error.message);
+                    showAppNotice('No se pudo actualizar la etapa CRM: ' + error.message);
                 } finally {
                     detailStageSelect.disabled = false;
                 }
@@ -2346,37 +2381,10 @@ async function renderMyActivity() {
 
         if (noteBtn) {
             noteBtn.addEventListener('click', async function() {
-                var interactionText = window.prompt('Describe la nueva interacción con este cliente:', 'Llamada de seguimiento');
-                if (!interactionText || !interactionText.trim()) return;
-                const date = new Date().toISOString().slice(0, 10);
-                var interactionClientId = clients[idx].id;
-                try {
-                    var interaction = await apiCreateInteraction({
-                        clienteId: interactionClientId,
-                        type: 'nota',
-                        date,
-                        note: interactionText.trim()
-                    });
-                    clients[idx].interactions = clients[idx].interactions || [];
-                    clients[idx].interactions.unshift(interaction);
-                    clients[idx].lastInteractionDate = date;
-                    crmMetrics = null;
-                } catch (error) {
-                    alert(error.message);
-                    return;
-                }
-                try {
-                    await loadCrmData();
-                } catch (error) {
-                    renderClientsTable();
-                    alert('La nota se guardó, pero no se pudo actualizar la vista: ' + error.message);
-                    return;
-                }
-                var refreshedIndex = clients.findIndex(function(client) {
-                    return String(client.id) === String(interactionClientId);
-                });
-                if (refreshedIndex >= 0) openClientDetail(refreshedIndex);
-                renderClientsTable();
+                var typeInput = document.getElementById('interaction-type');
+                var descriptionInput = document.getElementById('interaction-description');
+                if (typeInput) typeInput.value = 'nota';
+                if (descriptionInput) descriptionInput.focus();
             });
         }
 
@@ -2401,7 +2409,8 @@ async function renderMyActivity() {
                             renderClientsTable();
                             await refreshCrmMetrics();
                         } catch (error) {
-                            alert('No se pudo eliminar al cliente: ' + error.message);
+                            showAppNotice('No se pudo eliminar al cliente: ' + error.message);
+                            return;
                         }
 
                         if (isAdmin) {
@@ -2444,7 +2453,10 @@ async function renderMyActivity() {
             var c = filteredClients[i];
             var originalIndex = clients.indexOf(c);
             var statusBadge = '<span class="status-badge ' + (c.status === 'inactivo' ? 'status-inactive' : 'status-available') + '">Estado: ' + escapeHtml(c.status === 'inactivo' ? 'Inactivo' : 'Activo') + '</span>';
-            html += '<tr><td><div style="display:flex; flex-direction:column; gap:0.3rem;"><strong>' + escapeHtml(c.name || 'Sin nombre') + '</strong>' + statusBadge + '</div></td>';
+            var clientAvatar = c.imageUrl
+                ? '<img class="crm-client-avatar" src="' + escapeHtml(clientImageSource(c.imageUrl)) + '" alt="" loading="lazy">'
+                : '<span class="crm-client-avatar crm-client-avatar-placeholder" aria-hidden="true">' + escapeHtml((c.name || '?').slice(0, 1).toUpperCase()) + '</span>';
+            html += '<tr><td><div style="display:flex; align-items:center; gap:0.65rem;"><div style="display:flex; flex-direction:column; gap:0.3rem;">' + clientAvatar + '</div><div style="display:flex; flex-direction:column; gap:0.3rem;"><strong>' + escapeHtml(c.name || 'Sin nombre') + '</strong>' + statusBadge + '</div></div></td>';
             html += '<td>' + escapeHtml(c.email || '') + '</td>';
             html += '<td>' + escapeHtml(c.phone || '') + '</td>';
             html += '<td>' + escapeHtml(c.company || '—') + '</td>';
@@ -2484,7 +2496,7 @@ async function renderMyActivity() {
                     await refreshCrmMetrics();
                 } catch (error) {
                     select.value = previousStage;
-                    alert('No se pudo actualizar la etapa CRM: ' + error.message);
+                    showAppNotice('No se pudo actualizar la etapa CRM: ' + error.message);
                 } finally {
                     select.disabled = false;
                 }
@@ -2531,6 +2543,7 @@ async function renderMyActivity() {
         var addressInput = document.getElementById('form-client-address');
         var stageInput = document.getElementById('form-client-stage');
         var statusInput = document.getElementById('form-client-status');
+        var imageInput = document.getElementById('form-client-image');
         var msg = document.getElementById('client-form-message');
 
         if (!nameInput) return;
@@ -2540,6 +2553,7 @@ async function renderMyActivity() {
             msg.textContent = '';
             msg.className = '';
         }
+        if (imageInput) imageInput.value = '';
 
         var passwordInput = document.getElementById('form-client-password');
         var passwordConfirmInput = document.getElementById('form-client-password-confirm');
@@ -2554,6 +2568,7 @@ async function renderMyActivity() {
             if (addressInput) addressInput.value = c.address || '';
             if (stageInput) stageInput.value = c.stage || 'prospecto';
             if (statusInput) statusInput.value = c.status || 'activo';
+            renderClientImagePreview(c.imageUrl);
             if (passwordInput) passwordInput.value = '';
             if (passwordConfirmInput) passwordConfirmInput.value = '';
         } else {
@@ -2565,11 +2580,39 @@ async function renderMyActivity() {
             if (addressInput) addressInput.value = '';
             if (stageInput) stageInput.value = 'prospecto';
             if (statusInput) statusInput.value = 'activo';
+            renderClientImagePreview('');
             if (passwordInput) passwordInput.value = '';
             if (passwordConfirmInput) passwordConfirmInput.value = '';
         }
 
         showAdminPage('client-form');
+    }
+
+    function renderClientImagePreview(imageUrl) {
+        var preview = document.getElementById('form-client-image-preview');
+        if (!preview) return;
+        preview.innerHTML = imageUrl
+            ? '<img src="' + escapeHtml(clientImageSource(imageUrl)) + '" alt="Vista previa de imagen del cliente">'
+            : '<div class="empty-preview"><i class="fas fa-image" aria-hidden="true"></i>Vista previa</div>';
+    }
+
+    var clientImageInput = document.getElementById('form-client-image');
+    if (clientImageInput) {
+        clientImageInput.addEventListener('change', function() {
+            var file = clientImageInput.files && clientImageInput.files[0];
+            var message = document.getElementById('client-form-message');
+            if (!file) {
+                renderClientImagePreview(editingClientId !== null && clients[editingClientId] ? clients[editingClientId].imageUrl : '');
+                return;
+            }
+            if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 2 * 1024 * 1024) {
+                clientImageInput.value = '';
+                showFormMessage(message, 'Selecciona una imagen JPG, PNG o WEBP de hasta 2 MB.', 'error');
+                renderClientImagePreview(editingClientId !== null && clients[editingClientId] ? clients[editingClientId].imageUrl : '');
+                return;
+            }
+            renderClientImagePreview(URL.createObjectURL(file));
+        });
     }
 
     // ============================================================
@@ -3259,8 +3302,6 @@ async function renderMyActivity() {
     // ============================================================
 
     async function publicarProducto() {
-        console.log('🔍 Función publicarProducto() ejecutada');
-        
         var nombreInput = document.getElementById('publicar-nombre');
         var precioInput = document.getElementById('publicar-precio');
         var categoriaSelect = document.getElementById('publicar-categoria');
@@ -3269,7 +3310,6 @@ async function renderMyActivity() {
         var msg = document.getElementById('publicar-message');
 
         if (!nombreInput || !precioInput) {
-            console.error('❌ No se encontraron los campos del formulario');
             if (msg) {
                 msg.className = 'auth-error alert-message';
                 msg.textContent = '❌ Error: No se encontraron los campos del formulario.';
@@ -3284,7 +3324,6 @@ async function renderMyActivity() {
         var descripcion = descripcionTextarea ? descripcionTextarea.value.trim() || '' : '';
         var foto = fotoInput ? fotoInput.value.trim() || '' : '';
 
-        console.log('📝 Datos del formulario:', { nombre, precio, categoria, descripcion, foto });
 
         // VALIDACIONES DE PRODUCTO
         if (!nombre) {
@@ -3337,8 +3376,6 @@ async function renderMyActivity() {
             compras: 0
         };
 
-        console.log('✅ Nuevo producto creado:', newPublication);
-
         userPublications.push(newPublication);
         if (!await savePublications()) {
             userPublications.pop();
@@ -3353,7 +3390,6 @@ async function renderMyActivity() {
         renderMarketplace();
 
         showFormMessage(msg, '✅ ¡Producto "' + nombre.trim() + '" publicado exitosamente!', 'success');
-        console.log('✅ Producto publicado con éxito');
 
         nombreInput.value = '';
         precioInput.value = '';
@@ -3370,7 +3406,6 @@ async function renderMyActivity() {
         }
 
         setTimeout(function() {
-            console.log('🔀 Redirigiendo a "Mis publicaciones"');
             showPage('mis-publicaciones');
         }, 2000);
     }
@@ -4223,13 +4258,19 @@ function eliminarPublicacion(id) {
             if (password) payload.password = password;
             var isEditing = editingClientId !== null && editingClientId !== undefined;
             var targetClient = isEditing ? clients[editingClientId] : null;
+            var imageFile = document.getElementById('form-client-image')?.files?.[0];
+            var multipartPayload = new FormData();
+            Object.entries(payload).forEach(function(entry) {
+                multipartPayload.append(entry[0], entry[1]);
+            });
+            if (imageFile) multipartPayload.append('image', imageFile);
             var saveButton = document.getElementById('form-client-save-btn');
             if (saveButton) saveButton.disabled = true;
             try {
                 var savedClient = await apiClientRequest(
                     isEditing ? '/' + encodeURIComponent(targetClient.id) : '',
                     isEditing ? 'PUT' : 'POST',
-                    payload
+                    multipartPayload
                 );
                 savedClient = normalizeClientRecord(savedClient);
                 if (isEditing) {
@@ -4588,7 +4629,7 @@ if (topLogoutBtn) {
                 if (confirmed) ejecutarLogoutAdmin();
             });
         } else {
-            if (confirm('¿Cerrar sesión?')) ejecutarLogoutAdmin();
+            showAppNotice('No está disponible la confirmación de cierre de sesión. Actualiza la página e inténtalo de nuevo.');
         }
     });
 }
@@ -4642,6 +4683,21 @@ function ejecutarLogoutAdmin() {
     }
 
     var editProfileForm = document.getElementById('edit-profile-form');
+    var editProfileImageInput = document.getElementById('edit-profile-image');
+    if (editProfileImageInput) {
+        editProfileImageInput.addEventListener('change', function() {
+            var file = editProfileImageInput.files && editProfileImageInput.files[0];
+            var preview = document.getElementById('edit-profile-image-preview');
+            var feedback = document.getElementById('edit-profile-feedback');
+            if (!file) return;
+            if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 2 * 1024 * 1024) {
+                editProfileImageInput.value = '';
+                showFormMessage(feedback, 'Selecciona una imagen JPG, PNG o WEBP de hasta 2 MB.', 'error');
+                return;
+            }
+            if (preview) preview.innerHTML = '<img src="' + URL.createObjectURL(file) + '" alt="Vista previa de perfil">';
+        });
+    }
     if (editProfileForm) {
         editProfileForm.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -4665,21 +4721,32 @@ function ejecutarLogoutAdmin() {
             }
 
             try {
+                var imageFile = editProfileImageInput?.files?.[0];
+                var savedProfile;
                 if (isAdmin) {
                     var client = clients.find(function(item) {
                         return String(item.email || '').toLowerCase() === String(previousEmail || '').toLowerCase();
                     });
                     var adminProfile = { name: name, email: email, phone: phone, address: address, company: client?.company || '', stage: client?.stage || 'prospecto', status: client?.status || 'activo' };
+                    var profilePayload = new FormData();
+                    Object.entries(adminProfile).forEach(function(entry) { profilePayload.append(entry[0], entry[1]); });
+                    if (imageFile) profilePayload.append('image', imageFile);
                     var savedClient = await apiClientRequest(
                         client ? '/' + encodeURIComponent(client.id) : '',
                         client ? 'PUT' : 'POST',
-                        adminProfile
+                        imageFile ? profilePayload : adminProfile
                     );
                     if (client) Object.assign(client, normalizeClientRecord(savedClient));
                     else clients.unshift(normalizeClientRecord(savedClient));
+                    savedProfile = savedClient;
                     await refreshCrmMetrics();
                 } else {
-                    await apiClientRequest('/perfil', 'PUT', { name: name, email: email, phone: phone, address: address });
+                    savedProfile = await apiClientRequest('/perfil', 'PUT', { name: name, email: email, phone: phone, address: address });
+                    if (imageFile) {
+                        var imagePayload = new FormData();
+                        imagePayload.append('image', imageFile);
+                        savedProfile = await apiClientRequest('/perfil/imagen', 'PUT', imagePayload);
+                    }
                 }
             } catch (error) {
                 showFormMessage(feedback, error.message, 'error');
@@ -4689,6 +4756,7 @@ function ejecutarLogoutAdmin() {
             currentUser.email = email;
             currentUser.phone = phone;
             currentUser.address = address;
+            currentUser.imageUrl = savedProfile?.imageUrl || currentUser.imageUrl || null;
             saveCurrentUser();
             updateProfileUI();
             updateNavVisibility();
@@ -6131,7 +6199,7 @@ document.addEventListener('keydown', function(e) {
     loadApiData().then(function() {
         updateDashboardStats();
     }).catch(function(error) {
-        console.error('Error al cargar los datos de la API:', error);
+        showAppNotice('Error al cargar los datos de la API: ' + error.message);
         // Aún así intentamos actualizar el dashboard con los datos que haya
         updateDashboardStats();
     });

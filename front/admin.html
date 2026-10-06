@@ -327,6 +327,11 @@
                             </div>
                         </div>
                         <div class="form-group"><label for="form-client-address">Dirección</label><textarea id="form-client-address" placeholder="Dirección"></textarea></div>
+                        <div class="form-group">
+                            <label for="form-client-image">Imagen de perfil (opcional)</label>
+                            <input type="file" id="form-client-image" accept="image/jpeg,image/png,image/webp">
+                            <div class="image-preview" id="form-client-image-preview" aria-live="polite"></div>
+                        </div>
                         <div class="form-actions">
                             <button type="submit" class="btn-primary" id="form-client-save-btn">Guardar</button>
                             <button type="button" class="btn-secondary" id="form-client-cancel-btn">Cancelar</button>
@@ -708,7 +713,7 @@
                             <div style="font-size:1.5rem;color:#b45309;"><i class="fas fa-box-open"></i></div>
                             <div>
                                 <strong style="color:#92400e;">PUSH</strong>
-                                <p style="font-size:0.85rem;color:#78350f;margin-top:0.2rem;">Se genera pedido automáticamente cuando el stock llega al nivel mínimo.</p>
+                                <p style="font-size:0.85rem;color:#78350f;margin-top:0.2rem;">Se genera reposición automáticamente cuando el stock baja del nivel mínimo.</p>
                             </div>
                         </div>
 
@@ -974,6 +979,11 @@
                     <label for="scm-form-prod-desc">Descripción</label>
                     <textarea id="scm-form-prod-desc" placeholder="Descripción..."></textarea>
                 </div>
+                <div class="form-group">
+                    <label for="scm-form-prod-image">Imagen del producto <span aria-hidden="true">*</span></label>
+                    <input type="file" id="scm-form-prod-image" accept="image/jpeg,image/png,image/webp">
+                    <div class="image-preview" id="scm-form-prod-image-preview" aria-live="polite"></div>
+                </div>
                 <div class="scm-form-row">
                     <div class="form-group">
                         <label for="scm-form-prod-category">Categoría</label>
@@ -1017,6 +1027,7 @@
                     <button type="button" class="btn-secondary scm-modal-cancel-btn">Cancelar</button>
                     <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Guardar</button>
                 </div>
+                <div id="scm-product-form-message" class="hidden alert-message" role="status"></div>
             </form>
         </div>
     </div>
@@ -1046,7 +1057,7 @@
                 </div>
                 <div class="form-group" style="margin-bottom:1rem;">
                     <label for="scm-form-prov-email">Correo</label>
-                    <input type="email" id="scm-form-prov-email" placeholder="correo@ejemplo.com">
+                    <input type="text" id="scm-form-prov-email" inputmode="email" autocomplete="email" maxlength="254" placeholder="correo@ejemplo.com">
                 </div>
                 <div class="form-group" style="margin-bottom:1.5rem;">
                     <label for="scm-form-prov-address">Dirección</label>
@@ -1147,8 +1158,8 @@
                 </div>
                 <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1rem;">
                     <div class="form-group">
-                        <label for="scm-form-ord-provider">Proveedor</label>
-                        <select id="scm-form-ord-provider"></select>
+                        <label>Proveedor asignado al producto</label>
+                        <div id="scm-form-ord-provider" class="form-control" aria-live="polite">Selecciona un producto</div>
                     </div>
                     <div class="form-group">
                         <label for="scm-form-ord-date">Fecha</label>

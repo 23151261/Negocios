@@ -18,6 +18,7 @@
     let scmLevel = 'Inicial';
     let scmMetrics = null;
     let scmAlerts = [];
+    let scmDeleteNoticeTimeout;
 
     // Instancias de Chart.js
     let chartTopProducts = null;
@@ -56,7 +57,14 @@
             if (!token) throw new Error('Inicia sesión como administrador antes de guardar cambios SCM.');
             headers['Content-Type'] = 'application/json';
             headers.Authorization = `Bearer ${token}`;
-            if (data !== undefined) options.body = JSON.stringify(data);
+            if (data !== undefined) {
+                if (data instanceof FormData) {
+                    delete headers['Content-Type'];
+                    options.body = data;
+                } else {
+                    options.body = JSON.stringify(data);
+                }
+            }
         }
         const response = await fetch(`${API_ROOT}${path}`, options);
         const result = await response.json();
@@ -80,6 +88,50 @@
 
     function clearScmError() {
         document.getElementById('scm-save-error')?.remove();
+    }
+
+    function showScmProductFormMessage(message, type = 'error') {
+        const notice = document.getElementById('scm-product-form-message');
+        if (!notice) return;
+        notice.className = `alert-message ${type === 'success' ? 'auth-success' : 'auth-error'}`;
+        notice.setAttribute('role', type === 'success' ? 'status' : 'alert');
+        notice.textContent = message;
+        notice.classList.remove('hidden');
+    }
+
+    function renderScmProductImagePreview(imageUrl) {
+        const preview = document.getElementById('scm-form-prod-image-preview');
+        if (!preview) return;
+        if (!imageUrl) {
+            preview.innerHTML = '<div class="empty-preview"><i class="fas fa-image" aria-hidden="true"></i>Vista previa</div>';
+            return;
+        }
+        const image = document.createElement('img');
+        image.src = String(imageUrl).startsWith('/') ? `http://localhost:5000${imageUrl}` : imageUrl;
+        image.alt = 'Vista previa del producto';
+        preview.replaceChildren(image);
+    }
+
+    function showScmDeleteNotice(pageId, message, type = 'success') {
+        const content = document.getElementById(pageId)?.querySelector('.product-table-container');
+        if (!content) return;
+
+        let notice = document.getElementById('scm-delete-notice');
+        if (!notice) {
+            notice = document.createElement('div');
+            notice.id = 'scm-delete-notice';
+            content.prepend(notice);
+        } else if (notice.parentElement !== content) {
+            content.prepend(notice);
+        }
+
+        notice.setAttribute('role', type === 'success' ? 'status' : 'alert');
+        notice.className = `alert-message ${type === 'success' ? 'auth-success' : 'auth-error'}`;
+        notice.style.cssText = `margin:0 0 1rem;padding:0.85rem 1rem;border:1px solid ${type === 'success' ? '#10b981' : '#ef4444'};border-radius:8px;background:${type === 'success' ? '#f0fdf4' : '#fef2f2'};color:${type === 'success' ? '#047857' : '#991b1b'};`;
+        notice.textContent = message;
+        notice.classList.remove('hidden');
+        clearTimeout(scmDeleteNoticeTimeout);
+        scmDeleteNoticeTimeout = setTimeout(() => notice.classList.add('hidden'), 4000);
     }
 
     function renderLowStockWarning() {
@@ -141,19 +193,19 @@
         });
     }
 
-    async function persistScm(saveOperation) {
+    async function persistScm(saveOperation, onError) {
         try {
             await saveOperation();
             await loadScmData();
             clearScmError();
             return true;
         } catch (error) {
-            console.error('[SCM SQL] No se pudieron guardar los cambios:', error);
             showScmError(error);
+            if (onError) onError(error);
             try {
                 await loadScmData();
             } catch (reloadError) {
-                console.error('[SCM SQL] No se pudieron recuperar los datos guardados:', reloadError);
+                showScmError(reloadError);
             }
             return false;
         }
@@ -187,7 +239,11 @@
             };
         });
         scmProviders = dbProviders;
-        scmMovements = dbMovements;
+        scmMovements = dbMovements.map(movement => ({
+            ...movement,
+            productId: Number(movement.productId ?? movement.product_id),
+            productName: movement.productName || movement.product_name || ''
+        }));
         scmOrders = dbOrders;
         scmMaturity = scmState.checklist || [];
         scmMetrics = scmMetricsData;
@@ -210,7 +266,9 @@
 
     function getProductName(id) {
         const prod = scmProducts.find(x => x.id === Number(id));
-        return prod ? prod.name : 'Producto #' + id;
+        if (prod) return prod.name;
+        const historicalOrder = scmOrders.find(order => Number(order.productId) === Number(id) && order.productName);
+        return historicalOrder ? historicalOrder.productName : 'Producto #' + id;
     }
 
     async function refreshScmOrders() {
@@ -338,7 +396,7 @@
                 </td>
                 <td><strong>${p.name}</strong><br><small style="color:#64748b;">${getProviderName(p.providerId)}</small></td>
                 <td>${p.category}</td>
-                <td><span style="font-weight:700; color:${p.minStock !== null && p.stock <= p.minStock ? '#dc2626' : '#0f172a'}">${p.stock}</span></td>
+                <td><span style="font-weight:700; color:${p.minStock !== null && p.stock < p.minStock ? '#dc2626' : '#0f172a'}">${p.stock}</span></td>
                 <td>${p.minStock ?? 'Sin definir'}</td>
                 <td>
                     <span class="${isPush ? 'badge-push' : 'badge-pull'}">
@@ -363,6 +421,7 @@
         const form = document.getElementById('scm-product-form');
         const title = document.getElementById('scm-product-modal-title');
         const provSelect = document.getElementById('scm-form-prod-provider');
+        const imageLabel = document.querySelector('label[for="scm-form-prod-image"]');
 
         if (!modal || !form) return;
 
@@ -378,8 +437,10 @@
 
         form.reset();
         document.getElementById('scm-form-prod-id').value = '';
+        document.getElementById('scm-product-form-message')?.classList.add('hidden');
 
         if (id) {
+            if (imageLabel) imageLabel.textContent = 'Imagen del producto (opcional)';
             const p = scmProducts.find(x => x.id === id);
             if (p) {
                 title.textContent = 'Editar producto';
@@ -392,21 +453,63 @@
                 document.getElementById('scm-form-prod-minstock').value = p.minStock ?? '';
                 document.getElementById('scm-form-prod-strategy').value = p.strategy || 'PUSH';
                 document.getElementById('scm-form-prod-cost').value = p.unitCost || 0;
+                renderScmProductImagePreview(p.image);
             }
         } else {
             title.textContent = 'Nuevo producto';
+            if (imageLabel) imageLabel.textContent = 'Imagen del producto *';
+            renderScmProductImagePreview('');
         }
 
         modal.classList.add('active');
     };
 
     window.deleteScmProduct = async function (id) {
-        const p = scmProducts.find(x => x.id === id);
-        if (!p) return;
-        if (confirm(`¿Estás seguro de eliminar el platillo "${p.name}"?`)) {
-            if (!await persistScm(() => apiScmRequest(`/productos/${id}`, 'DELETE'))) return;
-            renderScmProductsTable();
+        const productId = Number(id);
+        const p = scmProducts.find(x => Number(x.id) === productId);
+        if (!p) {
+            showScmDeleteNotice('admin-scm-productos', 'No se encontró el producto. Actualiza la lista e inténtalo de nuevo.', 'error');
+            return;
         }
+        if (typeof window.showConfirmModal !== 'function') {
+            showScmDeleteNotice('admin-scm-productos', 'No está disponible la confirmación para eliminar el producto.', 'error');
+            return;
+        }
+        const providerNotice = p.providerId
+            ? ` Tiene proveedor asignado: ${p.providerName || getProviderName(p.providerId)}; se desvinculará al continuar.`
+            : '';
+        window.showConfirmModal(`¿Estás seguro de eliminar el platillo "${p.name}"?${providerNotice}`, async confirmed => {
+            if (!confirmed) return;
+            let result;
+            if (!await persistScm(
+                async () => {
+                    result = await apiScmRequest(`/productos/${productId}`, 'DELETE');
+                },
+                error => showScmDeleteNotice('admin-scm-productos', error.message, 'error')
+            )) return;
+            renderScmProductsTable();
+            renderScmInventoryTable();
+            let catalogRefreshError = null;
+            if (typeof window.refreshMainProductCatalog === 'function') {
+                try {
+                    await window.refreshMainProductCatalog();
+                } catch (error) {
+                    catalogRefreshError = error;
+                }
+            }
+            const cancelledOrders = Number(result?.cancelledOrders) || 0;
+            const cancellationMessage = cancelledOrders
+                ? ` Se cancelaron ${cancelledOrders} pedido${cancelledOrders === 1 ? '' : 's'} SCM pendiente${cancelledOrders === 1 ? '' : 's'}.`
+                : '';
+            const refreshMessage = catalogRefreshError
+                ? ` El producto se eliminó, pero no se pudo actualizar el catálogo principal: ${catalogRefreshError.message}`
+                : '';
+            showScmDeleteNotice(
+                'admin-scm-productos',
+                `Producto "${p.name}" eliminado correctamente.${cancellationMessage}${refreshMessage}`,
+                catalogRefreshError ? 'error' : 'success'
+            );
+        });
     };
 
     // ============================================================
@@ -475,12 +578,31 @@
     };
 
     window.deleteScmProvider = async function (id) {
-        const pr = scmProviders.find(x => x.id === id);
-        if (!pr) return;
-        if (confirm(`¿Estás seguro de eliminar al proveedor "${pr.name}"?`)) {
-            if (!await persistScm(() => apiScmRequest(`/proveedores/${id}`, 'DELETE'))) return;
-            renderScmProvidersTable();
+        const providerId = Number(id);
+        const pr = scmProviders.find(x => Number(x.id) === providerId);
+        if (!pr) {
+            showScmDeleteNotice('admin-scm-proveedores', 'No se encontró el proveedor. Actualiza la lista e inténtalo de nuevo.', 'error');
+            return;
         }
+        const hasProducts = scmProducts.some(product => Number(product.providerId) === providerId);
+        if (hasProducts) {
+            showScmDeleteNotice('admin-scm-proveedores', `No se puede eliminar al proveedor "${pr.name}" porque tiene productos asignados.`, 'error');
+            return;
+        }
+
+        if (typeof window.showConfirmModal !== 'function') {
+            showScmDeleteNotice('admin-scm-proveedores', 'No está disponible la confirmación para eliminar el proveedor.', 'error');
+            return;
+        }
+        window.showConfirmModal(`¿Estás seguro de eliminar al proveedor "${pr.name}"?`, async confirmed => {
+            if (!confirmed) return;
+            if (!await persistScm(
+                () => apiScmRequest(`/proveedores/${providerId}`, 'DELETE'),
+                error => showScmDeleteNotice('admin-scm-proveedores', error.message, 'error')
+            )) return;
+            renderScmProvidersTable();
+            showScmDeleteNotice('admin-scm-proveedores', `Proveedor "${pr.name}" eliminado correctamente.`);
+        });
     };
 
     // ============================================================
@@ -494,7 +616,7 @@
         const statusFilter = document.getElementById('scm-inventory-status-filter')?.value || 'todos';
 
         const filtered = scmProducts.filter(p => {
-            const isLow = p.minStock !== null && p.stock <= p.minStock;
+            const isLow = p.minStock !== null && p.stock < p.minStock;
             const hasNoMinimum = p.minStock === null;
             const matchesSearch = !search || p.name.toLowerCase().includes(search);
             const matchesStatus = statusFilter === 'todos'
@@ -511,7 +633,7 @@
         }
 
         filtered.forEach(p => {
-            const isLow = p.minStock !== null && p.stock <= p.minStock;
+            const isLow = p.minStock !== null && p.stock < p.minStock;
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><strong>${p.name}</strong><br><small style="color:#64748b;">${p.category}</small></td>
@@ -575,7 +697,7 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${m.date}</td>
-                <td><strong>${getProductName(m.productId)}</strong></td>
+                <td><strong>${m.productName || m.product_name || getProductName(m.productId ?? m.product_id)}</strong></td>
                 <td>
                     <span style="color:${isEntry ? '#10b981' : '#ef4444'};font-weight:700;">
                         ${isEntry ? 'Entrada' : 'Salida'}
@@ -707,14 +829,14 @@
                 <td><strong>${o.folio}</strong></td>
                 <td>${o.date}</td>
                 <td>
-                    <strong>${getProductName(o.productId)}</strong>
-                    ${o.autoGenerated ? '<br><small class="scm-auto-order-badge">Reposición automática por stock mínimo</small>' : ''}
+                    <strong>${o.productName || getProductName(o.productId)}</strong>
+                    ${o.autoGenerated ? `<br><small class="scm-auto-order-badge">${o.status === 'Surtido' ? 'Reposición automática completada' : 'Reposición automática por stock mínimo'}</small>` : ''}
                 </td>
                 <td>${o.quantity}</td>
                 <td>${o.type}</td>
                 <td><span class="${badgeClass}">${o.status}</span></td>
                 <td>
-                    <select onchange="window.changeScmOrderStatus(${o.id}, this.value)" style="padding:2px 6px;border-radius:6px;border:1px solid #cbd5e1;font-size:0.8rem;">
+                    <select onchange="window.changeScmOrderStatus(${o.id}, this.value, this)" ${o.status === 'Cancelado' ? 'disabled aria-label="Pedido cancelado; estado bloqueado"' : `aria-label="Cambiar estado del pedido ${o.folio}"`} style="padding:2px 6px;border-radius:6px;border:1px solid #cbd5e1;font-size:0.8rem;">
                         <option value="Pendiente" ${o.status === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
                         <option value="En proceso" ${o.status === 'En proceso' ? 'selected' : ''}>En proceso</option>
                         <option value="Surtido" ${o.status === 'Surtido' ? 'selected' : ''}>Surtido</option>
@@ -730,7 +852,7 @@
         const modal = document.getElementById('scm-order-modal');
         const form = document.getElementById('scm-order-form');
         const prodSelect = document.getElementById('scm-form-ord-product');
-        const provSelect = document.getElementById('scm-form-ord-provider');
+        const providerDisplay = document.getElementById('scm-form-ord-provider');
         if (!modal || !form) return;
 
         form.reset();
@@ -745,36 +867,44 @@
             });
         }
 
-        if (provSelect) {
-            provSelect.innerHTML = '<option value="">Selecciona un proveedor</option>';
-            scmProviders.forEach(pr => {
-                const opt = document.createElement('option');
-                opt.value = pr.id;
-                opt.textContent = pr.name;
-                provSelect.appendChild(opt);
-            });
-        }
-
         document.getElementById('scm-form-ord-date').value = new Date().toISOString().split('T')[0];
+        const updateAssignedProvider = () => {
+            const product = scmProducts.find(item => item.id === Number(prodSelect?.value));
+            if (providerDisplay) {
+                providerDisplay.textContent = product
+                    ? product.providerName || (product.providerId ? getProviderName(product.providerId) : 'Sin proveedor asignado')
+                    : 'Selecciona un producto';
+            }
+        };
+        if (prodSelect) prodSelect.onchange = updateAssignedProvider;
         if (productId !== null) {
             const product = scmProducts.find(item => item.id === Number(productId));
             if (product) {
                 prodSelect.value = String(product.id);
                 document.getElementById('scm-form-ord-qty').value = product.minStock;
                 document.getElementById('scm-form-ord-type').value = 'Reposición';
-                if (provSelect) provSelect.value = String(product.providerId || '');
                 document.getElementById('scm-form-ord-notes').value =
                     `Reposición por stock mínimo: ${product.stock} unidades disponibles de un mínimo de ${product.minStock}.`;
             }
         }
+        updateAssignedProvider();
         modal.classList.add('active');
     };
 
-    window.changeScmOrderStatus = async function (orderId, newStatus) {
-        const order = scmOrders.find(o => o.id === orderId);
+    window.changeScmOrderStatus = async function (orderId, newStatus, select) {
+        const order = scmOrders.find(o => String(o.id) === String(orderId));
         if (!order) return;
+        if (order.status === 'Cancelado' || order.status === newStatus) {
+            if (select) select.value = order.status;
+            return;
+        }
 
-        if (!await persistScm(() => apiScmRequest(`/pedidos/${order.id}/estado`, 'PUT', { status: newStatus }))) return;
+        const previousStatus = order.status;
+        if (!await persistScm(() => apiScmRequest(`/pedidos/${order.id}/estado`, 'PUT', { status: newStatus }))) {
+            if (select) select.value = previousStatus;
+            renderScmOrdersTable();
+            return;
+        }
         renderScmOrdersTable();
     };
 
@@ -852,7 +982,7 @@
         const totalProducts = metrics ? metrics.totalProducts : scmProducts.length;
         const totalProviders = metrics ? metrics.providersCount : scmProviders.length;
         const pendingOrders = metrics ? metrics.inProcessOrders : scmOrders.filter(o => o.status === 'En proceso' || o.status === 'Pendiente').length;
-        const lowStockCount = metrics ? metrics.lowStockCount : scmProducts.filter(p => p.minStock !== null && p.stock <= p.minStock).length;
+        const lowStockCount = metrics ? metrics.lowStockCount : scmProducts.filter(p => p.minStock !== null && p.stock < p.minStock).length;
 
         const kpiProd = document.getElementById('scm-kpi-products');
         const kpiProv = document.getElementById('scm-kpi-providers');
@@ -869,7 +999,7 @@
         if (critTable) {
             const criticalList = (metrics && metrics.criticalInventory && metrics.criticalInventory.length)
                 ? metrics.criticalInventory
-                : scmProducts.filter(p => p.minStock !== null && p.stock <= p.minStock);
+                : scmProducts.filter(p => p.minStock !== null && p.stock < p.minStock);
 
             critTable.innerHTML = '';
             if (criticalList.length === 0) {
@@ -1005,6 +1135,20 @@
 
         // Guardar producto
         const productForm = document.getElementById('scm-product-form');
+        const productImageInput = document.getElementById('scm-form-prod-image');
+        if (productImageInput) {
+            productImageInput.addEventListener('change', function() {
+                const file = productImageInput.files && productImageInput.files[0];
+                if (!file) return;
+                if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 2 * 1024 * 1024) {
+                    productImageInput.value = '';
+                    showScmProductFormMessage('Selecciona una imagen JPG, PNG o WEBP de hasta 2 MB.');
+                    return;
+                }
+                renderScmProductImagePreview(URL.createObjectURL(file));
+                document.getElementById('scm-product-form-message')?.classList.add('hidden');
+            });
+        }
         if (productForm) {
             productForm.addEventListener('submit', async function (e) {
                 e.preventDefault();
@@ -1018,23 +1162,35 @@
                 const strategy = document.getElementById('scm-form-prod-strategy').value;
                 const unitCost = Number(document.getElementById('scm-form-prod-cost').value);
 
-                if (!name) return alert('Por favor ingresa el nombre del producto.');
+                const imageFile = productImageInput?.files?.[0];
+                if (!name) return showScmProductFormMessage('El nombre del producto es obligatorio.');
+                if (!id && !imageFile) return showScmProductFormMessage('Selecciona una imagen para el producto.');
                 const current = scmProducts.find(product => product.id === Number(id));
-                const productData = {
+                const productData = new FormData();
+                Object.entries({
                     name,
                     description: desc,
                     category,
-                    providerId,
+                    providerId: providerId || '',
                     stock,
                     minStock,
                     strategy,
                     unitCost,
                     price: current?.price || Number((unitCost * 2.2).toFixed(2)),
                     image: current?.image || ''
-                };
+                }).forEach(([key, value]) => productData.append(key, value));
+                if (imageFile) productData.append('image', imageFile);
                 if (!await persistScm(() => apiScmRequest(id ? `/productos/${id}` : '/productos', id ? 'PUT' : 'POST', productData))) return;
                 document.getElementById('scm-product-modal').classList.remove('active');
                 renderScmProductsTable();
+                renderScmInventoryTable();
+                if (typeof window.refreshMainProductCatalog === 'function') {
+                    try {
+                        await window.refreshMainProductCatalog();
+                    } catch (error) {
+                        showScmDeleteNotice('admin-scm-productos', `El producto se guardó, pero no se pudo actualizar el catálogo principal: ${error.message}`, 'error');
+                    }
+                }
             });
         }
 
@@ -1050,7 +1206,7 @@
                 const phone = document.getElementById('scm-form-prov-phone').value.trim();
                 const address = document.getElementById('scm-form-prov-address').value.trim();
 
-                if (!name) return alert('Por favor ingresa el nombre del proveedor.');
+                if (!name) return showScmDeleteNotice('admin-scm-proveedores', 'El nombre del proveedor es obligatorio.', 'error');
 
                 const provider = scmProviders.find(item => item.id === Number(id));
                 const providerData = {
@@ -1075,11 +1231,11 @@
                 const reason = document.getElementById('scm-form-mov-reason').value;
                 const date = document.getElementById('scm-form-mov-date').value || new Date().toISOString().split('T')[0];
 
-                if (!productId) return alert('Selecciona un producto.');
-                if (!quantityInput || quantityInput <= 0) return alert('La cantidad debe ser mayor a 0.');
+                if (!productId) return showScmDeleteNotice('admin-scm-inventario', 'Selecciona un producto.', 'error');
+                if (!quantityInput || quantityInput <= 0) return showScmDeleteNotice('admin-scm-inventario', 'La cantidad debe ser mayor a 0.', 'error');
 
                 const product = scmProducts.find(p => p.id === productId);
-                if (!product) return alert('Producto no encontrado.');
+                if (!product) return showScmDeleteNotice('admin-scm-inventario', 'Producto no encontrado.', 'error');
                 if (!await persistScm(() => apiScmRequest('/inventario/movimiento', 'POST', {
                     productId,
                     type,
@@ -1090,6 +1246,7 @@
 
                 document.getElementById('scm-movement-modal').classList.remove('active');
                 renderScmMovementsTable();
+                renderScmInventoryTable();
             });
         }
 
@@ -1101,18 +1258,16 @@
                 const productId = Number(document.getElementById('scm-form-ord-product').value);
                 const quantity = Number(document.getElementById('scm-form-ord-qty').value);
                 const type = document.getElementById('scm-form-ord-type').value;
-                const providerId = Number(document.getElementById('scm-form-ord-provider').value);
                 const date = document.getElementById('scm-form-ord-date').value || new Date().toISOString().split('T')[0];
                 const notes = document.getElementById('scm-form-ord-notes').value.trim();
 
-                if (!productId) return alert('Selecciona un producto.');
-                if (!quantity || quantity <= 0) return alert('La cantidad debe ser mayor a cero.');
+                if (!productId) return showScmDeleteNotice('admin-scm-pedidos', 'Selecciona un producto.', 'error');
+                if (!quantity || quantity <= 0) return showScmDeleteNotice('admin-scm-pedidos', 'La cantidad debe ser mayor a cero.', 'error');
 
                 if (!await persistScm(() => apiScmRequest('/pedidos', 'POST', {
                     productId,
                     quantity,
                     type,
-                    providerId,
                     date,
                     notes
                 }))) return;
@@ -1137,7 +1292,7 @@
                 if (prod) {
                     if (!await persistScm(() => apiScmRequest(`/productos/${prodId}/estrategia`, 'PUT', { estrategia: newStrategy }))) return;
                     renderScmLogisticsView();
-                    alert(`Estrategia actualizada a ${newStrategy} para "${prod.name}".`);
+                    showScmDeleteNotice('admin-scm-logistica', `Estrategia actualizada a ${newStrategy} para "${prod.name}".`);
                 }
             });
         }
@@ -1179,7 +1334,6 @@
         try {
             await loadScmData();
         } catch (error) {
-            console.error('[SCM SQL] No se pudieron cargar los datos:', error);
             showScmError(error);
         }
         setupFormListeners();

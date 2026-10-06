@@ -17,6 +17,7 @@ app.get('/', (req, res) => {
     res.json({ mensaje: 'API de DeliciasResto funcionando' });
 });
 
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, '../front')));
 
 // Importar rutas
@@ -103,6 +104,7 @@ async function startServer() {
         ['password', 'VARCHAR(255) NULL'],
         ['phone', "VARCHAR(30) NOT NULL DEFAULT ''"],
         ['address', "VARCHAR(255) NOT NULL DEFAULT ''"],
+        ['imagen_url', 'VARCHAR(500) NULL'],
         ['stage', "VARCHAR(30) NOT NULL DEFAULT 'prospecto'"],
         ['status', "VARCHAR(20) NOT NULL DEFAULT 'activo'"],
         ['orders', 'INT NOT NULL DEFAULT 0'],
@@ -140,6 +142,23 @@ async function startServer() {
     ];
     for (const [column, definition] of interactionColumns) {
         await ensureColumn('interacciones', column, definition);
+    }
+
+    const [scmTables] = await pool.query(
+        "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('productos', 'movimientos_inventario')"
+    );
+    const existingScmTables = new Set(scmTables.map(row => row.TABLE_NAME));
+    if (existingScmTables.has('productos')) {
+        await ensureColumn('productos', 'active', 'TINYINT(1) NOT NULL DEFAULT 1');
+    }
+    if (existingScmTables.has('movimientos_inventario')) {
+        await ensureColumn('movimientos_inventario', 'product_name', 'VARCHAR(150) NULL');
+        await pool.query(`
+            UPDATE movimientos_inventario m
+            INNER JOIN productos p ON p.id = m.product_id
+            SET m.product_name = p.name
+            WHERE m.product_name IS NULL OR m.product_name = ''
+        `);
     }
 
     const [roleColumn] = await pool.query(`

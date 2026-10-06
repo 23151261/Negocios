@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { ensureLowStockOrders } = require('./data.controller');
+const getProductImage = require('../utils/productImage');
 
 const validStrategies = new Set(['PUSH', 'PULL']);
 const validOrderStatuses = new Set(['Pendiente', 'En proceso', 'Surtido', 'Cancelado']);
@@ -49,7 +50,6 @@ function run(handler, successStatus = 200) {
             res.status(successStatus).json(await handler(req));
         } catch (error) {
             if (error.status) return res.status(error.status).json({ error: error.message });
-            console.error('[SCM API]', error);
             res.status(500).json({ error: 'Error al procesar la operación SCM' });
         }
     };
@@ -88,14 +88,6 @@ function normalizeStrategy(value) {
     return strategy;
 }
 
-function defaultProviderId(category) {
-    if (category === 'Pizzas') return 2;
-    if (category === 'Pescados') return 3;
-    if (category === 'Bebidas') return 5;
-    if (category === 'Ensaladas') return 4;
-    return 1;
-}
-
 function normalizeOrderStatus(value) {
     const normalized = String(value || '').trim().toLowerCase();
     const status = {
@@ -115,22 +107,15 @@ function normalizeOrderStatus(value) {
 
 async function getProduct(connection, id) {
     const productId = number(id, 'ID de producto', { integer: true, min: 1 });
-    const [[product]] = await connection.query('SELECT * FROM productos WHERE id = ?', [productId]);
+    const [[product]] = await connection.query('SELECT * FROM productos WHERE id=? AND active=1', [productId]);
     if (!product) throw new RequestError(404, 'Producto no encontrado');
-    const metadata = await getAppData(connection, 'scm_product_meta', {});
-    return {
-        productId,
-        product,
-        meta: metadata[productId] || {}
-    };
+    return { productId, product };
 }
 
 async function resolveProvider(connection, providerId) {
     if (!providerId) return;
-    const providers = await getAppData(connection, 'scm_providers', []);
-    if (!providers.some(provider => Number(provider.id) === Number(providerId))) {
-        throw new RequestError(400, 'Proveedor no encontrado');
-    }
+    const [[prov]] = await connection.query('SELECT id FROM proveedores WHERE id=? AND activo=1', [providerId]);
+    if (!prov) throw new RequestError(400, 'Proveedor no encontrado');
 }
 
 function productPayload(body, current = {}, currentMeta = {}) {
@@ -139,11 +124,22 @@ function productPayload(body, current = {}, currentMeta = {}) {
     if (!name || !category) throw new RequestError(400, 'Nombre y categoría son obligatorios');
     const price = number(body.price === undefined ? current.price : body.price, 'Precio');
     const stock = number(body.stock === undefined ? current.stock : body.stock, 'Existencia', { integer: true });
-    const minStock = number(body.minStock === undefined ? currentMeta.minStock : body.minStock, 'Stock mínimo', { integer: true, min: 1 });
-    const unitCost = number(body.unitCost === undefined ? (currentMeta.unitCost ?? 0) : body.unitCost, 'Costo unitario');
-    const strategy = normalizeStrategy(body.strategy === undefined ? (currentMeta.strategy || 'PUSH') : body.strategy);
-    const providerId = body.providerId === undefined ? currentMeta.providerId : body.providerId;
-    const normalizedProviderId = providerId ? number(providerId, 'ID de proveedor', { integer: true, min: 1 }) : defaultProviderId(category);
+    const minStockRaw = body.minStock === undefined
+        ? (current.min_stock != null ? current.min_stock : currentMeta.minStock)
+        : body.minStock;
+    const minStock = number(minStockRaw, 'Stock mínimo', { integer: true, min: 1 });
+    const unitCostRaw = body.unitCost === undefined
+        ? (current.unit_cost != null ? current.unit_cost : (currentMeta.unitCost ?? 0))
+        : body.unitCost;
+    const unitCost = number(unitCostRaw, 'Costo unitario');
+    const strategyRaw = body.strategy === undefined
+        ? (current.strategy || currentMeta.strategy || 'PUSH')
+        : body.strategy;
+    const strategy = normalizeStrategy(strategyRaw);
+    const providerIdRaw = body.providerId === undefined
+        ? (current.provider_id != null ? current.provider_id : currentMeta.providerId)
+        : body.providerId;
+    const providerId = providerIdRaw ? number(providerIdRaw, 'ID de proveedor', { integer: true, min: 1 }) : null;
     const description = body.description === undefined ? (body.desc ?? current.description ?? '') : body.description;
     const image = body.image === undefined ? (current.image ?? '') : body.image;
     if (typeof description !== 'string' || typeof image !== 'string') {
@@ -157,65 +153,73 @@ function productPayload(body, current = {}, currentMeta = {}) {
         minStock,
         unitCost,
         strategy,
-        providerId: normalizedProviderId,
+        providerId,
         description,
         image
     };
 }
 
-function registerActivity(req, productId, type, quantity, reason, date) {
-    return {
-        id: Date.now(),
-        date: date ? new Date(`${date}T00:00:00`).toLocaleDateString('es-MX') : new Date().toLocaleDateString('es-MX'),
-        productId,
-        type,
-        quantity,
-        reason,
-        user: req.user?.name || req.user?.email || 'Usuario'
-    };
+async function applyStrategyChange(connection, productId, currentStrategy, nextStrategy) {
+    if (currentStrategy === nextStrategy) return;
+
+    if (nextStrategy === 'PULL') {
+        await connection.query(
+            "UPDATE pedidos_scm SET status='Cancelado', retry_suppressed=1, notes=CONCAT(COALESCE(notes,''),' Cancelado: estrategia PULL requiere pedido manual.') WHERE product_id=? AND auto_generated=1 AND status IN ('Pendiente','En proceso')",
+            [productId]
+        );
+        return;
+    }
+
+    await connection.query(
+        'UPDATE pedidos_scm SET retry_suppressed=0 WHERE product_id=? AND auto_generated=1 AND retry_suppressed=1',
+        [productId]
+    );
 }
+
+// ─── PRODUCTOS ────────────────────────────────────────────────────────────────
 
 async function getProducts(req) {
     const strategyFilter = req.query.estrategia === undefined
         ? null
         : normalizeStrategy(req.query.estrategia);
-    const [products] = await pool.query('SELECT * FROM productos ORDER BY id');
-    const metadata = await getAppData(pool, 'scm_product_meta', {});
+    const [products] = await pool.query(`
+        SELECT p.*, pv.name AS provider_name
+        FROM productos p
+        LEFT JOIN proveedores pv ON pv.id = p.provider_id AND pv.activo = 1
+        WHERE p.active=1
+        ORDER BY p.id
+    `);
     return products
-        .map(product => ({
-            id: Number(product.id),
-            name: product.name,
-            description: product.description,
-            desc: product.description,
-            category: product.category,
-            price: Number(product.price),
-            stock: Number(product.stock),
-            status: product.status,
-            image: product.image,
-            minStock: metadata[product.id]?.minStock == null ? null : Number(metadata[product.id].minStock),
-            strategy: metadata[product.id]?.strategy || 'PUSH',
-            providerId: metadata[product.id]?.providerId ?? defaultProviderId(product.category),
-            unitCost: Number(metadata[product.id]?.unitCost ?? 0)
+        .map(p => ({
+            id: Number(p.id),
+            name: p.name,
+            description: p.description,
+            desc: p.description,
+            category: p.category,
+            price: Number(p.price),
+            stock: Number(p.stock),
+            status: p.status,
+            image: getProductImage(p.image, p.name),
+            minStock: p.min_stock != null ? Number(p.min_stock) : null,
+            strategy: p.strategy || 'PUSH',
+            providerId: p.provider_id != null ? Number(p.provider_id) : null,
+            unitCost: Number(p.unit_cost || 0),
+            providerName: p.provider_name || null
         }))
-        .filter(product => !strategyFilter || product.strategy === strategyFilter);
+        .filter(p => !strategyFilter || p.strategy === strategyFilter);
 }
 
 async function createProduct(req) {
     return inTransaction(async connection => {
+        if (!req.file) throw new RequestError(400, 'Selecciona una imagen para el producto');
+        req.body.image = `/uploads/productos/${req.file.filename}`;
         const input = productPayload(req.body);
         await resolveProvider(connection, input.providerId);
         const [result] = await connection.query(
-            'INSERT INTO productos (name, category, price, description, image, badge, badge_text, stock, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [input.name, input.category, input.price, input.description, input.image, null, null, input.stock, input.stock > 0 ? 'disponible' : 'agotado']
+            'INSERT INTO productos (name, category, price, description, image, badge, badge_text, stock, status, min_stock, strategy, unit_cost, provider_id, active) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,1)',
+            [input.name, input.category, input.price, input.description, input.image, null, null, input.stock,
+             input.stock > 0 ? 'disponible' : 'agotado', input.minStock, input.strategy, input.unitCost, input.providerId]
         );
-        const productMeta = await getAppData(connection, 'scm_product_meta', {});
-        productMeta[result.insertId] = {
-            minStock: input.minStock,
-            strategy: input.strategy,
-            unitCost: input.unitCost,
-            providerId: input.providerId
-        };
-        await setAppData(connection, 'scm_product_meta', productMeta);
         await ensureLowStockOrders(connection);
         return { id: result.insertId, ...input };
     });
@@ -223,21 +227,22 @@ async function createProduct(req) {
 
 async function updateProduct(req) {
     return inTransaction(async connection => {
-        const { productId, product, meta } = await getProduct(connection, req.params.id);
-        const input = productPayload(req.body, product, meta);
+        const { productId, product } = await getProduct(connection, req.params.id);
+        if (req.file) req.body.image = `/uploads/productos/${req.file.filename}`;
+        const input = productPayload(req.body, product);
         await resolveProvider(connection, input.providerId);
-        await connection.query(
-            'UPDATE productos SET name = ?, category = ?, price = ?, description = ?, image = ?, stock = ?, status = ? WHERE id = ?',
-            [input.name, input.category, input.price, input.description, input.image, input.stock, input.stock > 0 ? 'disponible' : 'agotado', productId]
+        await applyStrategyChange(
+            connection,
+            productId,
+            String(product.strategy || 'PUSH').toUpperCase(),
+            input.strategy
         );
-        const productMeta = await getAppData(connection, 'scm_product_meta', {});
-        productMeta[productId] = {
-            minStock: input.minStock,
-            strategy: input.strategy,
-            unitCost: input.unitCost,
-            providerId: input.providerId
-        };
-        await setAppData(connection, 'scm_product_meta', productMeta);
+        await connection.query(
+            'UPDATE productos SET name=?, category=?, price=?, description=?, image=?, stock=?, status=?, min_stock=?, strategy=?, unit_cost=?, provider_id=? WHERE id=? AND active=1',
+            [input.name, input.category, input.price, input.description, input.image, input.stock,
+             input.stock > 0 ? 'disponible' : 'agotado', input.minStock, input.strategy, input.unitCost,
+             input.providerId, productId]
+        );
         await ensureLowStockOrders(connection);
         return { id: productId, ...input };
     });
@@ -245,18 +250,16 @@ async function updateProduct(req) {
 
 async function deleteProduct(req) {
     return inTransaction(async connection => {
-        const { productId } = await getProduct(connection, req.params.id);
-        const orders = await getAppData(connection, 'scm_orders', []);
-        const hasOpenOrder = orders.some(order =>
-            Number(order.productId) === productId
-            && ['pendiente', 'en proceso'].includes(String(order.status || '').toLowerCase())
+        const { productId, product } = await getProduct(connection, req.params.id);
+        const [cancelled] = await connection.query(
+            "UPDATE pedidos_scm SET status='Cancelado', product_name=?, notes=CONCAT(COALESCE(notes,''),' Cancelado: producto eliminado.') WHERE product_id=? AND status IN ('Pendiente','En proceso')",
+            [product.name, productId]
         );
-        if (hasOpenOrder) throw new RequestError(409, 'No se puede eliminar un producto con pedidos pendientes');
-        await connection.query('DELETE FROM productos WHERE id = ?', [productId]);
-        const metadata = await getAppData(connection, 'scm_product_meta', {});
-        delete metadata[productId];
-        await setAppData(connection, 'scm_product_meta', metadata);
-        return { message: 'Producto eliminado' };
+        await connection.query(
+            'UPDATE productos SET active=0, provider_id=NULL WHERE id=? AND active=1',
+            [productId]
+        );
+        return { message: 'Producto eliminado', cancelledOrders: cancelled.affectedRows };
     });
 }
 
@@ -264,91 +267,118 @@ async function updateStrategy(req) {
     return inTransaction(async connection => {
         const { productId } = await getProduct(connection, req.params.id);
         const strategy = normalizeStrategy(req.body.estrategia ?? req.body.strategy);
-        const metadata = await getAppData(connection, 'scm_product_meta', {});
-        metadata[productId] = { ...(metadata[productId] || {}), strategy };
-        await setAppData(connection, 'scm_product_meta', metadata);
+        const [[current]] = await connection.query('SELECT strategy FROM productos WHERE id=?', [productId]);
+        await applyStrategyChange(
+            connection,
+            productId,
+            String(current.strategy || 'PUSH').toUpperCase(),
+            strategy
+        );
+        await connection.query('UPDATE productos SET strategy=? WHERE id=?', [strategy, productId]);
         await ensureLowStockOrders(connection);
         return { productId, estrategia: strategy };
     });
 }
 
+async function uploadProductImage(req) {
+    const productId = number(req.params.id, 'ID de producto', { integer: true, min: 1 });
+    const [[product]] = await pool.query('SELECT id FROM productos WHERE id=? AND active=1', [productId]);
+    if (!product) throw new RequestError(404, 'Producto no encontrado');
+    if (!req.file) throw new RequestError(400, 'No se recibió ningún archivo de imagen');
+    const imagePath = `/uploads/productos/${req.file.filename}`;
+    await pool.query('UPDATE productos SET image=? WHERE id=? AND active=1', [imagePath, productId]);
+    return { id: productId, image: imagePath };
+}
+
+// ─── PROVEEDORES ──────────────────────────────────────────────────────────────
+
 async function getProviders() {
-    return getAppData(pool, 'scm_providers', []);
+    const [rows] = await pool.query('SELECT * FROM proveedores WHERE activo=1 ORDER BY id');
+    return rows;
 }
 
 async function createProvider(req) {
     return inTransaction(async connection => {
         const { name, contact, email, phone } = req.body;
-        const providers = await getAppData(connection, 'scm_providers', []);
         if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
             throw new RequestError(400, 'Correo electrónico de proveedor inválido');
         }
-        if (providers.some(provider => String(provider.email).toLowerCase() === email.trim().toLowerCase())) {
-            throw new RequestError(409, 'El correo ya está registrado para otro proveedor');
-        }
-        const provider = {
-            id: providers.reduce((max, item) => Math.max(max, Number(item.id) || 0), 0) + 1,
-            name: requiredText(name, 'Nombre'),
-            contact: requiredText(contact, 'Contacto'),
-            email: email.trim().toLowerCase(),
-            phone: requiredText(phone, 'Teléfono'),
-            address: typeof req.body.address === 'string' ? req.body.address.trim() : '',
-            products: typeof req.body.products === 'string' ? req.body.products.trim() : ''
-        };
-        providers.push(provider);
-        await setAppData(connection, 'scm_providers', providers);
+        const normalizedEmail = email.trim().toLowerCase();
+        const [[existing]] = await connection.query(
+            'SELECT id FROM proveedores WHERE LOWER(email)=? AND activo=1',
+            [normalizedEmail]
+        );
+        if (existing) throw new RequestError(409, 'El correo ya está registrado para otro proveedor');
+        const address = typeof req.body.address === 'string' ? req.body.address.trim() : '';
+        const products = typeof req.body.products === 'string' ? req.body.products.trim() : '';
+        const [result] = await connection.query(
+            'INSERT INTO proveedores (name, contact, email, phone, address, products, activo) VALUES (?,?,?,?,?,?,1)',
+            [requiredText(name, 'Nombre'), requiredText(contact, 'Contacto'), normalizedEmail,
+             requiredText(phone, 'Teléfono'), address, products]
+        );
+        const [[provider]] = await connection.query('SELECT * FROM proveedores WHERE id=?', [result.insertId]);
         return provider;
     });
 }
 
 async function updateProvider(req) {
     return inTransaction(async connection => {
-        const providers = await getAppData(connection, 'scm_providers', []);
         const providerId = number(req.params.id, 'ID de proveedor', { integer: true, min: 1 });
-        const index = providers.findIndex(provider => Number(provider.id) === providerId);
-        if (index === -1) throw new RequestError(404, 'Proveedor no encontrado');
-        const current = providers[index];
-        const email = req.body.email === undefined ? current.email : String(req.body.email).trim().toLowerCase();
-        if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        const [[current]] = await connection.query('SELECT * FROM proveedores WHERE id=? AND activo=1', [providerId]);
+        if (!current) throw new RequestError(404, 'Proveedor no encontrado');
+        const emailRaw = req.body.email === undefined ? current.email : String(req.body.email).trim().toLowerCase();
+        if (typeof emailRaw !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) {
             throw new RequestError(400, 'Correo electrónico de proveedor inválido');
         }
-        if (providers.some(provider => Number(provider.id) !== providerId && String(provider.email).toLowerCase() === email)) {
-            throw new RequestError(409, 'El correo ya está registrado para otro proveedor');
-        }
-        providers[index] = {
-            ...current,
+        const [[dup]] = await connection.query(
+            'SELECT id FROM proveedores WHERE LOWER(email)=? AND id<>? AND activo=1',
+            [emailRaw, providerId]
+        );
+        if (dup) throw new RequestError(409, 'El correo ya está registrado para otro proveedor');
+        const updated = {
             name: req.body.name === undefined ? current.name : requiredText(req.body.name, 'Nombre'),
             contact: req.body.contact === undefined ? current.contact : requiredText(req.body.contact, 'Contacto'),
-            email,
+            email: emailRaw,
             phone: req.body.phone === undefined ? current.phone : requiredText(req.body.phone, 'Teléfono'),
             address: req.body.address === undefined ? current.address : String(req.body.address).trim(),
             products: req.body.products === undefined ? current.products : String(req.body.products).trim()
         };
-        await setAppData(connection, 'scm_providers', providers);
-        return providers[index];
+        await connection.query(
+            'UPDATE proveedores SET name=?, contact=?, email=?, phone=?, address=?, products=? WHERE id=?',
+            [updated.name, updated.contact, updated.email, updated.phone, updated.address, updated.products, providerId]
+        );
+        const [[provider]] = await connection.query('SELECT * FROM proveedores WHERE id=?', [providerId]);
+        return provider;
     });
 }
 
 async function deleteProvider(req) {
     return inTransaction(async connection => {
         const providerId = number(req.params.id, 'ID de proveedor', { integer: true, min: 1 });
-        const providers = await getAppData(connection, 'scm_providers', []);
-        if (!providers.some(provider => Number(provider.id) === providerId)) {
-            throw new RequestError(404, 'Proveedor no encontrado');
+        const [[provider]] = await connection.query('SELECT id FROM proveedores WHERE id=? AND activo=1', [providerId]);
+        if (!provider) throw new RequestError(404, 'Proveedor no encontrado');
+        // Verificar productos asignados
+        const [[{ count }]] = await connection.query(
+            'SELECT COUNT(*) AS count FROM productos WHERE provider_id=?',
+            [providerId]
+        );
+        if (Number(count) > 0) {
+            throw new RequestError(409, `No se puede eliminar: el proveedor tiene ${count} producto${count === 1 ? '' : 's'} asociado${count === 1 ? '' : 's'}`);
         }
-        const productMeta = await getAppData(connection, 'scm_product_meta', {});
-        if (Object.values(productMeta).some(meta => Number(meta.providerId) === providerId)) {
-            throw new RequestError(409, 'No se puede eliminar un proveedor asignado a productos');
-        }
-        const orders = await getAppData(connection, 'scm_orders', []);
-        if (orders.some(order => Number(order.providerId) === providerId
-            && ['pendiente', 'en proceso'].includes(String(order.status || '').toLowerCase()))) {
+        // Verificar pedidos pendientes
+        const [[{ pendientes }]] = await connection.query(
+            "SELECT COUNT(*) AS pendientes FROM pedidos_scm WHERE provider_id=? AND status IN ('Pendiente','En proceso')",
+            [providerId]
+        );
+        if (Number(pendientes) > 0) {
             throw new RequestError(409, 'No se puede eliminar un proveedor con pedidos pendientes');
         }
-        await setAppData(connection, 'scm_providers', providers.filter(provider => Number(provider.id) !== providerId));
+        await connection.query('DELETE FROM proveedores WHERE id=?', [providerId]);
         return { message: 'Proveedor eliminado' };
     });
 }
+
+// ─── MOVIMIENTOS ──────────────────────────────────────────────────────────────
 
 async function createMovement(req) {
     return inTransaction(async connection => {
@@ -358,54 +388,71 @@ async function createMovement(req) {
         if (!type) throw new RequestError(400, 'Tipo de movimiento debe ser entrada o salida');
         const quantity = number(req.body.quantity ?? req.body.cantidad, 'Cantidad', { integer: true, min: 1 });
         const reason = requiredText(req.body.reason ?? req.body.motivo, 'Motivo');
-        const date = req.body.date;
-        localDate(date, 'Fecha de movimiento');
+        const date = localDate(req.body.date, 'Fecha de movimiento');
         const { product } = await getProduct(connection, productId);
         const stockChange = type === 'Entrada' ? quantity : -quantity;
         const [update] = await connection.query(
-            `UPDATE productos SET status = IF(stock + ? > 0, 'disponible', 'agotado'), stock = stock + ? WHERE id = ? AND stock + ? >= 0`,
+            `UPDATE productos SET status=IF(stock+?>0,'disponible','agotado'), stock=stock+? WHERE id=? AND stock+?>=0`,
             [stockChange, stockChange, productId, stockChange]
         );
         if (!update.affectedRows) throw new RequestError(409, 'Stock insuficiente para registrar la salida');
-        const movements = await getAppData(connection, 'scm_movements', []);
-        const movement = registerActivity(req, productId, type, stockChange, reason, date);
-        if (movements.some(item => Number(item.id) === movement.id)) movement.id += 1;
-        movements.unshift(movement);
-        await setAppData(connection, 'scm_movements', movements);
-        const [[updatedProduct]] = await connection.query('SELECT stock FROM productos WHERE id = ?', [productId]);
+        const userName = req.user?.name || req.user?.email || 'Usuario';
+        await connection.query(
+            'INSERT INTO movimientos_inventario (date, product_id, product_name, type, quantity, reason, user) VALUES (?,?,?,?,?,?,?)',
+            [date, productId, product.name, type, Math.abs(stockChange), reason, userName]
+        );
+        const [[updated]] = await connection.query('SELECT stock FROM productos WHERE id=?', [productId]);
         await ensureLowStockOrders(connection);
-        return { ...movement, stockAnterior: Number(product.stock), stockActual: Number(updatedProduct.stock) };
+        return { date, productId, type, quantity: Math.abs(stockChange), reason, user: userName, stockAnterior: Number(product.stock), stockActual: Number(updated.stock) };
     });
 }
 
 async function getProductMovements(req) {
     const productId = number(req.params.id, 'ID de producto', { integer: true, min: 1 });
-    const [rows] = await pool.query('SELECT id FROM productos WHERE id = ?', [productId]);
-    if (rows.length === 0) throw new RequestError(404, 'Producto no encontrado');
-    const movements = await getAppData(pool, 'scm_movements', []);
-    return movements.filter(item => Number(item.productId) === productId);
+    const [[prod]] = await pool.query('SELECT id FROM productos WHERE id=?', [productId]);
+    if (!prod) throw new RequestError(404, 'Producto no encontrado');
+    const [rows] = await pool.query(
+        'SELECT * FROM movimientos_inventario WHERE product_id=? ORDER BY id DESC',
+        [productId]
+    );
+    return rows;
 }
 
 async function getAllMovements() {
-    return getAppData(pool, 'scm_movements', []);
+    const [rows] = await pool.query(`
+        SELECT m.*, COALESCE(m.product_name, p.name) AS product_name
+        FROM movimientos_inventario m
+        LEFT JOIN productos p ON p.id = m.product_id
+        ORDER BY m.id DESC
+    `);
+    return rows;
 }
 
-function nextOrderId(orders) {
-    return Math.max(Date.now(), ...orders.map(order => Number(order.id) || 0)) + 1;
-}
-
-function nextOrderFolio(orders) {
-    const max = orders.reduce((highest, order) => {
-        const match = String(order.folio || '').match(/^PC-(\d+)$/i);
-        return match ? Math.max(highest, Number(match[1])) : highest;
-    }, 0);
-    return `PC-${String(max + 1).padStart(3, '0')}`;
-}
+// ─── PEDIDOS ──────────────────────────────────────────────────────────────────
 
 async function getOrders() {
     return inTransaction(async connection => {
         await ensureLowStockOrders(connection);
-        return getAppData(connection, 'scm_orders', []);
+        const [orders] = await connection.query(`
+            SELECT ps.*, p.name AS product_name_live
+            FROM pedidos_scm ps
+            LEFT JOIN productos p ON p.id = ps.product_id
+            ORDER BY ps.id DESC
+        `);
+        return orders.map(o => ({
+            id: Number(o.id),
+            folio: o.folio,
+            date: o.date,
+            productId: Number(o.product_id),
+            quantity: Number(o.quantity),
+            type: o.type,
+            status: o.status,
+            providerId: o.provider_id ? Number(o.provider_id) : null,
+            notes: o.notes || '',
+            autoGenerated: Boolean(o.auto_generated),
+            stockReceived: Boolean(o.stock_received),
+            productName: o.product_name_live || o.product_name || `Producto #${o.product_id}`
+        }));
     });
 }
 
@@ -413,40 +460,42 @@ async function createOrder(req) {
     return inTransaction(async connection => {
         const productId = number(req.body.productId ?? req.body.producto_id, 'ID de producto', { integer: true, min: 1 });
         const quantity = number(req.body.quantity ?? req.body.cantidad, 'Cantidad', { integer: true, min: 1 });
-        const { product, meta } = await getProduct(connection, productId);
+        const { product } = await getProduct(connection, productId);
         const typeRaw = String(req.body.type ?? req.body.tipo ?? 'Reposición').trim().toLowerCase();
-        const type = ['venta', 'sale'].includes(typeRaw) ? 'Venta' : ['reposicion', 'reposición', 'replenishment', 'suministro', 'supply'].includes(typeRaw) ? 'Reposición' : null;
+        const type = ['venta','sale'].includes(typeRaw) ? 'Venta'
+            : ['reposicion','reposición','replenishment','suministro','supply'].includes(typeRaw) ? 'Reposición' : null;
         if (!type) throw new RequestError(400, 'Tipo de pedido debe ser reposición o venta');
-        const providerId = req.body.providerId || req.body.proveedor_id || meta.providerId || null;
-        if (type === 'Reposición') await resolveProvider(connection, providerId);
-        const orders = await getAppData(connection, 'scm_orders', []);
+        const providerId = product.provider_id ? Number(product.provider_id) : null;
+        if (type === 'Reposición') {
+            if (!providerId) {
+                throw new RequestError(409, 'Asigna un proveedor al producto antes de generar un pedido de reposición');
+            }
+            await resolveProvider(connection, providerId);
+        }
+        const [[{ maxId }]] = await connection.query('SELECT COALESCE(MAX(id),0) AS maxId FROM pedidos_scm');
+        const orderId = Math.max(Date.now(), Number(maxId) + 1);
+        const [[{ maxFolio }]] = await connection.query("SELECT COALESCE(MAX(CAST(SUBSTRING(folio,4) AS UNSIGNED)),0) AS maxFolio FROM pedidos_scm WHERE folio REGEXP '^PC-[0-9]+$'");
+        const folio = `PC-${String(Number(maxFolio) + 1).padStart(3, '0')}`;
         const orderDate = localDate(req.body.date, 'Fecha del pedido');
-        const order = {
-            id: nextOrderId(orders),
-            folio: nextOrderFolio(orders),
-            date: orderDate,
-            productId,
-            quantity,
-            type,
-            status: 'Pendiente',
-            providerId: providerId ? Number(providerId) : null,
-            notes: typeof req.body.notes === 'string' ? req.body.notes.trim() : '',
-            autoGenerated: false
-        };
         if (type === 'Venta') {
             const [update] = await connection.query(
-                "UPDATE productos SET status = IF(stock - ? > 0, 'disponible', 'agotado'), stock = stock - ? WHERE id = ? AND stock >= ?",
+                "UPDATE productos SET status=IF(stock-?>0,'disponible','agotado'), stock=stock-? WHERE id=? AND stock>=?",
                 [quantity, quantity, productId, quantity]
             );
             if (!update.affectedRows) throw new RequestError(409, 'Stock insuficiente para registrar la venta');
-            const movements = await getAppData(connection, 'scm_movements', []);
-            movements.unshift(registerActivity(req, productId, 'Salida', -quantity, `Venta ${order.folio}`));
-            await setAppData(connection, 'scm_movements', movements);
+            const userName = req.user?.name || req.user?.email || 'Usuario';
+            await connection.query(
+                'INSERT INTO movimientos_inventario (date, product_id, product_name, type, quantity, reason, user) VALUES (?,?,?,?,?,?,?)',
+                [orderDate, productId, product.name, 'Salida', quantity, `Venta ${folio}`, userName]
+            );
         }
-        orders.unshift(order);
-        await setAppData(connection, 'scm_orders', orders);
+        await connection.query(
+            'INSERT INTO pedidos_scm (id, folio, date, product_id, quantity, type, status, provider_id, notes, auto_generated, product_name) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+            [orderId, folio, orderDate, productId, quantity, type, 'Pendiente', providerId ? Number(providerId) : null,
+             typeof req.body.notes === 'string' ? req.body.notes.trim() : '', 0, product.name]
+        );
         if (type === 'Venta') await ensureLowStockOrders(connection);
-        return order;
+        return { id: orderId, folio, date: orderDate, productId, quantity, type, status: 'Pendiente', providerId: providerId ? Number(providerId) : null, autoGenerated: false };
     });
 }
 
@@ -454,37 +503,57 @@ async function updateOrderStatus(req) {
     return inTransaction(async connection => {
         const orderId = String(req.params.id);
         const status = normalizeOrderStatus(req.body.status ?? req.body.estado);
-        const orders = await getAppData(connection, 'scm_orders', []);
-        const order = orders.find(item => String(item.id) === orderId || String(item.folio) === orderId);
+        const [[order]] = await connection.query(
+            'SELECT * FROM pedidos_scm WHERE id=? OR folio=?',
+            [orderId, orderId]
+        );
         if (!order) throw new RequestError(404, 'Pedido no encontrado');
-        const previouslyReceived = Boolean(order.stockReceived) || order.status === 'Surtido';
-        if (status === 'Cancelado' && order.autoGenerated && !previouslyReceived) {
-            const { product, meta } = await getProduct(connection, order.productId);
-            const minStock = Number(meta.minStock);
-            order.retrySuppressedUntilStockRecovers = meta.minStock != null
-                && Number.isSafeInteger(minStock)
-                && Number(product.stock) <= minStock;
+        if (order.status === 'Cancelado') {
+            throw new RequestError(409, 'El pedido ya fue cancelado y su estado quedó bloqueado');
         }
-        if (status === 'Surtido' && !previouslyReceived && ['Reposición', 'Suministro'].includes(order.type)) {
-            const quantity = number(order.quantity, 'Cantidad del pedido', { integer: true, min: 1 });
-            const { productId } = await getProduct(connection, order.productId);
+        const previouslyReceived = Boolean(order.stock_received) || order.status === 'Surtido';
+        if (status === 'Cancelado' && order.auto_generated && !previouslyReceived) {
+            const [[prod]] = await connection.query('SELECT stock, min_stock FROM productos WHERE id=?', [order.product_id]);
+            const retrySuppressed = prod && prod.min_stock != null && Number(prod.stock) <= Number(prod.min_stock);
             await connection.query(
-                "UPDATE productos SET stock = stock + ?, status = 'disponible' WHERE id = ?",
-                [quantity, productId]
+                "UPDATE pedidos_scm SET status='Cancelado', retry_suppressed=? WHERE id=?",
+                [retrySuppressed ? 1 : 0, order.id]
             );
-            const movements = await getAppData(connection, 'scm_movements', []);
-            movements.unshift(registerActivity(req, productId, 'Entrada', quantity, `Pedido surtido (${order.folio})`));
-            await setAppData(connection, 'scm_movements', movements);
-            order.stockReceived = true;
+        } else if (status === 'Surtido' && !previouslyReceived && ['Reposición','Suministro'].includes(order.type)) {
+            await connection.query(
+                "UPDATE productos SET stock=stock+?, status='disponible' WHERE id=?",
+                [Number(order.quantity), Number(order.product_id)]
+            );
+            const userName = req.user?.name || req.user?.email || 'Usuario';
+            const [[product]] = await connection.query(
+                'SELECT name FROM productos WHERE id=?',
+                [Number(order.product_id)]
+            );
+            await connection.query(
+                'INSERT INTO movimientos_inventario (date, product_id, product_name, type, quantity, reason, user) VALUES (?,?,?,?,?,?,?)',
+                [new Date().toLocaleDateString('es-MX'), Number(order.product_id), product?.name || order.product_name || `Producto #${order.product_id}`, 'Entrada', Number(order.quantity), `Pedido surtido (${order.folio})`, userName]
+            );
+            await connection.query(
+                'UPDATE pedidos_scm SET status=?, stock_received=1 WHERE id=?',
+                [status, order.id]
+            );
+        } else {
+            await connection.query('UPDATE pedidos_scm SET status=? WHERE id=?', [status, order.id]);
         }
-        order.status = status;
-        orders.splice(orders.indexOf(order), 1);
-        orders.unshift(order);
-        await setAppData(connection, 'scm_orders', orders);
         await ensureLowStockOrders(connection);
-        return order;
+        const [[updated]] = await connection.query('SELECT * FROM pedidos_scm WHERE id=?', [order.id]);
+        return {
+            id: Number(updated.id), folio: updated.folio, date: updated.date,
+            productId: Number(updated.product_id), quantity: Number(updated.quantity),
+            type: updated.type, status: updated.status,
+            providerId: updated.provider_id ? Number(updated.provider_id) : null,
+            notes: updated.notes || '', autoGenerated: Boolean(updated.auto_generated),
+            stockReceived: Boolean(updated.stock_received)
+        };
     });
 }
+
+// ─── SCM LEVEL / STATE ────────────────────────────────────────────────────────
 
 async function getScmState() {
     const [state, maturity] = await Promise.all([
@@ -508,6 +577,7 @@ module.exports = {
     updateProduct: run(updateProduct),
     deleteProduct: run(deleteProduct),
     updateStrategy: run(updateStrategy),
+    uploadProductImage: run(uploadProductImage),
     getProviders: run(getProviders),
     createProvider: run(createProvider, 201),
     updateProvider: run(updateProvider),

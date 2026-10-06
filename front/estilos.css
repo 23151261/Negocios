@@ -3298,6 +3298,27 @@ body.admin-mode .user-nav {
     box-shadow: 0 10px 20px rgba(22, 163, 74, 0.18);
 }
 
+.client-detail-avatar[src] {
+    object-fit: cover;
+}
+
+.crm-client-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: 0 0 40px;
+}
+
+.crm-client-avatar-placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #ccfbf1;
+    color: #0f766e;
+    font-weight: 700;
+}
+
 .client-detail-badge {
     display: inline-block;
     background: #dcfce7;
@@ -4486,6 +4507,26 @@ body.admin-mode .user-nav {
     font-size: 2rem;
     display: block;
     margin-bottom: 0.5rem;
+}
+
+.product-img > img,
+.cart-item-img > img,
+.ultima-img > img,
+.subasta-producto-imagen > img,
+.publicacion-img > img,
+.product-img-thumb > img,
+.image-preview > img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.client-detail-avatar[src],
+.crm-client-avatar {
+    object-fit: cover;
+    object-position: center;
 }
 
 /* ===== BOTONES DE COMENTARIOS ===== */
