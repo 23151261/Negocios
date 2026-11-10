@@ -9,20 +9,23 @@ const router = express.Router();
 router.put('/perfil', verifyToken, updateOwnClientProfile);
 router.put('/perfil/imagen', verifyToken, clientImageUpload, updateOwnClientImage);
 
-function requireAdmin(req, res, next) {
-    if (['admin', 'super_administrador'].includes(req.user?.role)) return next();
-    return res.status(403).json({ error: 'Solo un administrador puede acceder al CRM' });
+function requireCrmStaff(req, res, next) {
+    if (['admin', 'super_administrador', 'ventas'].includes(req.user?.role)) return next();
+    return res.status(403).json({ error: 'El CRM solo está disponible para administración y ventas' });
 }
 
-router.use(verifyToken, requireAdmin);
+function requireAdmin(req, res, next) {
+    if (['admin', 'super_administrador'].includes(req.user?.role)) return next();
+    return res.status(403).json({ error: 'Solo un administrador puede eliminar clientes' });
+}
 
-router.get('/', getClients);
-router.get('/metricas', getClientMetrics);
-router.get('/:id/interacciones', getInteractionsByClient);
-router.get('/:id', getClientById);
-router.post('/', clientImageUpload, createClient);
-router.put('/:id', clientImageUpload, updateClient);
-router.put('/:id/etapa', updateClientStage);
-router.delete('/:id', deleteClient);
+router.get('/', verifyToken, requireCrmStaff, getClients);
+router.get('/metricas', verifyToken, requireCrmStaff, getClientMetrics);
+router.get('/:id/interacciones', verifyToken, requireCrmStaff, getInteractionsByClient);
+router.get('/:id', verifyToken, requireCrmStaff, getClientById);
+router.post('/', verifyToken, requireCrmStaff, clientImageUpload, createClient);
+router.put('/:id', verifyToken, requireCrmStaff, clientImageUpload, updateClient);
+router.put('/:id/etapa', verifyToken, requireCrmStaff, updateClientStage);
+router.delete('/:id', verifyToken, requireAdmin, deleteClient);
 
 module.exports = router;

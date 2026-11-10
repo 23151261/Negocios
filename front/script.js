@@ -1,6 +1,118 @@
+(function() {
+    const rolePageAccess = {
+        ventas: new Set([
+            'dashboard', 'clientes', 'client-detail', 'client-form', 'mi-actividad',
+            'scm-productos', 'erp-ordenes', 'erp-nueva-orden', 'erp-reportes', 'ecom-monedero', 'ecom-impuestos', 'ecom-tickets', 'ecom-pagos'
+        ]),
+        logistica: new Set([
+            'dashboard', 'scm-productos', 'scm-inventario', 'erp-ordenes', 'erp-reportes'
+        ]),
+        soporte: new Set(['ecom-tickets'])
+    };
+    const notificationTitles = {
+        success: 'Éxito',
+        error: 'Error',
+        warning: 'Atención',
+        info: 'Aviso'
+    };
+    const notificationIcons = {
+        success: 'fa-check-circle',
+        error: 'fa-times-circle',
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
+    };
+
+    window.showAppNotification = function(message, type = 'info') {
+        const normalizedType = Object.prototype.hasOwnProperty.call(notificationTitles, type) ? type : 'info';
+        const text = String(message ?? '').trim();
+        if (!text) return;
+
+        let region = document.getElementById('app-notifications');
+        if (!region) {
+            region = document.createElement('div');
+            region.id = 'app-notifications';
+            region.className = 'app-notifications';
+            region.setAttribute('aria-label', 'Notificaciones');
+            document.body.appendChild(region);
+        }
+
+        const notification = document.createElement('div');
+        notification.className = `app-notification app-notification-${normalizedType}`;
+        notification.setAttribute('role', normalizedType === 'error' ? 'alert' : 'status');
+        notification.setAttribute('aria-live', normalizedType === 'error' ? 'assertive' : 'polite');
+
+        const icon = document.createElement('i');
+        icon.className = `fas ${notificationIcons[normalizedType]}`;
+        icon.setAttribute('aria-hidden', 'true');
+
+        const content = document.createElement('div');
+        content.className = 'app-notification-content';
+        const title = document.createElement('strong');
+        title.textContent = notificationTitles[normalizedType];
+        const detail = document.createElement('span');
+        detail.textContent = text;
+        content.append(title, detail);
+
+        const closeButton = document.createElement('button');
+        closeButton.type = 'button';
+        closeButton.className = 'app-notification-close';
+        closeButton.setAttribute('aria-label', 'Cerrar notificación');
+        closeButton.innerHTML = '&times;';
+
+        let timeout;
+        const dismiss = function() {
+            clearTimeout(timeout);
+            notification.classList.add('app-notification-leaving');
+            notification.addEventListener('transitionend', function() {
+                notification.remove();
+            }, { once: true });
+            setTimeout(function() {
+                notification.remove();
+            }, 250);
+        };
+        closeButton.addEventListener('click', dismiss);
+        notification.append(icon, content, closeButton);
+        region.appendChild(notification);
+        timeout = setTimeout(dismiss, normalizedType === 'error' ? 7000 : 4500);
+
+    };
+
+    window.getAdminRole = function() {
+        try {
+            const storedUser = sessionStorage.getItem('delicias_admin_user');
+            if (storedUser) {
+                const user = JSON.parse(storedUser);
+                if (user.role) return String(user.role).toLowerCase();
+            }
+        } catch (error) {
+            window.showAppNotification(`No se pudo leer el rol de acceso: ${error.message}`, 'error');
+        }
+        return 'admin';
+    };
+
+    window.isAdminPageAllowed = function(pageId) {
+        const role = window.getAdminRole();
+        if (role === 'admin' || role === 'super_administrador') return true;
+        return rolePageAccess[role]?.has(pageId) || false;
+    };
+})();
+
 document.addEventListener('DOMContentLoaded', function() {
 
-    const API_BASE = 'http://localhost:5000/api';
+    const API_BASE = `${window.location.origin}/api`;
+    document.querySelectorAll('.menu-group-toggle').forEach(function(toggle) {
+        const submenuId = toggle.id.replace('-menu-toggle', '-submenu');
+        const submenu = document.getElementById(submenuId);
+        if (!submenu) return;
+
+        toggle.addEventListener('click', function(event) {
+            event.preventDefault();
+            const isCollapsed = submenu.classList.toggle('collapsed');
+            toggle.classList.toggle('collapsed', isCollapsed);
+            toggle.setAttribute('aria-expanded', String(!isCollapsed));
+        });
+    });
+
     let apiReady = false;
     let cartReady = false;
     let cartSaveVersion = 0;
@@ -210,7 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function clientImageSource(imageUrl) {
         if (!imageUrl) return '';
         if (/^(https?:|blob:)/i.test(imageUrl)) return imageUrl;
-        return 'http://localhost:5000' + (imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl);
+        return window.location.origin + (imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl);
     }
 
     function escapeHtml(value) {
@@ -226,19 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showAppNotice(message, type = 'error') {
-        var app = document.querySelector('.app');
-        if (!app) return;
-        var notice = document.getElementById('app-operation-notice');
-        if (!notice) {
-            notice = document.createElement('div');
-            notice.id = 'app-operation-notice';
-            notice.style.cssText = 'margin:0 0 1rem;padding:0.85rem 1rem;border-radius:8px;';
-            app.prepend(notice);
-        }
-        notice.setAttribute('role', type === 'success' ? 'status' : 'alert');
-        notice.style.background = type === 'success' ? '#f0fdf4' : '#fef2f2';
-        notice.style.color = type === 'success' ? '#047857' : '#991b1b';
-        notice.textContent = message;
+        window.showAppNotification(message, type);
     }
 
     async function loadCrmData() {
@@ -409,6 +509,7 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
     let editingProductId = null;
     let editingClientId = null;
     let previousClientView = 'clientes';
+    let clientDetailReturnPage = 'clientes';
     let cartOpen = false;
     let editingCommentId = null;
 
@@ -586,6 +687,7 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
         }
 
         document.addEventListener('admin-authenticated', async function() {
+            if (!['admin', 'super_administrador', 'ventas'].includes(window.getAdminRole())) return;
             try {
                 await loadCrmData();
             } catch (error) {
@@ -602,30 +704,8 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
     // ============================================================
 
     function showFormMessage(msgElement, message, type) {
-        if (!msgElement) return;
-        
-        // Limpiar clases anteriores
-        msgElement.className = 'alert-message';
-        msgElement.classList.remove('hidden', 'auth-success', 'auth-error');
-        
-        if (type === 'success') {
-            msgElement.classList.add('auth-success');
-            msgElement.style.color = '#10b981';
-            msgElement.style.border = '1px solid #10b981';
-            msgElement.style.background = '#f0fdf4';
-        } else {
-            msgElement.classList.add('auth-error');
-            msgElement.style.color = '#ef4444';
-            msgElement.style.border = '1px solid #ef4444';
-            msgElement.style.background = '#fef2f2';
-        }
-        
-        msgElement.textContent = message;
-        msgElement.classList.remove('hidden');
-        
-        setTimeout(function() {
-            msgElement.classList.add('hidden');
-        }, 4000);
+        window.showAppNotification(message, type === 'success' ? 'success' : 'error');
+        if (msgElement) msgElement.classList.add('hidden');
     }
 
     function showConfirmModal(message, callback) {
@@ -771,7 +851,17 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
         'scm-pedidos': document.getElementById('admin-scm-pedidos'),
         'scm-madurez': document.getElementById('admin-scm-madurez'),
         'scm-reportes': document.getElementById('admin-scm-reportes'),
-        configuracion: document.getElementById('admin-configuracion')
+        'erp-dashboard': document.getElementById('admin-erp-dashboard'),
+        'erp-ordenes': document.getElementById('admin-erp-ordenes'),
+        'erp-inventario': document.getElementById('admin-erp-inventario'),
+        'erp-nueva-orden': document.getElementById('admin-erp-nueva-orden'),
+        'erp-nivel': document.getElementById('admin-erp-nivel'),
+        'erp-reportes': document.getElementById('admin-erp-reportes'),
+        configuracion: document.getElementById('admin-configuracion'),
+        'ecom-monedero': document.getElementById('admin-ecom-monedero'),
+        'ecom-impuestos': document.getElementById('admin-ecom-impuestos'),
+        'ecom-tickets': document.getElementById('admin-ecom-tickets'),
+        'ecom-pagos': document.getElementById('admin-ecom-pagos')
     };
 
     function showPage(pageId) {
@@ -785,7 +875,7 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
                 if (adminLoginPage) adminLoginPage.classList.add('active');
             } else if (pageId === 'admin') {
                 if (adminMainPage) adminMainPage.classList.add('active');
-                showAdminPage('dashboard');
+                showAdminPage(currentUser.role === 'soporte' ? 'ecom-tickets' : 'dashboard');
                 updateDashboardStats();
             }
             return;
@@ -819,7 +909,7 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
         }
 
         if (pageId === 'admin') {
-            showAdminPage('dashboard');
+            showAdminPage(currentUser.role === 'soporte' ? 'ecom-tickets' : 'dashboard');
             updateDashboardStats();
         }
 
@@ -888,7 +978,49 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
         updateCartUI();
     };
 
+    window.loadCrmData = loadCrmData;
+
+    window.viewClientDetailById = async function(clientId, returnPage) {
+        clientDetailReturnPage = returnPage && adminPages[returnPage] && returnPage !== 'client-detail' && returnPage !== 'client-form'
+            ? returnPage
+            : 'clientes';
+        if (typeof loadCrmData === 'function') await loadCrmData();
+        var idx = clients.findIndex(function(c) { return Number(c.id) === Number(clientId); });
+        if (idx !== -1) {
+            showAdminPage('client-detail');
+            openClientDetail(idx);
+        } else {
+            showAdminPage('clientes');
+        }
+    };
+
+    window.syncAllModules = async function() {
+        const tasks = [];
+        const role = window.getAdminRole();
+        const reportFailure = (task, moduleName) => task.catch(error => {
+            window.showAppNotification(`No se pudo sincronizar ${moduleName}: ${error.message}`, 'error');
+        });
+        if (['admin', 'super_administrador', 'ventas'].includes(role) && typeof loadCrmData === 'function') {
+            tasks.push(reportFailure(loadCrmData(), 'CRM'));
+        }
+        if (typeof window.refreshMainProductCatalog === 'function') {
+            tasks.push(reportFailure(window.refreshMainProductCatalog(), 'el catálogo de productos'));
+        }
+        if (typeof window.loadScmData === 'function') {
+            tasks.push(reportFailure(window.loadScmData(), 'SCM'));
+        }
+        if (typeof window.refreshErpData === 'function') {
+            tasks.push(reportFailure(window.refreshErpData(), 'ERP'));
+        }
+        await Promise.all(tasks);
+    };
+
     function showAdminPage(pageId) {
+        if (!window.isAdminPageAllowed(pageId)) {
+            window.showAppNotification('No tienes acceso a esta sección.', 'warning');
+            return;
+        }
+        if (pageId !== 'client-detail') clientDetailReturnPage = 'clientes';
         for (var key in adminPages) {
             if (adminPages[key]) {
                 adminPages[key].classList.remove('active');
@@ -908,8 +1040,14 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
             }
         });
 
-        if (pageId === 'productos') renderProductTable();
-        if (pageId === 'clientes') renderClientsTable();
+        if (pageId === 'productos') {
+            if (typeof window.refreshMainProductCatalog === 'function') window.refreshMainProductCatalog();
+            else renderProductTable();
+        }
+        if (pageId === 'clientes') {
+            if (typeof loadCrmData === 'function') loadCrmData();
+            else renderClientsTable();
+        }
         if (pageId === 'pedidos') renderOrdersTable();
         if (pageId === 'dashboard') updateDashboardStats();
         if (pageId === 'promociones') renderPromotionsAdmin();
@@ -921,8 +1059,18 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
             else if (typeof loadUsersFromApi === 'function') loadUsersFromApi();
         }
         if (pageId === 'configuracion') loadSystemConfig();
+        if (pageId === 'ecom-monedero' && window.ecom) window.ecom.loadAdminMonedero();
+        if (pageId === 'ecom-impuestos' && window.ecom) window.ecom.loadAdminImpuestos();
+        if (pageId === 'ecom-tickets' && window.ecom) window.ecom.loadAdminTickets();
+        if (pageId === 'ecom-pagos' && window.ecom) window.ecom.loadAdminPagos();
         if (pageId && pageId.startsWith('scm-')) {
             if (typeof window.renderScmPage === 'function') window.renderScmPage(pageId);
+        }
+        if (pageId && pageId.startsWith('erp-')) {
+            if (typeof window.renderErpPage === 'function') window.renderErpPage(pageId);
+        }
+        if (typeof window.applyRolePermissions === 'function') {
+            window.applyRolePermissions();
         }
     }
         async function renderActividadUsuarios() {
@@ -1588,7 +1736,6 @@ async function renderMyActivity() {
         if (cart.length === 0) return;
         showConfirmModal('¿Estás seguro de que quieres vaciar tu carrito?', async function(confirmed) {
             if (confirmed) {
-                var previousCart = cart.slice();
                 cart = [];
                 updateCartUI();
                 if (!await saveCartWithRollback(previousCart)) return;
@@ -1963,10 +2110,13 @@ async function renderMyActivity() {
         var sidebarName = document.getElementById('sidebar-admin-name');
         var sidebarEmail = document.getElementById('sidebar-admin-email');
         var sidebarAvatar = document.getElementById('sidebar-admin-avatar');
-        if (sidebarName) sidebarName.textContent = currentUser.name || 'Administrador';
+        var displayName = currentUser.role === 'logistica' ? 'Logística'
+            : currentUser.role === 'soporte' ? 'Soporte'
+                : (currentUser.name || 'Administrador');
+        if (sidebarName) sidebarName.textContent = displayName;
         if (sidebarEmail) sidebarEmail.textContent = currentUser.email || '';
         if (sidebarAvatar) {
-            var initials = (currentUser.name || 'AD').split(' ').map(function(n) { return n[0]; }).join('').substring(0, 2).toUpperCase();
+            var initials = displayName.split(' ').map(function(n) { return n[0]; }).join('').substring(0, 2).toUpperCase();
             sidebarAvatar.textContent = initials;
         }
     }
@@ -2183,6 +2333,7 @@ async function renderMyActivity() {
             return;
         }
 
+        var canDeleteClients = ['admin', 'super_administrador'].includes(window.getAdminRole());
         var interactions = (c.interactions || []).slice(0, 5);
         var timelineHtml = interactions.map(function(item, interactionIndex) {
             var colors = ['green', 'purple', 'amber', 'blue', 'rose'];
@@ -2281,7 +2432,7 @@ async function renderMyActivity() {
                             <div class="action-stack">
                                 <button class="btn-primary alt" data-client-index="${idx}" id="client-detail-edit-inline-btn"><i class="fas fa-edit"></i> Editar</button>
                                 <button class="btn-secondary" data-client-index="${idx}" id="client-detail-followup-btn"><i class="fas fa-calendar-check"></i> Programar seguimiento</button>
-                                <button class="btn-danger" data-client-index="${idx}" id="client-detail-delete-btn"><i class="fas fa-trash"></i> Eliminar</button>
+                                ${canDeleteClients ? '<button class="btn-danger" data-client-index="' + idx + '" id="client-detail-delete-btn"><i class="fas fa-trash"></i> Eliminar</button>' : ''}
                             </div>
                         </div>
 
@@ -2297,9 +2448,21 @@ async function renderMyActivity() {
                                         return '<option value="' + stage + '"' + (c.stage === stage ? ' selected' : '') + '>' + getClientStageLabel(stage) + '</option>';
                                     }).join('')}
                                 </select>
-                                <p>${getClientRiskStatus(c) === 'active' ? 'Cliente reciente con buena actividad.' : getClientRiskStatus(c) === 'inactive' ? 'Cliente con actividad moderada; requiere seguimiento.' : 'Cliente sin interacción reciente; necesita reactivación.'}</p>
+                                <p style="margin-top:0.5rem;color:#64748b;font-size:0.85rem;">${getClientRiskStatus(c) === 'active' ? 'Cliente reciente con buena actividad.' : getClientRiskStatus(c) === 'inactive' ? 'Cliente con actividad moderada; requiere seguimiento.' : 'Cliente sin interacción reciente; necesita reactivación.'}</p>
                             </div>
                         </div>
+
+                        ${c.erpOrders && c.erpOrders.length > 0 ? `
+                        <div class="client-detail-card">
+                            <div class="client-detail-card-header">
+                                <h5><i class="fas fa-receipt" style="color:#6366f1;"></i> Órdenes ERP (${c.erpOrders.length})</h5>
+                            </div>
+                            <div style="font-size:0.85rem;">
+                                ${c.erpOrders.map(function(eo) {
+                                    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid #f1f5f9;"><span><strong>' + escapeHtml(eo.folio) + '</strong> <span style="font-size:0.75rem;padding:0.15rem 0.4rem;border-radius:4px;background:#ede9fe;color:#6366f1;font-weight:600;">' + escapeHtml(eo.estado) + '</span></span><strong style="color:#6366f1;">$' + Number(eo.total).toFixed(2) + '</strong></div>';
+                                }).join('')}
+                            </div>
+                        </div>` : ''}
                     </div>
                 </div>
             </div>
@@ -2320,6 +2483,7 @@ async function renderMyActivity() {
                     Object.assign(c, normalizeClientRecord(await apiClientRequest('/' + encodeURIComponent(c.id) + '/etapa', 'PUT', { stage: detailStageSelect.value })));
                     renderClientsTable();
                     await refreshCrmMetrics();
+                    if (typeof window.syncAllModules === 'function') window.syncAllModules().catch(console.error);
                 } catch (error) {
                     detailStageSelect.value = previousStage;
                     showAppNotice('No se pudo actualizar la etapa CRM: ' + error.message);
@@ -2408,6 +2572,7 @@ async function renderMyActivity() {
                             showAdminPage('clientes');
                             renderClientsTable();
                             await refreshCrmMetrics();
+                            if (typeof window.syncAllModules === 'function') window.syncAllModules().catch(console.error);
                         } catch (error) {
                             showAppNotice('No se pudo eliminar al cliente: ' + error.message);
                             return;
@@ -2470,7 +2635,9 @@ async function renderMyActivity() {
             html += '<td><div class="table-actions">';
             html += '<button class="btn-view" data-index="' + originalIndex + '" aria-label="Ver detalle de ' + escapeHtml(c.name || 'cliente') + '" title="Ver detalle"><i class="fas fa-eye"></i></button>';
             html += '<button class="btn-edit" data-index="' + originalIndex + '" aria-label="Editar ' + escapeHtml(c.name || 'cliente') + '" title="Editar cliente"><i class="fas fa-edit"></i></button>';
-            html += '<button class="btn-delete" data-index="' + originalIndex + '" aria-label="Eliminar ' + escapeHtml(c.name || 'cliente') + '" title="Eliminar cliente"><i class="fas fa-trash"></i></button>';
+            if (['admin', 'super_administrador'].includes(window.getAdminRole())) {
+                html += '<button class="btn-delete" data-index="' + originalIndex + '" aria-label="Eliminar ' + escapeHtml(c.name || 'cliente') + '" title="Eliminar cliente"><i class="fas fa-trash"></i></button>';
+            }
             html += '</div></td></tr>';
         }
         tbody.innerHTML = html;
@@ -2494,6 +2661,7 @@ async function renderMyActivity() {
                     Object.assign(client, normalizeClientRecord(updated));
                     renderClientsTable();
                     await refreshCrmMetrics();
+                    if (typeof window.syncAllModules === 'function') window.syncAllModules().catch(console.error);
                 } catch (error) {
                     select.value = previousStage;
                     showAppNotice('No se pudo actualizar la etapa CRM: ' + error.message);
@@ -2514,6 +2682,7 @@ async function renderMyActivity() {
                             clients.splice(idx, 1);
                             renderClientsTable();
                             await refreshCrmMetrics();
+                            if (typeof window.syncAllModules === 'function') window.syncAllModules().catch(console.error);
                         } catch (error) {
                             showFormMessage(document.getElementById('client-form-message'), error.message, 'error');
                         }
@@ -4121,6 +4290,9 @@ function eliminarPublicacion(id) {
             renderProductTable();
             renderCatalog(selectedCategory);
             updateDashboardStats();
+            if (typeof window.syncAllModules === 'function') {
+                window.syncAllModules().catch(console.error);
+            }
 
             setTimeout(function() {
                 showAdminPage('productos');
@@ -4287,6 +4459,9 @@ function eliminarPublicacion(id) {
                     );
                 }
                 await refreshCrmMetrics();
+                if (typeof window.syncAllModules === 'function') {
+                    window.syncAllModules().catch(console.error);
+                }
                 window.setTimeout(function() {
                     showAdminPage('clientes');
                     renderClientsTable();
@@ -4328,7 +4503,9 @@ function eliminarPublicacion(id) {
     var clientDetailBackBtn = document.getElementById('client-detail-back-btn');
     if (clientDetailBackBtn) {
         clientDetailBackBtn.addEventListener('click', function() {
-            showAdminPage('clientes');
+            var returnPage = clientDetailReturnPage;
+            clientDetailReturnPage = 'clientes';
+            showAdminPage(returnPage);
         });
     }
 
@@ -4384,7 +4561,14 @@ function eliminarPublicacion(id) {
 
             var customerCartTransferred = false;
             try {
-                const result = await apiAuth('register', { name: name, email: email, password: password });
+                var confirmPassword = document.getElementById('registro-confirm-password')?.value || '';
+                        var phone = document.getElementById('registro-phone')?.value.trim() || '';
+                        var address = document.getElementById('registro-address')?.value.trim() || '';
+                        if (confirmPassword && password !== confirmPassword) {
+                            showFormMessage(msg, 'Las contraseñas no coinciden.', 'error');
+                            return;
+                        }
+                        const result = await apiAuth('register', { name: name, email: email, password: password, phone: phone, address: address });
                 currentUser.name = result.user.name;
                 currentUser.email = result.user.email;
                 currentUser.role = result.user.role || 'usuario'; 
@@ -4462,8 +4646,8 @@ function eliminarPublicacion(id) {
             if (document.body.classList.contains('admin-page-shell')) {
                 try {
                     const result = await apiAuth('login', { email: email, password: password });
-                    if (!['admin', 'super_administrador'].includes(result.user.role)) {
-                        throw new Error('Este usuario no tiene permisos de administrador.');
+                    if (!['admin', 'super_administrador', 'ventas', 'logistica', 'soporte'].includes(result.user.role)) {
+                        throw new Error('Este usuario no tiene permisos de acceso al panel empresarial.');
                     }
                     currentUser.name = result.user.name;
                     currentUser.email = result.user.email;
@@ -4490,6 +4674,7 @@ function eliminarPublicacion(id) {
                 } catch (_) {}
                 updateAdminSidebarInfo();
                 document.dispatchEvent(new CustomEvent('admin-authenticated'));
+                showAdminPage(currentUser.role === 'soporte' ? 'ecom-tickets' : 'dashboard');
                 var topLogoutBtn = document.getElementById('admin-top-logout-btn');
                 if (topLogoutBtn) topLogoutBtn.style.display = 'flex';
                 if (msg) showFormMessage(msg, 'Inicio de sesión exitoso.', 'success');
@@ -4499,7 +4684,7 @@ function eliminarPublicacion(id) {
                     var adminMainPage = document.getElementById('page-admin');
                     if (adminLoginPage) adminLoginPage.classList.remove('active');
                     if (adminMainPage) adminMainPage.classList.add('active');
-                    showAdminPage('dashboard');
+                    showAdminPage(currentUser.role === 'soporte' ? 'ecom-tickets' : 'dashboard');
                     updateDashboardStats();
                 }, 800);
                 return;
@@ -4561,11 +4746,12 @@ function eliminarPublicacion(id) {
             }
             try {
                 const result = await apiAuth('login', { email: email, password: password });
-                if (!['admin', 'super_administrador'].includes(result.user.role)) {
-                    throw new Error('Este usuario no tiene permisos de administrador.');
+                if (!['admin', 'super_administrador', 'ventas', 'logistica', 'soporte'].includes(result.user.role)) {
+                    throw new Error('Este usuario no tiene permisos de acceso al panel empresarial.');
                 }
                 currentUser.name = result.user.name;
                 currentUser.email = result.user.email;
+                currentUser.role = result.user.role;
                 saveCurrentUser();
             } catch (error) {
                 showFormMessage(msg, error.message, 'error');
@@ -4575,7 +4761,7 @@ function eliminarPublicacion(id) {
             isAdmin = true;
             adminEmail = email;
             document.dispatchEvent(new CustomEvent('admin-authenticated'));
-            if (msg) showFormMessage(msg, 'Acceso de administrador concedido.', 'success');
+            if (msg) showFormMessage(msg, 'Acceso concedido.', 'success');
             document.getElementById('login-email').value = '';
             document.getElementById('login-password').value = '';
             redirectAfterLogin = null;
@@ -4585,7 +4771,7 @@ function eliminarPublicacion(id) {
                 var adminMainPage = document.getElementById('page-admin');
                 if (adminLoginPage) adminLoginPage.classList.remove('active');
                 if (adminMainPage) adminMainPage.classList.add('active');
-                showAdminPage('dashboard');
+                showAdminPage(currentUser.role === 'soporte' ? 'ecom-tickets' : 'dashboard');
                 updateDashboardStats();
             }, 1500);
         });
@@ -5253,8 +5439,8 @@ function ejecutarLogoutAdmin() {
         confirmButton.disabled = true;
         
         // 2. Preparar los datos del pedido
-        const total = checkoutData.total || calcularTotalCheckout();
-        const items = checkoutData.items || obtenerItemsCheckout();
+        let total = checkoutData.total || calcularTotalCheckout();
+        let items = checkoutData.items || obtenerItemsCheckout();
         const metodo = checkoutData.metodoPago || 'Tarjeta';
         const direccion = checkoutData.direccion || {
             nombre: currentUser.name || 'Juan Pérez',
@@ -5265,7 +5451,34 @@ function ejecutarLogoutAdmin() {
             cp: '12345'
         };
         
-        const numeroPedido = 'DEL-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9000) + 1000);
+        if (!window.ecom || typeof window.ecom.procesarCompraCompleta !== 'function') {
+            confirmButton.disabled = false;
+            showFormMessage(document.getElementById('checkout-message'), 'No se pudo conectar con el servicio de pagos.', 'error');
+            return;
+        }
+
+        const apiPurchaseResult = await window.ecom.procesarCompraCompleta({
+            metodo_pago: metodo,
+            direccion: direccion,
+            cart_session_key: getGuestCartSessionId()
+        });
+        if (!apiPurchaseResult.success) {
+            confirmButton.disabled = false;
+            showFormMessage(document.getElementById('checkout-message'), apiPurchaseResult.error, 'error');
+            return;
+        }
+
+        const purchase = apiPurchaseResult.data;
+        const numeroPedido = purchase.orden;
+        total = Number(purchase.total);
+        items = purchase.items.map(function(item) {
+            return {
+                ...item,
+                subtotal: Number((Number(item.price) * Number(item.quantity)).toFixed(2))
+            };
+        });
+        checkoutData.total = total;
+        checkoutData.items = items;
         const fecha = new Date().toLocaleString('es-ES');
         
         // 3. Guardar en el historial
@@ -5290,36 +5503,12 @@ function ejecutarLogoutAdmin() {
             direccion: direccion,
             items: items
         });
-        var savedHistory = await saveHistorial();
-        var savedOrders = await saveOrders();
-        if (!savedHistory || !savedOrders) {
-            historialCompras.shift();
-            orders.shift();
-            await Promise.all([saveHistorial(), saveOrders()]);
-            confirmButton.disabled = false;
-            var orderSaveError = document.getElementById('terminos-error');
-            if (orderSaveError) {
-                orderSaveError.textContent = 'No se pudo guardar el pedido. Intenta nuevamente.';
-                orderSaveError.style.display = 'block';
-            }
-            return;
-        }
+        await Promise.all([saveHistorial(), saveOrders()]);
         
         // 4. Vaciar el carrito
         var previousCart = cart.slice();
         cart = [];
-        var savedCart = await saveCart();
-        if (!savedCart) {
-            cart = previousCart;
-            confirmButton.disabled = false;
-            var cartSaveError = document.getElementById('terminos-error');
-            if (cartSaveError) {
-                cartSaveError.textContent = 'El pedido se guardó, pero no se pudo actualizar el carrito.';
-                cartSaveError.style.display = 'block';
-            }
-            updateCartUI();
-            return;
-        }
+        await saveCart();
         updateCartUI();
         
         // 5. Guardar datos del ticket
@@ -5337,8 +5526,32 @@ function ejecutarLogoutAdmin() {
             metodo: metodo
         };
         
-        mostrarTicket(compra);
-        registrarActividadUsuario('compra', 'Realizó una compra por $' + total.toFixed(2), { total: total, items: items.length });
+        // Actualizar pantalla de confirmación (Paso 7 del flujo)
+                const confirmEmailEl = document.getElementById('checkout-confirm-email');
+                if (confirmEmailEl) confirmEmailEl.textContent = direccion.email || currentUser.email || 'cliente@ejemplo.com';
+                const successSubtotalEl = document.getElementById('checkout-success-subtotal');
+                if (successSubtotalEl) successSubtotalEl.textContent = '$' + Number(purchase.subtotal).toFixed(2);
+                const successTaxEl = document.getElementById('checkout-success-impuesto');
+                if (successTaxEl) successTaxEl.textContent = '$' + Number(purchase.impuesto).toFixed(2);
+                const successTotalEl = document.getElementById('checkout-total');
+                if (successTotalEl) successTotalEl.textContent = '$' + total.toFixed(2);
+                const confirmTotalEl = document.getElementById('confirm-total');
+                if (confirmTotalEl) confirmTotalEl.textContent = '$' + total.toFixed(2);
+                const orderNumberEl = document.getElementById('checkout-order-number');
+                if (orderNumberEl) orderNumberEl.textContent = numeroPedido;
+                const paymentMethodEl = document.getElementById('checkout-payment-method');
+                if (paymentMethodEl) paymentMethodEl.textContent = purchase.pago;
+                const saldoActualRow = document.getElementById('checkout-saldo-actual-row');
+                const saldoActualVal = document.getElementById('checkout-saldo-actual-val');
+                if (purchase.es_monedero && saldoActualRow && saldoActualVal) {
+                    saldoActualRow.style.display = 'flex';
+                    saldoActualVal.textContent = '$' + Number(purchase.saldo_actual).toFixed(2);
+                }
+                const termsPanel = document.getElementById('confirmacion-terminos');
+                const successPanel = document.getElementById('confirmacion-exito');
+                if (termsPanel) termsPanel.style.display = 'none';
+                if (successPanel) successPanel.style.display = 'block';
+                registrarActividadUsuario('compra', 'Realizó una compra por $' + total.toFixed(2), { total: total, items: items.length });
     });
 
     // ============================================================
@@ -5438,7 +5651,15 @@ function ejecutarLogoutAdmin() {
     // BOTÓN "CONTINUAR" DEL PASO DE ÉXITO
     // ============================================================
 
-    document.getElementById('checkout-continuar-btn')?.addEventListener('click', function() {
+    document.getElementById('checkout-ver-mi-pedido-btn')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            showPage('mis-compras');
+        });
+        document.getElementById('checkout-seguir-comprando-btn')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            showPage('catalogo');
+        });
+        document.getElementById('checkout-continuar-btn')?.addEventListener('click', function() {
         showPage('perfil');
     });
 
@@ -6192,6 +6413,7 @@ document.addEventListener('keydown', function(e) {
                 var topLogoutBtn = document.getElementById('admin-top-logout-btn');
                 if (topLogoutBtn) topLogoutBtn.style.display = 'flex';
                 document.dispatchEvent(new CustomEvent('admin-authenticated'));
+                showAdminPage(currentUser.role === 'soporte' ? 'ecom-tickets' : 'dashboard');
             }
         } catch (_) {}
     }

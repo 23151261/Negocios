@@ -46,6 +46,8 @@
                         </a>
                         <ul class="profile-dropdown-menu" id="profile-dropdown-menu" role="menu">
                             <li><a href="#" data-page="perfil" role="menuitem"><i class="fas fa-user" aria-hidden="true"></i> Mi Perfil</a></li>
+                            <li><a href="#" data-page="monedero" role="menuitem"><i class="fas fa-wallet" aria-hidden="true"></i> Mi Monedero (<span id="nav-monedero-saldo">$1,200.00</span>)</a></li>
+                            <li><a href="#" data-page="tickets" role="menuitem"><i class="fas fa-headset" aria-hidden="true"></i> Atención a clientes</a></li>
                             <li><a href="#" data-page="mis-compras" role="menuitem"><i class="fas fa-shopping-bag" aria-hidden="true"></i> Mis Compras</a></li>
                             <li><a href="#" data-page="mi-actividad" role="menuitem"><i class="fas fa-history" aria-hidden="true"></i> Mi actividad</a></li>
                             <li><a href="#" data-page="mis-publicaciones" role="menuitem"><i class="fas fa-boxes" aria-hidden="true"></i> Mis Publicaciones</a></li>
@@ -534,7 +536,23 @@
                         </div>
                         <div class="form-group">
                             <label for="registro-password"><i class="fas fa-lock" aria-hidden="true"></i> Contraseña</label>
-                            <input type="password" id="registro-password" placeholder="Ingresa tu contraseña">
+                            <input type="password" id="registro-password" placeholder="Mínimo 6 caracteres" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registro-confirm-password"><i class="fas fa-lock" aria-hidden="true"></i> Confirmar contraseña</label>
+                            <input type="password" id="registro-confirm-password" placeholder="Repite tu contraseña" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registro-phone"><i class="fas fa-phone" aria-hidden="true"></i> Teléfono</label>
+                            <input type="tel" id="registro-phone" placeholder="Ej: 55 1234 5678">
+                        </div>
+                        <div class="form-group">
+                            <label for="registro-address"><i class="fas fa-map-marker-alt" aria-hidden="true"></i> Dirección de entrega</label>
+                            <input type="text" id="registro-address" placeholder="Calle, número, colonia, ciudad">
+                        </div>
+                        <div style="background:#ede9fe; color:#6d28d9; padding:0.8rem; border-radius:12px; font-size:0.85rem; margin-bottom:1rem; display:flex; align-items:center; gap:0.6rem;">
+                            <i class="fas fa-gift" style="font-size:1.2rem;"></i>
+                            <span><strong>¡Bono de bienvenida!</strong> Recibe automáticamente <strong>$1,200.00</strong> en tu Monedero Digital para compras.</span>
                         </div>
                         <button type="submit" class="btn-primary" id="registro-btn"><i class="fas fa-check-circle" aria-hidden="true"></i> Registrarme</button>
                     </form>
@@ -590,15 +608,139 @@
                         <div class="profile-field"><span class="label">Correo electrónico</span><span class="value" id="profile-user-email">Sin datos</span></div>
                         <div class="profile-field"><span class="label">Teléfono</span><span class="value" id="profile-phone">Sin datos</span></div>
                         <div class="profile-field"><span class="label">Dirección</span><span class="value" id="profile-address">Sin datos</span></div>
+                        <div class="profile-field"><span class="label">Monedero Digital</span><span class="value" id="profile-monedero-saldo" style="font-weight:800; color:#10b981; font-size:1.1rem;">$1,200.00</span></div>
                     </div>
                     
                     <!-- ===== BOTONES DE ACCIÓN ===== -->
                     <div class="profile-actions">
+                        <button class="btn-primary" id="profile-go-monedero-btn"><i class="fas fa-wallet" aria-hidden="true"></i> Mi Monedero</button>
+                        <button class="btn-secondary" id="profile-go-tickets-btn"><i class="fas fa-headset" aria-hidden="true"></i> Atención a clientes</button>
+                        <button class="btn-secondary" id="profile-go-orders-btn"><i class="fas fa-shopping-bag" aria-hidden="true"></i> Mis compras</button>
                         <button class="btn-secondary" id="go-to-community-btn"><i class="fas fa-users" aria-hidden="true"></i> Ir a comunidad</button>
                         <button class="btn-secondary" id="edit-profile-btn"><i class="fas fa-edit" aria-hidden="true"></i> Editar perfil</button>
                         <button class="btn-danger" id="logout-btn"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Cerrar sesión</button>
                     </div>
                     <div id="profile-message" class="hidden alert-message" style="margin-top:1.2rem; width:100%; text-align:center;"></div>
+                </div>
+            </section>
+
+            <!-- ===== PÁGINA MONEDERO ===== -->
+            <section id="page-monedero" class="page-section" aria-labelledby="monedero-title">
+                <h2 id="monedero-title" class="section-title"><i class="fas fa-wallet" aria-hidden="true"></i> Mi Monedero Digital</h2>
+                <div class="ecom-grid">
+                    <div>
+                        <div class="monedero-hero-card">
+                            <div class="monedero-hero-label"><i class="fas fa-coins"></i> Saldo disponible</div>
+                            <div class="monedero-hero-amount" id="monedero-saldo-display">$1,200.00</div>
+                            <div class="monedero-hero-footer">
+                                <span><i class="fas fa-shield-alt"></i> Aplicable al checkout</span>
+                                <span><i class="fas fa-check-circle"></i> Saldo activo</span>
+                            </div>
+                        </div>
+                        <div class="ecom-card">
+                            <div class="ecom-card-header">
+                                <div class="ecom-card-title"><i class="fas fa-plus-circle" style="color:var(--primary);"></i> Recargar monedero</div>
+                            </div>
+                            <p style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:1rem;">Selecciona el monto que deseas abonar a tu saldo:</p>
+                            <div class="quick-amount-group">
+                                <button type="button" class="btn-quick-amount active" data-amount="100">$100</button>
+                                <button type="button" class="btn-quick-amount" data-amount="200">$200</button>
+                                <button type="button" class="btn-quick-amount" data-amount="500">$500</button>
+                                <button type="button" class="btn-quick-amount" data-amount="1000">$1,000</button>
+                            </div>
+                            <div class="form-group" style="margin-bottom:1rem;">
+                                <label for="monedero-custom-amount" style="font-size:0.9rem; font-weight:600;"><i class="fas fa-dollar-sign"></i> Otro monto:</label>
+                                <input type="number" id="monedero-custom-amount" placeholder="Ej: 350.00" min="1" step="any" style="width:100%; padding:0.75rem; border-radius:12px; border:1px solid var(--border);">
+                            </div>
+                            <label style="font-size:0.9rem; font-weight:600; display:block; margin-bottom:0.5rem;"><i class="fas fa-credit-card"></i> Método de pago:</label>
+                            <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1.25rem;">
+                                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer; font-size:0.9rem;">
+                                    <input type="radio" name="recarga-metodo" value="Tarjeta de crédito / débito" checked>
+                                    <i class="fas fa-credit-card" style="color:var(--primary);"></i> Tarjeta de crédito / débito
+                                </label>
+                                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer; font-size:0.9rem;">
+                                    <input type="radio" name="recarga-metodo" value="PayPal">
+                                    <i class="fab fa-paypal" style="color:#0079c1;"></i> PayPal
+                                </label>
+                                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer; font-size:0.9rem;">
+                                    <input type="radio" name="recarga-metodo" value="Transferencia bancaria">
+                                    <i class="fas fa-university" style="color:var(--primary);"></i> Transferencia bancaria
+                                </label>
+                            </div>
+                            <button class="btn-primary" id="monedero-recargar-btn" style="width:100%; justify-content:center; min-height:46px;">
+                                <i class="fas fa-plus-circle" aria-hidden="true"></i> Recargar saldo
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="ecom-card">
+                            <div class="ecom-card-header">
+                                <div class="ecom-card-title"><i class="fas fa-history" style="color:var(--primary);"></i> Historial del monedero</div>
+                                <span style="font-size:0.85rem; color:#64748b;">Cargos, recargas y saldo</span>
+                            </div>
+                            <div style="overflow-x:auto;">
+                                <table class="product-table" style="width:100%; font-size:0.9rem;">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Concepto</th>
+                                            <th>Monto</th>
+                                            <th>Saldo</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="monedero-movimientos-body">
+                                        <tr><td colspan="4" style="text-align:center; padding:1.5rem; color:#64748b;">Cargando movimientos...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== PÁGINA ATENCIÓN A CLIENTES (TICKETS) ===== -->
+            <section id="page-tickets" class="page-section" aria-labelledby="tickets-title">
+                <h2 id="tickets-title" class="section-title"><i class="fas fa-headset" aria-hidden="true"></i> Atención a Clientes (Tickets)</h2>
+                <div class="ecom-grid">
+                    <div>
+                        <div class="ecom-card">
+                            <div class="ecom-card-header">
+                                <div class="ecom-card-title"><i class="fas fa-ticket-alt" style="color:var(--primary);"></i> Nuevo ticket</div>
+                            </div>
+                            <p style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:1rem;">Registra tu consulta o aclaración y te responderemos a la brevedad:</p>
+                            <form id="ticket-form-elem" onsubmit="return false;">
+                                <div class="form-group" style="margin-bottom:1rem;">
+                                    <label for="ticket-form-asunto" style="font-size:0.9rem; font-weight:600;"><i class="fas fa-tag"></i> Asunto:</label>
+                                    <select id="ticket-form-asunto" style="width:100%; padding:0.75rem; border-radius:12px; border:1px solid var(--border);">
+                                        <option value="Duda sobre mi pedido">Duda sobre mi pedido</option>
+                                        <option value="Cambio de producto">Cambio de producto</option>
+                                        <option value="Facturación">Facturación</option>
+                                        <option value="Consulta sobre ingredientes">Consulta sobre ingredientes</option>
+                                        <option value="Aclaración de monedero">Aclaración de monedero</option>
+                                        <option value="Otro asunto">Otro asunto</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom:1.25rem;">
+                                    <label for="ticket-form-mensaje" style="font-size:0.9rem; font-weight:600;"><i class="fas fa-comment-dots"></i> Mensaje:</label>
+                                    <textarea id="ticket-form-mensaje" rows="4" placeholder="Escribe tu consulta detallada..." style="width:100%; padding:0.75rem; border-radius:12px; border:1px solid var(--border); font-family:inherit;"></textarea>
+                                </div>
+                                <button class="btn-primary" id="enviar-ticket-btn" style="width:100%; justify-content:center; min-height:46px;">
+                                    <i class="fas fa-paper-plane" aria-hidden="true"></i> Enviar ticket
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="ecom-card">
+                            <div class="ecom-card-header">
+                                <div class="ecom-card-title"><i class="fas fa-clipboard-list" style="color:var(--primary);"></i> Mis tickets</div>
+                                <span style="font-size:0.85rem; color:#64748b;">Registro y seguimiento</span>
+                            </div>
+                            <div id="tickets-lista-container" class="tickets-list">
+                                <div style="text-align:center; padding:1.5rem; color:#64748b;">Cargando solicitudes...</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -1083,16 +1225,45 @@
                                 </div>
                             </label>
                             
-                            <!-- E-wallet -->
+                            <!-- PayPal -->
                             <label class="payment-method">
-                                <input type="radio" name="payment-method" value="ewallet">
-                                <div class="payment-method-icon"><i class="fas fa-wallet"></i></div>
-                                <span>E-wallet</span>
+                                <input type="radio" name="payment-method" value="paypal">
+                                <div class="payment-method-icon"><i class="fab fa-paypal" style="color:#0079c1;"></i></div>
+                                <span>PayPal</span>
                                 <div class="payment-form" style="display:none;">
                                     <p style="background:#ede6f5; padding:1rem; border-radius:12px; font-size:0.9rem; margin:0;">
-                                        <strong>Saldo disponible: <span style="color:#8b5cf6;">$5.00</span></strong><br>
-                                        <span style="font-size:0.8rem; color:#6b4f7a;">Simulación - No se realizará un cargo real.</span>
+                                        <i class="fab fa-paypal" style="color:#0079c1;"></i> Serás conectado con PayPal de forma protegida para completar tu pago.
                                     </p>
+                                </div>
+                            </label>
+
+                            <!-- Monedero Digital -->
+                            <label class="payment-method">
+                                <input type="radio" name="payment-method" value="monedero" id="payment-method-monedero">
+                                <div class="payment-method-icon"><i class="fas fa-wallet" style="color:#8b5cf6;"></i></div>
+                                <span>Monedero Digital</span>
+                                <div class="payment-form" style="display:none;">
+                                    <div class="wallet-validation-panel">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                                            <strong><i class="fas fa-wallet" style="color:#8b5cf6;"></i> Saldo disponible:</strong>
+                                            <span id="checkout-wallet-saldo" style="color:#10b981; font-weight:800; font-size:1.2rem;">$1,200.00</span>
+                                        </div>
+                                        <div class="wallet-calc-row">
+                                            <span>Total a pagar:</span>
+                                            <span id="checkout-wallet-total-pagar" style="font-weight:700;">$0.00</span>
+                                        </div>
+                                        <div class="wallet-calc-row final-balance">
+                                            <span>Saldo después del pago:</span>
+                                            <span id="checkout-wallet-saldo-despues">$0.00</span>
+                                        </div>
+                                        <div id="checkout-wallet-alerta" class="wallet-insufficient-alert" style="display:none;">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            <div>
+                                                <strong>Saldo insuficiente:</strong> Tu saldo de monedero no cubre este pedido.
+                                                <button type="button" class="btn-primary" id="checkout-wallet-ir-recarga" style="margin-top:0.5rem; padding:0.3rem 0.8rem; font-size:0.8rem;">Recargar monedero</button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </label>
                         </div>
@@ -1164,43 +1335,54 @@
                             </div>
                         </div>
 
-                        <!-- ✅ SECCIÓN DE ÉXITO (visible después de aceptar términos) -->
+                        <!-- ✅ SECCIÓN DE ÉXITO (Paso 7: Confirmación de compra) -->
                         <div id="confirmacion-exito" style="display:none;">
-                            <div class="big-icon" style="color:#4caf50; font-size:3.5rem; margin-bottom:0.5rem;">
+                            <div class="order-success-icon" style="color:#10b981; font-size:3.8rem; margin:0 auto 1rem auto;">
                                 <i class="fas fa-check-circle" aria-hidden="true"></i>
                             </div>
-                            <h2 style="font-size:1.6rem; color:var(--text-primary);">¡Pago aprobado!</h2>
-                            <p style="color:var(--text-secondary); margin-bottom:0.5rem;">Tu compra ha sido confirmada exitosamente.</p>
+                            <h2 style="font-size:1.8rem; font-weight:800; color:var(--text-primary); margin-bottom:0.4rem;">¡Compra realizada con éxito!</h2>
+                            <p style="color:var(--text-secondary); margin-bottom:1rem;">Tu orden ha sido registrada en el sistema y se está procesando.</p>
                             
-                            <div class="order-confirmation">
-                                <div style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid var(--border);">
-                                    <span style="font-weight:600;">Número de pedido</span>
-                                    <span id="checkout-order-number" style="color:var(--primary); font-weight:700;">#DEL-2026-1234</span>
+                            <div class="order-receipt-card" style="text-align:left; background:#faf8fc; border-radius:14px; padding:1.25rem; border:1px solid var(--border); margin-bottom:1.5rem;">
+                                <div style="display:flex; justify-content:space-between; padding:0.4rem 0; border-bottom:1px solid var(--border);">
+                                    <span style="font-weight:600;">Orden:</span>
+                                    <span id="checkout-order-number" style="color:var(--primary); font-weight:800; font-size:1.1rem;">OR-00648</span>
                                 </div>
-                                <div style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid var(--border);">
-                                    <span style="font-weight:600;">Fecha</span>
-                                    <span id="checkout-order-date">15/01/2026 14:30</span>
+                                <div style="display:flex; justify-content:space-between; padding:0.4rem 0; border-bottom:1px solid var(--border);">
+                                    <span style="font-weight:600;">Pago:</span>
+                                    <span id="checkout-payment-method" style="font-weight:700;">Monedero</span>
                                 </div>
-                                <div style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid var(--border);">
-                                    <span style="font-weight:600;">Método de pago</span>
-                                    <span id="checkout-payment-method">Tarjeta</span>
+                                <div id="checkout-saldo-actual-row" style="display:flex; justify-content:space-between; padding:0.4rem 0; border-bottom:1px solid var(--border); color:#10b981;">
+                                    <span style="font-weight:600;">Saldo actual del Monedero:</span>
+                                    <span id="checkout-saldo-actual-val" style="font-weight:800;">$504.00</span>
                                 </div>
-                                <div style="margin-top:0.5rem;">
-                                    <div style="font-weight:600; margin-bottom:0.3rem;">Resumen:</div>
-                                    <div id="checkout-resumen-items"></div>
+                                <div style="display:flex; justify-content:space-between; padding:0.4rem 0; border-bottom:1px solid var(--border);">
+                                    <span style="font-weight:600;">Subtotal:</span>
+                                    <span id="checkout-success-subtotal">$600.00</span>
                                 </div>
-                                <div style="display:flex; justify-content:space-between; margin-top:0.5rem; padding-top:0.5rem; border-top:2px solid var(--border); font-weight:700; font-size:1.1rem;">
-                                    <span>Total</span>
-                                    <span id="checkout-total" style="color:var(--primary);">$0.00</span>
+                                <div style="display:flex; justify-content:space-between; padding:0.4rem 0; border-bottom:1px solid var(--border);">
+                                    <span style="font-weight:600;">Impuestos (IVA 16%):</span>
+                                    <span id="checkout-success-impuesto">$96.00</span>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; padding:0.5rem 0; font-weight:800; font-size:1.2rem; color:var(--primary);">
+                                    <span>Total:</span>
+                                    <span id="checkout-total">$696.00</span>
+                                </div>
+                                <div style="background:#ede9fe; color:#5b21b6; border-radius:10px; padding:0.75rem; margin-top:0.75rem; font-size:0.85rem; display:flex; align-items:center; gap:0.5rem;">
+                                    <i class="fas fa-envelope"></i>
+                                    <span>Hemos enviado el detalle de tu compra al correo: <strong id="checkout-confirm-email">juan@ejemplo.com</strong></span>
                                 </div>
                             </div>
                             
                             <div style="display:flex; gap:0.8rem; flex-wrap:wrap; justify-content:center;">
-                                <button class="btn-primary" id="checkout-generar-factura" style="min-width:140px; justify-content:center;">
-                                    <i class="fas fa-file-invoice" aria-hidden="true"></i> Ver Factura
+                                <button class="btn-primary" id="checkout-ver-mi-pedido-btn" style="min-width:160px; justify-content:center;">
+                                    <i class="fas fa-shopping-bag" aria-hidden="true"></i> Ver mi pedido
                                 </button>
-                                <button class="btn-secondary" id="checkout-continuar-btn" style="min-width:140px; justify-content:center;">
-                                    <i class="fas fa-arrow-right" aria-hidden="true"></i> Ir al perfil
+                                <button class="btn-secondary" id="checkout-seguir-comprando-btn" style="min-width:160px; justify-content:center;">
+                                    <i class="fas fa-store" aria-hidden="true"></i> Seguir comprando
+                                </button>
+                                <button class="btn-outline" id="checkout-generar-factura" style="min-width:140px; justify-content:center;">
+                                    <i class="fas fa-file-invoice" aria-hidden="true"></i> Ver Factura
                                 </button>
                             </div>
                         </div>
@@ -1508,5 +1690,6 @@
         </div>
 
         <script src="script.js"></script>
-    </body>
+        <script src="ecom.js"></script>
+</body>
     </html>

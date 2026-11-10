@@ -38,7 +38,7 @@
 <!-- ============ LOGIN ADMIN ============ -->
 <section id="page-login" class="page-section active" aria-labelledby="login-title">
     <div class="auth-container">
-        <h2 id="login-title"><i class="fas fa-user-shield" style="color:#8b5cf6;" aria-hidden="true"></i> Acceso administrador</h2>
+        <h2 id="login-title"><i class="fas fa-user" style="color:#8b5cf6;" aria-hidden="true"></i> Acceso</h2>
         <div id="login-message" class="hidden"></div>
         <form id="login-form" onsubmit="return false;">
             <div class="form-group">
@@ -106,7 +106,36 @@
                         <li><a href="#" data-admin-page="scm-pedidos"><i class="fas fa-clipboard-list"></i> Pedidos</a></li>
                         <li><a href="#" data-admin-page="scm-logistica"><i class="fas fa-random"></i> Logística (Push/Pull)</a></li>
                         <li><a href="#" data-admin-page="scm-madurez"><i class="fas fa-chart-line"></i> Nivel de madurez</a></li>
-                        <li><a href="#" data-admin-page="scm-reportes"><i class="fas fa-chart-bar"></i> Reportes SCM</a></li>
+                    </ul>
+                </li>
+
+                <!-- SECCIÓN ERP (debajo de SCM) -->
+                <li class="menu-group-header">
+                    <button type="button" class="menu-group-toggle collapsed" id="erp-menu-toggle" aria-expanded="false">
+                        <span><i class="fas fa-network-wired"></i> ERP</span>
+                        <i class="fas fa-chevron-down group-arrow"></i>
+                    </button>
+                    <ul class="submenu collapsed" id="erp-submenu">
+                        <li><a href="#" data-admin-page="erp-dashboard"><i class="fas fa-chart-line"></i> Dashboard ERP</a></li>
+                        <li><a href="#" data-admin-page="erp-ordenes"><i class="fas fa-receipt"></i> Órdenes de clientes</a></li>
+                        <li><a href="#" data-admin-page="erp-inventario"><i class="fas fa-boxes-stacked"></i> Inventario ERP</a></li>
+                        <li><a href="#" data-admin-page="erp-nueva-orden"><i class="fas fa-cart-plus"></i> Nueva orden</a></li>
+                        <li><a href="#" data-admin-page="erp-nivel"><i class="fas fa-layer-group"></i> Nivel ERP</a></li>
+                        <li><a href="#" data-admin-page="erp-reportes"><i class="fas fa-file-invoice-dollar"></i> Reportes ERP</a></li>
+                    </ul>
+                </li>
+
+                <!-- SECCIÓN COMERCIO ELECTRÓNICO (ETAPA 4) -->
+                <li class="menu-group-header">
+                    <button type="button" class="menu-group-toggle collapsed" id="ecom-menu-toggle" aria-expanded="false">
+                        <span><i class="fas fa-shopping-cart"></i> E-Commerce</span>
+                        <i class="fas fa-chevron-down group-arrow"></i>
+                    </button>
+                    <ul class="submenu collapsed" id="ecom-submenu">
+                        <li><a href="#" data-admin-page="ecom-monedero"><i class="fas fa-wallet"></i> Monedero</a></li>
+                        <li><a href="#" data-admin-page="ecom-impuestos"><i class="fas fa-percentage"></i> Configuración de Impuestos</a></li>
+                        <li><a href="#" data-admin-page="ecom-pagos"><i class="fas fa-money-check-alt"></i> Registro de Pagos</a></li>
+                        <li><a href="#" data-admin-page="ecom-tickets"><i class="fas fa-headset"></i> Tickets de soporte</a></li>
                     </ul>
                 </li>
 
@@ -371,17 +400,40 @@
 
             <!-- ===== USUARIOS (ADMINS) ===== -->
             <div id="admin-usuarios" class="admin-page hidden">
+                <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-user-cog"></i> Usuarios por área</h3>
                 <div class="product-table-container">
                     <div class="table-header">
-                        <h3><i class="fas fa-user-cog"></i> Administradores</h3>
-                        <button class="btn-primary" id="admin-add-user-btn"><i class="fas fa-user-plus"></i> Agregar administrador</button>
+                        <h3><i class="fas fa-user-shield"></i> Administradores</h3>
+                        <button class="btn-primary" type="button" data-add-user-role="admin"><i class="fas fa-user-plus"></i> Agregar administrador</button>
                     </div>
                     <div style="overflow-x:auto;">
                         <table class="product-table">
-                            <thead>
-                                <tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>
-                            </thead>
-                            <tbody id="users-table-body"></tbody>
+                            <thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th><th>Acciones</th></tr></thead>
+                            <tbody id="users-table-admin"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="product-table-container">
+                    <div class="table-header">
+                        <h3><i class="fas fa-truck"></i> Logística</h3>
+                        <button class="btn-primary" type="button" data-add-user-role="logistica"><i class="fas fa-user-plus"></i> Agregar personal de logística</button>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="product-table">
+                            <thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th><th>Acciones</th></tr></thead>
+                            <tbody id="users-table-logistica"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="product-table-container">
+                    <div class="table-header">
+                        <h3><i class="fas fa-chart-line"></i> Ventas</h3>
+                        <button class="btn-primary" type="button" data-add-user-role="ventas"><i class="fas fa-user-plus"></i> Agregar vendedor</button>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="product-table">
+                            <thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th><th>Acciones</th></tr></thead>
+                            <tbody id="users-table-ventas"></tbody>
                         </table>
                     </div>
                 </div>
@@ -390,16 +442,16 @@
             <!-- ===== FORM USUARIO ===== -->
             <div id="admin-user-form" class="admin-page hidden">
                 <div class="product-form-container">
-                    <h3><i class="fas fa-user-plus"></i> Agregar administrador</h3>
+                    <h3><i class="fas fa-user-plus"></i> Agregar usuario</h3>
                     <form id="user-form" onsubmit="return false;">
-                        <div class="form-group"><label for="form-user-name">Nombre completo</label><input type="text" id="form-user-name" placeholder="Nombre del administrador"></div>
+                        <div class="form-group"><label for="form-user-name">Nombre completo</label><input type="text" id="form-user-name" placeholder="Nombre del usuario"></div>
                         <div class="form-group"><label for="form-user-email">Correo electrónico</label><input type="email" id="form-user-email" placeholder="admin@ejemplo.com"></div>
                         <div class="form-group"><label for="form-user-password">Contraseña</label><input type="password" id="form-user-password" placeholder="Contraseña"></div>
                         <div class="form-group"><label for="form-user-confirm-password">Confirmar contraseña</label><input type="password" id="form-user-confirm-password" placeholder="Confirmar contraseña"></div>
                         <div class="form-group">
-                            <label for="form-user-role">Rol</label>
-                            <select id="form-user-role"><option value="admin">Administrador</option></select>
-                            <small style="color: #6b7280;">Solo existe la cuenta principal con rol "Super Administrador"</small>
+                            <label for="form-user-role-label">Rol empresarial</label>
+                            <input type="text" id="form-user-role-label" readonly>
+                            <small style="color: #6b7280;">El rol se asigna según el panel desde el que se agrega el usuario.</small>
                         </div>
                         <div class="form-actions">
                             <button type="submit" class="btn-primary" id="form-user-save-btn"><i class="fas fa-save"></i> Guardar</button>
@@ -512,7 +564,7 @@
                             <h3 class="scm-header-title"><i class="fas fa-box"></i> Productos SCM</h3>
                             <div class="scm-header-subtitle">Visualiza, busca y administra productos de la cadena de suministros.</div>
                         </div>
-                        <button class="btn-primary" onclick="window.openScmProductModal()">
+                        <button class="btn-primary" data-scm-admin-only onclick="window.openScmProductModal()">
                             <i class="fas fa-plus"></i> Nuevo producto
                         </button>
                     </div>
@@ -562,7 +614,7 @@
                             <h3 class="scm-header-title"><i class="fas fa-truck"></i> Proveedores SCM</h3>
                             <div class="scm-header-subtitle">Visualiza y administra proveedores de la cadena de suministro.</div>
                         </div>
-                        <button class="btn-primary" onclick="window.openScmProviderModal()">
+                        <button class="btn-primary" data-scm-admin-only onclick="window.openScmProviderModal()">
                             <i class="fas fa-plus"></i> Nuevo proveedor
                         </button>
                     </div>
@@ -598,7 +650,7 @@
                             <h3 class="scm-header-title"><i class="fas fa-warehouse"></i> Inventario</h3>
                             <div class="scm-header-subtitle">Consulta existencias y estado de stock en tiempo real.</div>
                         </div>
-                        <button class="btn-primary" onclick="window.openScmMovementModal()">
+                        <button class="btn-primary" data-scm-admin-only onclick="window.openScmMovementModal()">
                             <i class="fas fa-exchange-alt"></i> Registrar movimiento
                         </button>
                     </div>
@@ -640,7 +692,7 @@
                             <h3 class="scm-header-title"><i class="fas fa-exchange-alt"></i> Movimientos de inventario</h3>
                             <div class="scm-header-subtitle">Registra y consulta entradas y salidas de mercancía.</div>
                         </div>
-                        <button class="btn-primary" onclick="window.openScmMovementModal()">
+                        <button class="btn-primary" data-scm-admin-only onclick="window.openScmMovementModal()">
                             <i class="fas fa-plus"></i> Nuevo movimiento
                         </button>
                     </div>
@@ -955,6 +1007,677 @@
                 </div>
             </div>
 
+            <!-- ============================================================
+                 ETAPA 3 - ERP (PLANIFICACIÓN DE RECURSOS EMPRESARIALES)
+                 ============================================================ -->
+
+            <!-- ===== 1. INICIO ERP (DASHBOARD GENERAL) ===== -->
+            <div id="admin-erp-dashboard" class="admin-page hidden">
+                <div class="erp-page-header">
+                    <div>
+                        <h3 class="erp-header-title"><i class="fas fa-network-wired"></i> Dashboard ERP</h3>
+                        <p class="erp-header-subtitle">Vista integrada del negocio — Conectando CRM + SCM + ERP</p>
+                    </div>
+                    <div>
+                        <button type="button" class="btn-primary" onclick="window.openErpOrderWizard()">
+                            <i class="fas fa-cart-plus"></i> + Nueva orden de cliente
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tarjetas KPI Principales (Foto 1) -->
+                <div class="erp-kpi-grid">
+                    <div class="erp-kpi-card">
+                        <div class="erp-kpi-icon" style="background:#e0f2fe;color:#0284c7;"><i class="fas fa-users"></i></div>
+                        <div>
+                            <div class="erp-kpi-val" id="erp-dash-clients">0</div>
+                            <div class="erp-kpi-lbl">Clientes activos (CRM)</div>
+                        </div>
+                    </div>
+                    <div class="erp-kpi-card">
+                        <div class="erp-kpi-icon" style="background:#e0e7ff;color:#4f46e5;"><i class="fas fa-receipt"></i></div>
+                        <div>
+                            <div class="erp-kpi-val" id="erp-dash-orders">0</div>
+                            <div class="erp-kpi-lbl">Órdenes de clientes</div>
+                        </div>
+                    </div>
+                    <div class="erp-kpi-card">
+                        <div class="erp-kpi-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-coins"></i></div>
+                        <div>
+                            <div class="erp-kpi-val" id="erp-dash-sales">$0.00</div>
+                            <div class="erp-kpi-lbl">Ventas totales</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficas del Dashboard General (Foto 1) -->
+                <div class="erp-charts-grid">
+                    <div class="erp-chart-card">
+                        <h4><i class="fas fa-chart-bar" style="color:#6366f1;"></i> Ventas (últimos 6 meses)</h4>
+                        <div style="height:270px;">
+                            <canvas id="erpDashSalesChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="erp-chart-card">
+                        <h4><i class="fas fa-fire" style="color:#10b981;"></i> Productos más vendidos</h4>
+                        <div style="height:270px;">
+                            <canvas id="erpDashTopProductsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Integración entre Módulos (Foto pie de página) -->
+                <div class="erp-integration-banner">
+                    <div class="erp-module-node">
+                        <div class="erp-module-icon" style="background:#dbeafe;color:#1e40af;"><i class="fas fa-users-cog"></i></div>
+                        <div class="erp-module-info">
+                            <strong>CRM</strong>
+                            <small>Clientes e interacciones</small>
+                        </div>
+                    </div>
+                    <div class="erp-arrow-flow"><i class="fas fa-exchange-alt"></i></div>
+                    <div class="erp-module-node" style="border: 2px solid #6366f1;">
+                        <div class="erp-module-icon" style="background:#ede9fe;color:#6366f1;"><i class="fas fa-network-wired"></i></div>
+                        <div class="erp-module-info">
+                            <strong>ERP</strong>
+                            <small>Órdenes, integración y reportes</small>
+                        </div>
+                    </div>
+                    <div class="erp-arrow-flow"><i class="fas fa-exchange-alt"></i></div>
+                    <div class="erp-module-node">
+                        <div class="erp-module-icon" style="background:#ffedd5;color:#c2410c;"><i class="fas fa-boxes"></i></div>
+                        <div class="erp-module-info">
+                            <strong>SCM</strong>
+                            <small>Productos, inventario y compras</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 2. ÓRDENES DE CLIENTES (LISTADO) ===== -->
+            <div id="admin-erp-ordenes" class="admin-page hidden">
+                <div class="erp-page-header">
+                    <div>
+                        <h3 class="erp-header-title"><i class="fas fa-receipt"></i> Órdenes de Clientes</h3>
+                        <p class="erp-header-subtitle">Consulta de órdenes de clientes registradas en el sistema</p>
+                    </div>
+                    <div>
+                        <button type="button" class="btn-primary" onclick="window.openErpOrderWizard()">
+                            <i class="fas fa-plus"></i> + Nueva orden
+                        </button>
+                    </div>
+                </div>
+
+                <div class="product-table-container">
+                    <!-- Barra de búsqueda y filtros -->
+                    <div class="table-header" style="flex-wrap:wrap;gap:1rem;">
+                        <div style="display:flex;align-items:center;gap:0.75rem;flex:1;min-width:260px;">
+                            <div style="position:relative;width:100%;max-width:380px;">
+                                <i class="fas fa-search" aria-hidden="true" style="position:absolute;left:0.9rem;top:50%;transform:translateY(-50%);color:var(--primary);"></i>
+                                <input type="text" id="erp-orders-search" aria-label="Buscar órdenes de clientes" placeholder="Buscar por folio, cliente o empresa..." style="width:100%;padding:0.6rem 0.9rem 0.6rem 2.5rem;border-radius:10px;border:1px solid var(--border);">
+                            </div>
+                            <select id="erp-orders-status-filter" style="padding:0.6rem;border-radius:10px;border:1px solid #cbd5e1;">
+                                <option value="todos">Todos los estados</option>
+                                <option value="Procesada">Procesada</option>
+                                <option value="Procesando">Procesando</option>
+                                <option value="Completada">Completada</option>
+                                <option value="Cancelada">Cancelada</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x:auto;">
+                        <table class="product-table">
+                            <thead>
+                                <tr>
+                                    <th>Folio</th>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Total</th>
+                                    <th>Estado</th>
+                                    <th style="text-align:center;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="erp-orders-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 2B. INVENTARIO ERP (INTEGRACIÓN CRM & SCM) ===== -->
+            <div id="admin-erp-inventario" class="admin-page hidden">
+                <div class="erp-page-header">
+                    <div>
+                        <h3 class="erp-header-title"><i class="fas fa-boxes-stacked" style="color:#6366f1;"></i> Inventario ERP — Integración CRM & SCM</h3>
+                        <p class="erp-header-subtitle">Monitoreo integral de existencias, abastecimiento de proveedores (SCM) y demanda de clientes (CRM) en la misma base de datos MySQL</p>
+                    </div>
+                    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+                        <button type="button" class="btn-secondary" onclick="window.refreshErpInventory()">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                        <button type="button" class="btn-primary" onclick="window.openErpOrderWizard()">
+                            <i class="fas fa-cart-plus"></i> + Nueva orden ERP
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tarjetas KPI Principales de Inventario ERP -->
+                <div class="erp-kpi-grid">
+                    <div class="erp-kpi-card">
+                        <div class="erp-kpi-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-coins"></i></div>
+                        <div>
+                            <div class="erp-kpi-val" id="erp-inv-kpi-valor-costo">$0.00</div>
+                            <div class="erp-kpi-lbl">Valoración en almacén (Costo)</div>
+                        </div>
+                    </div>
+                    <div class="erp-kpi-card">
+                        <div class="erp-kpi-icon" style="background:#e0f2fe;color:#0284c7;"><i class="fas fa-warehouse"></i></div>
+                        <div>
+                            <div class="erp-kpi-val" id="erp-inv-kpi-total-stock">0</div>
+                            <div class="erp-kpi-lbl">Existencias totales (Unidades)</div>
+                        </div>
+                    </div>
+                    <div class="erp-kpi-card">
+                        <div class="erp-kpi-icon" style="background:#fee2e2;color:#dc2626;"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div>
+                            <div class="erp-kpi-val" id="erp-inv-kpi-stock-bajo">0</div>
+                            <div class="erp-kpi-lbl">Stock bajo / Crítico (SCM)</div>
+                        </div>
+                    </div>
+                    <div class="erp-kpi-card">
+                        <div class="erp-kpi-icon" style="background:#ecfdf5;color:#059669;"><i class="fas fa-users-cog"></i></div>
+                        <div>
+                            <div class="erp-kpi-val" id="erp-inv-kpi-demanda-crm">0</div>
+                            <div class="erp-kpi-lbl">Demanda despachada (CRM)</div>
+                        </div>
+                    </div>
+                    <div class="erp-kpi-card">
+                        <div class="erp-kpi-icon" style="background:#ede9fe;color:#7c3aed;"><i class="fas fa-truck-loading"></i></div>
+                        <div>
+                            <div class="erp-kpi-val" id="erp-inv-kpi-scm-camino">0</div>
+                            <div class="erp-kpi-lbl">Reposición en camino (SCM)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Banner explicativo de Integración en la misma BD -->
+                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #6366f1;padding:0.9rem 1.2rem;border-radius:10px;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+                    <div style="display:flex;align-items:center;gap:0.75rem;">
+                        <i class="fas fa-database" style="color:#6366f1;font-size:1.3rem;"></i>
+                        <span style="font-size:0.92rem;color:#334155;">
+                            <strong>Conexión directa a base de datos MySQL:</strong> Este panel consulta en tiempo real las tablas relacionales de <strong>SCM</strong> (<code>proveedores</code>, <code>movimientos_inventario</code>, <code>pedidos_scm</code>) y <strong>CRM</strong> (<code>clientes</code>, <code>ordenes_erp</code>, <code>orden_items_erp</code>) vinculadas a <code>productos</code>.
+                        </span>
+                    </div>
+                    <span class="erp-badge erp-badge-primary"><i class="fas fa-check-circle"></i> Sincronizado en vivo</span>
+                </div>
+
+                <!-- Contenedor de la Tabla de Inventario -->
+                <div class="product-table-container">
+                    <!-- Filtros y Búsqueda -->
+                    <div class="table-header" style="flex-wrap:wrap;gap:0.75rem;padding:1rem 1.2rem;">
+                        <div style="display:flex;align-items:center;gap:0.6rem;flex:1;min-width:240px;">
+                            <input type="text" id="erp-inv-search" placeholder="🔍 Buscar por nombre, categoría o proveedor..." style="width:100%;max-width:360px;padding:0.6rem 0.9rem;border-radius:10px;border:1px solid #cbd5e1;font-size:0.9rem;">
+                        </div>
+                        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+                            <select id="erp-inv-status-filter" style="padding:0.6rem 0.8rem;border-radius:10px;border:1px solid #cbd5e1;font-size:0.88rem;">
+                                <option value="todos">Todos los estados</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Bajo">Stock bajo</option>
+                                <option value="Agotado">Agotado</option>
+                            </select>
+                            <select id="erp-inv-strategy-filter" style="padding:0.6rem 0.8rem;border-radius:10px;border:1px solid #cbd5e1;font-size:0.88rem;">
+                                <option value="todas">Todas las estrategias (Push/Pull)</option>
+                                <option value="PUSH">PUSH (Fabricación anticipada)</option>
+                                <option value="PULL">PULL (Bajo demanda / Pedido)</option>
+                            </select>
+                            <select id="erp-inv-provider-filter" style="padding:0.6rem 0.8rem;border-radius:10px;border:1px solid #cbd5e1;font-size:0.88rem;">
+                                <option value="todos">Todos los proveedores</option>
+                            </select>
+                            <select id="erp-inv-sort" style="padding:0.6rem 0.8rem;border-radius:10px;border:1px solid #cbd5e1;font-size:0.88rem;">
+                                <option value="name-asc">Nombre (A - Z)</option>
+                                <option value="stock-asc">Menor stock primero</option>
+                                <option value="stock-desc">Mayor stock primero</option>
+                                <option value="crm-desc">Mayor demanda CRM</option>
+                                <option value="valor-desc">Mayor valor en stock</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x:auto;">
+                        <table class="product-table">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Almacén / Stock</th>
+                                    <th>Finanzas ERP</th>
+                                    <th>Cadena SCM (Proveedor)</th>
+                                    <th>Demanda CRM (Clientes)</th>
+                                    <th style="text-align:center;">Trazabilidad 360°</th>
+                                </tr>
+                            </thead>
+                            <tbody id="erp-inventory-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 3, 4, 5, 6, 7. NUEVA ORDEN (ASISTENTE / STEPPER) ===== -->
+            <div id="admin-erp-nueva-orden" class="admin-page hidden">
+                <div class="erp-page-header">
+                    <div>
+                        <h3 class="erp-header-title"><i class="fas fa-cart-plus"></i> Nueva Orden de Cliente</h3>
+                        <p class="erp-header-subtitle">Flujo guiado para crear y procesar órdenes empresariales</p>
+                    </div>
+                    <div>
+                        <button type="button" class="btn-secondary" onclick="window.cancelErpWizard()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stepper Visual de Pasos (1, 2, 3) -->
+                <div class="erp-stepper">
+                    <div class="erp-step-node active" id="stepper-step-1">
+                        <div class="erp-step-circle">1</div>
+                        <span>Cliente</span>
+                    </div>
+                    <div class="erp-step-line"></div>
+                    <div class="erp-step-node" id="stepper-step-2">
+                        <div class="erp-step-circle">2</div>
+                        <span>Productos</span>
+                    </div>
+                    <div class="erp-step-line"></div>
+                    <div class="erp-step-node" id="stepper-step-3">
+                        <div class="erp-step-circle">3</div>
+                        <span>Confirmar</span>
+                    </div>
+                </div>
+
+                <!-- PASO 1: SELECCIONAR CLIENTE (Foto 3) -->
+                <div id="erp-wizard-step-1" class="product-table-container">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+                        <h4 style="margin:0;color:#0f172a;"><i class="fas fa-user-tag" style="color:#6366f1;"></i> Paso 1: Seleccionar Cliente (CRM)</h4>
+                        <button type="button" class="btn-success btn-sm" onclick="window.openQuickClientModal()">
+                            <i class="fas fa-user-plus"></i> + Nuevo cliente (CRM)
+                        </button>
+                    </div>
+
+                    <div style="margin-bottom:1.2rem;">
+                        <input type="text" id="erp-client-search" placeholder="Buscar cliente por nombre, empresa, correo..." style="width:100%;padding:0.75rem 1rem;border-radius:10px;border:1px solid #cbd5e1;">
+                    </div>
+
+                    <!-- Vista previa de cliente seleccionado -->
+                    <div id="erp-selected-client-preview" style="display:none;"></div>
+
+                    <h5 style="margin:1rem 0 0.5rem 0;color:#475569;font-size:0.9rem;">Clientes disponibles en el CRM:</h5>
+                    <div id="erp-client-select-results" class="erp-client-grid"></div>
+
+                    <div style="display:flex;justify-content:flex-end;gap:1rem;margin-top:1.5rem;border-top:1px solid #f1f5f9;padding-top:1.2rem;">
+                        <button type="button" class="btn-secondary" onclick="window.cancelErpWizard()">Cancelar</button>
+                        <button type="button" class="btn-primary" id="erp-btn-step1-next" onclick="window.erpWizardNext()" disabled>
+                            Siguiente: Productos <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PASO 2: AGREGAR PRODUCTOS (Foto 4) -->
+                <div id="erp-wizard-step-2" class="product-table-container" style="display:none;">
+                    <h4 style="margin:0 0 1.2rem 0;color:#0f172a;"><i class="fas fa-boxes" style="color:#6366f1;"></i> Paso 2: Productos y Cantidades (SCM)</h4>
+
+                    <div style="margin-bottom:1rem;">
+                        <input type="text" id="erp-product-search" placeholder="Buscar platillo / producto en catálogo..." style="width:100%;padding:0.7rem 1rem;border-radius:10px;border:1px solid #cbd5e1;">
+                    </div>
+
+                    <!-- Catálogo de productos disponibles -->
+                    <div style="overflow-x:auto;max-height:300px;margin-bottom:1.8rem;border:1px solid #e2e8f0;border-radius:12px;">
+                        <table class="product-table" style="margin:0;">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Stock (SCM)</th>
+                                    <th>Precio</th>
+                                    <th style="width:100px;">Cantidad</th>
+                                    <th>Agregar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="erp-catalog-products-body"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Resumen del Carrito de la Orden -->
+                    <h4 style="margin:1.5rem 0 0.8rem 0;color:#0f172a;display:flex;justify-content:space-between;align-items:center;">
+                        <span><i class="fas fa-shopping-cart" style="color:#10b981;"></i> Productos agregados a la orden</span>
+                        <span style="font-size:1.1rem;color:#6366f1;">Subtotal: <strong id="erp-wizard-cart-total">$0.00</strong></span>
+                    </h4>
+                    <div style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:12px;">
+                        <table class="product-table" style="margin:0;">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th style="text-align:center;">Cantidad</th>
+                                    <th>Precio Unitario</th>
+                                    <th>Subtotal</th>
+                                    <th style="text-align:center;">Quitar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="erp-wizard-cart-body"></tbody>
+                        </table>
+                    </div>
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.8rem;border-top:1px solid #f1f5f9;padding-top:1.2rem;">
+                        <button type="button" class="btn-secondary" onclick="window.erpWizardPrev()">
+                            <i class="fas fa-arrow-left"></i> Anterior
+                        </button>
+                        <button type="button" class="btn-primary" id="erp-btn-step2-next" onclick="window.erpWizardNext()" disabled>
+                            Siguiente: Confirmar <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PASO 3: RESUMEN DE LA ORDEN (Foto 5) -->
+                <div id="erp-wizard-step-3" class="product-table-container" style="display:none;">
+                    <h4 style="margin:0 0 1.2rem 0;color:#0f172a;"><i class="fas fa-file-invoice" style="color:#6366f1;"></i> Paso 3: Total y Confirmación de la Orden</h4>
+
+                    <div id="erp-summary-client-box"></div>
+
+                    <div style="overflow-x:auto;margin:1.5rem 0;border:1px solid #e2e8f0;border-radius:12px;">
+                        <table class="product-table" style="margin:0;">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th style="text-align:center;">Cantidad</th>
+                                    <th>Precio unitario</th>
+                                    <th>Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody id="erp-summary-items-body"></tbody>
+                        </table>
+                    </div>
+
+                    <div style="display:flex;justify-content:flex-end;margin-bottom:1.5rem;">
+                        <div style="background:#f8fafc;padding:1.2rem 1.8rem;border-radius:12px;border:1px solid #e2e8f0;min-width:260px;">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;color:#64748b;">
+                                <span>Subtotal:</span>
+                                <strong id="erp-summary-subtotal">$0.00</strong>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;font-size:1.25rem;color:#0f172a;border-top:1px solid #cbd5e1;padding-top:0.5rem;">
+                                <span>Total:</span>
+                                <strong id="erp-summary-total" style="color:#6366f1;">$0.00</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:1.5rem;">
+                        <label for="erp-order-notes">Notas u observaciones para la orden (opcional):</label>
+                        <textarea id="erp-order-notes" rows="2" placeholder="Indicaciones de entrega, contacto, etc." style="width:100%;border-radius:10px;border:1px solid #cbd5e1;padding:0.7rem;"></textarea>
+                    </div>
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #f1f5f9;padding-top:1.2rem;">
+                        <button type="button" class="btn-secondary" onclick="window.erpWizardPrev()">
+                            <i class="fas fa-arrow-left"></i> Anterior
+                        </button>
+                        <button type="button" class="btn-primary" style="background:#10b981;border-color:#10b981;" onclick="window.erpWizardNext()">
+                            <i class="fas fa-check"></i> Confirmar orden
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PASO 4 / PANTALLA 6: PROCESAMIENTO DE LA ORDEN (Foto 6) -->
+                <div id="erp-wizard-step-4" style="display:none;">
+                    <div class="erp-process-card">
+                        <i class="fas fa-cog erp-gear-spinner"></i>
+                        <h3 style="margin:0 0 0.5rem 0;color:#0f172a;">Procesando orden...</h3>
+                        <p style="color:#64748b;margin:0 0 1.5rem 0;">Sincronizando inventario, clientes y operaciones del sistema</p>
+
+                        <div class="erp-progress-wrapper">
+                            <div class="erp-progress-bar-fill" id="erp-process-progress-bar"></div>
+                        </div>
+                        <div style="font-weight:700;color:#6366f1;font-size:1.2rem;margin-bottom:1.5rem;" id="erp-process-percentage">0%</div>
+
+                        <ul class="erp-checklist-process">
+                            <li class="erp-proc-step" id="erp-proc-step-1">
+                                <i class="far fa-circle proc-icon"></i>
+                                <span>Creando orden en la base de datos</span>
+                            </li>
+                            <li class="erp-proc-step" id="erp-proc-step-2">
+                                <i class="far fa-circle proc-icon"></i>
+                                <span>Validando stock disponible</span>
+                            </li>
+                            <li class="erp-proc-step" id="erp-proc-step-3">
+                                <i class="far fa-circle proc-icon"></i>
+                                <span>Actualizando inventario y registrando movimientos</span>
+                            </li>
+                            <li class="erp-proc-step" id="erp-proc-step-4">
+                                <i class="far fa-circle proc-icon"></i>
+                                <span>Guardando historial del cliente en CRM</span>
+                            </li>
+                            <li class="erp-proc-step" id="erp-proc-step-5">
+                                <i class="far fa-circle proc-icon"></i>
+                                <span>Finalizando operación exitosa</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- PASO 5 / PANTALLA 7: OPERACIÓN EXITOSA (Foto 7) -->
+                <div id="erp-wizard-step-5" style="display:none;">
+                    <div class="erp-success-card">
+                        <div class="erp-success-icon-circle">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <h2 style="color:#0f172a;margin:0 0 0.5rem 0;">¡Orden registrada con éxito!</h2>
+                        <p style="color:#64748b;margin:0 0 1.5rem 0;">La orden de cliente ha sido procesada y el inventario descontado.</p>
+
+                        <div class="erp-success-details-box">
+                            <div>
+                                <strong>Folio</strong>
+                                <span id="erp-success-folio">OR-000</span>
+                            </div>
+                            <div>
+                                <strong>Cliente</strong>
+                                <span id="erp-success-client">-</span>
+                            </div>
+                            <div>
+                                <strong>Total</strong>
+                                <span id="erp-success-total" style="color:#10b981;">$0.00</span>
+                            </div>
+                            <div>
+                                <strong>Fecha</strong>
+                                <span id="erp-success-date">-</span>
+                            </div>
+                        </div>
+
+                        <div style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;margin-top:1.5rem;">
+                            <button type="button" class="btn-primary" style="background:#0284c7;border-color:#0284c7;" onclick="if (orderWizard && orderWizard.createdOrder) window.viewErpOrderDetail(orderWizard.createdOrder.id)">
+                                <i class="fas fa-eye"></i> Ver orden
+                            </button>
+                            <button type="button" class="btn-primary" onclick="window.showAdminPage('erp-ordenes')">
+                                <i class="fas fa-list"></i> Ir a órdenes
+                            </button>
+                            <button type="button" class="btn-secondary" onclick="window.openErpOrderWizard()">
+                                <i class="fas fa-plus"></i> + Nueva orden
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 8. NIVEL DE IMPLEMENTACIÓN ERP (Foto 8) ===== -->
+            <div id="admin-erp-nivel" class="admin-page hidden">
+                <div class="erp-page-header">
+                    <div>
+                        <h3 class="erp-header-title"><i class="fas fa-layer-group"></i> Nivel de Implementación ERP</h3>
+                        <p class="erp-header-subtitle">Evalúa el avance en la integración de procesos y madurez empresarial</p>
+                    </div>
+                    <div>
+                        <button type="button" class="btn-primary" onclick="window.saveErpChecklistChange()">
+                            <i class="fas fa-save"></i> Guardar avance
+                        </button>
+                    </div>
+                </div>
+
+                <div class="erp-maturity-container">
+                    <!-- Stepper de Madurez (Básico -> Integrado -> Automatizado -> Optimizado) -->
+                    <div class="erp-maturity-stepper">
+                        <div class="erp-mat-node completed" id="erp-mat-step-básico">
+                            <div class="erp-mat-circle"><i class="fas fa-check"></i></div>
+                            <span>Básico</span>
+                        </div>
+                        <div class="erp-step-line"></div>
+                        <div class="erp-mat-node active" id="erp-mat-step-integrado">
+                            <div class="erp-mat-circle">2</div>
+                            <span>Integrado</span>
+                        </div>
+                        <div class="erp-step-line"></div>
+                        <div class="erp-mat-node" id="erp-mat-step-automatizado">
+                            <div class="erp-mat-circle">3</div>
+                            <span>Automatizado</span>
+                        </div>
+                        <div class="erp-step-line"></div>
+                        <div class="erp-mat-node" id="erp-mat-step-optimizado">
+                            <div class="erp-mat-circle">4</div>
+                            <span>Optimizado</span>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta Informativa de Nivel Actual -->
+                    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1.5rem;margin-bottom:1.8rem;">
+                        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.6rem;">
+                            <span class="erp-badge erp-badge-primary" id="erp-current-level-badge" style="font-size:1rem;padding:0.4rem 1rem;">Nivel actual: Integrado</span>
+                            <span style="color:#64748b;font-size:0.9rem;" id="erp-maturity-percentage">67% de madurez</span>
+                        </div>
+                        <p style="margin:0 0 1rem 0;color:#334155;font-size:0.95rem;" id="erp-current-level-desc">
+                            Los módulos de CRM, SCM y ERP se encuentran integrados y funcionando de manera coordinada.
+                        </p>
+                        <div class="erp-progress-wrapper" style="margin:0;">
+                            <div class="erp-progress-bar-fill" id="erp-maturity-progress-bar" style="width:67%;background:linear-gradient(90deg, #10b981, #6366f1);"></div>
+                        </div>
+                    </div>
+
+                    <!-- Checklist de Avance (Foto 8) -->
+                    <h4 style="margin:0 0 1rem 0;color:#0f172a;"><i class="fas fa-tasks" style="color:#6366f1;"></i> Checklist de avance empresarial</h4>
+                    <div id="erp-maturity-checklist"></div>
+                </div>
+            </div>
+
+            <!-- ===== 9. REPORTES ERP (DASHBOARD EMPRESARIAL) (Foto 9) ===== -->
+            <div id="admin-erp-reportes" class="admin-page hidden">
+                <div class="erp-page-header">
+                    <div>
+                        <h3 class="erp-header-title"><i class="fas fa-file-invoice-dollar"></i> Reportes ERP (Dashboard Empresarial)</h3>
+                        <p class="erp-header-subtitle">Indicadores clave del negocio y analítica integrada</p>
+                    </div>
+                </div>
+
+                <!-- KPIs Superiores (Foto 9) -->
+                <div class="erp-kpi-grid">
+                    <div class="erp-kpi-card">
+                        <div class="erp-kpi-icon" style="background:#ecfdf5;color:#10b981;"><i class="fas fa-dollar-sign"></i></div>
+                        <div>
+                            <div class="erp-kpi-val" id="erp-rep-sales">$0.00</div>
+                            <div class="erp-kpi-lbl">Ventas totales</div>
+                        </div>
+                    </div>
+                    <div class="erp-kpi-card">
+                        <div class="erp-kpi-icon" style="background:#eff6ff;color:#3b82f6;"><i class="fas fa-chart-line"></i></div>
+                        <div>
+                            <div class="erp-kpi-val" id="erp-rep-orders">0</div>
+                            <div class="erp-kpi-lbl">Órdenes de clientes</div>
+                        </div>
+                    </div>
+                    <div class="erp-kpi-card">
+                        <div class="erp-kpi-icon" style="background:#fff7ed;color:#ea580c;"><i class="fas fa-box-open"></i></div>
+                        <div>
+                            <div class="erp-kpi-val" id="erp-rep-prods">0</div>
+                            <div class="erp-kpi-lbl">Productos vendidos</div>
+                        </div>
+                    </div>
+                    <div class="erp-kpi-card">
+                        <div class="erp-kpi-icon" style="background:#faf5ff;color:#9333ea;"><i class="fas fa-users"></i></div>
+                        <div>
+                            <div class="erp-kpi-val" id="erp-rep-clients">0</div>
+                            <div class="erp-kpi-lbl">Clientes activos</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficos de Reportes (Foto 9) -->
+                <div class="erp-charts-grid">
+                    <div class="erp-chart-card">
+                        <h4><i class="fas fa-chart-column" style="color:#6366f1;"></i> Ventas por mes</h4>
+                        <div style="height:270px;">
+                            <canvas id="erpRepSalesChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="erp-chart-card">
+                        <h4><i class="fas fa-chart-bar" style="color:#10b981;"></i> Productos más vendidos</h4>
+                        <div style="height:270px;">
+                            <canvas id="erpRepTopProductsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfico de Rotación de Inventario (Foto 9) -->
+                <div class="erp-chart-card" style="max-width:550px;margin-bottom:2rem;">
+                    <h4><i class="fas fa-circle-notch" style="color:#0284c7;"></i> Inventario disponible</h4>
+                    <div style="height:260px;position:relative;">
+                        <canvas id="erpRepRotationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+    <div id="admin-ecom-monedero" class="admin-page hidden">
+        <div class="product-table-container">
+            <h3><i class="fas fa-wallet"></i> Monedero de clientes</h3>
+            <div class="ecom-grid">
+                <div class="ecom-card"><strong>Saldo en circulación</strong><div id="admin-monedero-circulacion">$0.00</div></div>
+                <div class="ecom-card"><strong>Clientes con monedero</strong><div id="admin-monedero-clientes-count">0</div></div>
+                <div class="ecom-card"><strong>Total abonado</strong><div id="admin-monedero-total-recargado">$0.00</div></div>
+                <div class="ecom-card"><strong>Total utilizado</strong><div id="admin-monedero-total-gastado">$0.00</div></div>
+            </div>
+            <h4 style="margin:1.5rem 0 0.75rem;">Saldos de clientes</h4>
+            <div style="overflow-x:auto;"><table class="product-table">
+                <thead><tr><th>Cliente</th><th>Teléfono</th><th>Saldo</th><th>Pedidos</th><th>Compras</th><th>Acciones</th></tr></thead>
+                <tbody id="admin-monedero-clientes-tbody"></tbody>
+            </table></div>
+            <h4 style="margin:1.5rem 0 0.75rem;">Movimientos recientes</h4>
+            <div style="overflow-x:auto;"><table class="product-table">
+                <thead><tr><th>Fecha</th><th>Folio</th><th>Cliente</th><th>Concepto</th><th>Monto</th><th>Saldo</th></tr></thead>
+                <tbody id="admin-monedero-movimientos-tbody"></tbody>
+            </table></div>
+        </div>
+    </div>
+    <div id="admin-ecom-impuestos" class="admin-page hidden">
+        <div class="product-table-container">
+            <h3><i class="fas fa-percentage"></i> Configuración de impuestos</h3>
+            <div style="overflow-x:auto;"><table class="product-table">
+                <thead><tr><th>Impuesto</th><th>Porcentaje</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody id="admin-impuestos-tbody"></tbody>
+            </table></div>
+        </div>
+    </div>
+    <div id="admin-ecom-tickets" class="admin-page hidden">
+        <div class="product-table-container">
+            <div class="scm-page-header">
+                <div><h3 class="scm-header-title"><i class="fas fa-headset"></i> Panel de soporte</h3>
+                    <div class="scm-header-subtitle">Consulta, responde y da seguimiento a solicitudes de clientes.</div></div>
+                <button class="btn-secondary" type="button" id="admin-refresh-tickets"><i class="fas fa-sync-alt"></i> Actualizar</button>
+            </div>
+            <div style="overflow-x:auto;"><table class="product-table">
+                <thead><tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Solicitud</th><th>Estado</th><th>Respuesta</th><th>Acciones</th></tr></thead>
+                <tbody id="admin-tickets-tbody"></tbody>
+            </table></div>
+        </div>
+    </div>
+    <div id="admin-ecom-pagos" class="admin-page hidden">
+        <div class="product-table-container">
+            <h3><i class="fas fa-money-check-alt"></i> Registro de pagos</h3>
+            <div style="overflow-x:auto;"><table class="product-table">
+                <thead><tr><th>Fecha</th><th>Pedido</th><th>Cliente</th><th>Método</th><th>Monto</th><th>Estado</th></tr></thead>
+                <tbody id="admin-pagos-tbody"></tbody>
+            </table></div>
+        </div>
+    </div>
         </div> <!-- cierra admin-content -->
     </div> <!-- cierra admin-layout -->
 
@@ -1177,8 +1900,351 @@
             </form>
         </div>
     </div>
+
+    <!-- ============================================================
+         MODALES ERP
+         ============================================================ -->
+
+    <!-- MODAL DETALLE DE ORDEN ERP -->
+    <div class="scm-modal-backdrop" id="erp-order-detail-modal">
+        <div class="scm-modal-window" style="max-width:680px;">
+            <div class="scm-modal-header">
+                <h3 class="scm-modal-title"><i class="fas fa-receipt" style="color:#6366f1;"></i> Detalle de Orden <span id="erp-modal-folio" style="color:#6366f1;">OR-000</span></h3>
+                <button type="button" class="scm-modal-close" onclick="window.closeErpModal('erp-order-detail-modal')"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div style="background:#f8fafc;border-radius:12px;padding:1.2rem;margin-bottom:1.5rem;border:1px solid #e2e8f0;display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                <div>
+                    <strong style="color:#64748b;font-size:0.8rem;text-transform:uppercase;display:block;">Cliente</strong>
+                    <span id="erp-modal-client" style="font-weight:700;color:#0f172a;">-</span>
+                    <small id="erp-modal-company" style="display:block;color:#64748b;">-</small>
+                </div>
+                <div>
+                    <strong style="color:#64748b;font-size:0.8rem;text-transform:uppercase;display:block;">Fecha de Registro</strong>
+                    <span id="erp-modal-date" style="color:#0f172a;">-</span>
+                </div>
+                <div>
+                    <strong style="color:#64748b;font-size:0.8rem;text-transform:uppercase;display:block;">Contacto</strong>
+                    <span id="erp-modal-email" style="display:block;font-size:0.85rem;color:#475569;">-</span>
+                    <span id="erp-modal-phone" style="display:block;font-size:0.85rem;color:#475569;">-</span>
+                </div>
+                <div>
+                    <strong style="color:#64748b;font-size:0.8rem;text-transform:uppercase;display:block;">Estado de la Orden</strong>
+                    <input type="hidden" id="erp-modal-order-id">
+                    <select id="erp-modal-status-select" style="padding:0.4rem;border-radius:8px;border:1px solid #cbd5e1;font-weight:600;margin-top:0.25rem;">
+                        <option value="Procesada">Procesada</option>
+                        <option value="Procesando">Procesando</option>
+                        <option value="Completada">Completada</option>
+                        <option value="Cancelada">Cancelada</option>
+                    </select>
+                </div>
+            </div>
+
+            <h4 style="margin:0 0 0.8rem 0;color:#0f172a;"><i class="fas fa-boxes" style="color:#6366f1;"></i> Productos ordenados</h4>
+            <div style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:1.2rem;">
+                <table class="product-table" style="margin:0;">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th style="text-align:center;">Cantidad</th>
+                            <th>Precio Unitario</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="erp-modal-items-body"></tbody>
+                </table>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label for="erp-modal-notes" style="font-weight:600;font-size:0.85rem;color:#475569;display:block;margin-bottom:0.3rem;">Notas / Observaciones:</label>
+                <textarea id="erp-modal-notes" rows="2" style="width:100%;border-radius:8px;border:1px solid #cbd5e1;padding:0.5rem;font-size:0.9rem;" placeholder="Observaciones de la orden..."></textarea>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #f1f5f9;padding-top:1rem;flex-wrap:wrap;gap:0.75rem;">
+                <div style="font-size:1.2rem;">
+                    <span>Total de la orden: </span>
+                    <strong id="erp-modal-total" style="color:#6366f1;">$0.00</strong>
+                </div>
+                <div style="display:flex;gap:0.8rem;align-items:center;">
+                    <button type="button" class="btn-secondary" id="erp-modal-view-crm-btn" style="display:none;" onclick="window.viewCrmClientFromErp()"><i class="fas fa-user"></i> Ver en CRM</button>
+                    <button type="button" class="btn-secondary" onclick="window.closeErpModal('erp-order-detail-modal')">Cerrar</button>
+                    <button type="button" class="btn-primary" onclick="window.saveErpOrderStatusChange()"><i class="fas fa-save"></i> Guardar cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL NUEVO CLIENTE RÁPIDO (CRM) -->
+    <div class="scm-modal-backdrop" id="erp-quick-client-modal">
+        <div class="scm-modal-window">
+            <div class="scm-modal-header">
+                <h3 class="scm-modal-title"><i class="fas fa-user-plus" style="color:#10b981;"></i> Registrar Cliente en CRM</h3>
+                <button type="button" class="scm-modal-close" onclick="window.closeErpModal('erp-quick-client-modal')"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="erp-qc-form" onsubmit="window.saveQuickClient(); return false;">
+                <div class="form-group" style="margin-bottom:1rem;">
+                    <label for="erp-qc-name">Nombre completo o Representante *</label>
+                    <input type="text" id="erp-qc-name" placeholder="Ej. Juan Pérez" required>
+                </div>
+                <div class="form-group" style="margin-bottom:1rem;">
+                    <label for="erp-qc-company">Empresa / Razón Social</label>
+                    <input type="text" id="erp-qc-company" placeholder="Ej. Restaurante Don Pepe">
+                </div>
+                <div class="scm-form-row" style="margin-bottom:1rem;">
+                    <div class="form-group">
+                        <label for="erp-qc-email">Correo Electrónico *</label>
+                        <input type="email" id="erp-qc-email" placeholder="cliente@ejemplo.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="erp-qc-phone">Teléfono</label>
+                        <input type="tel" id="erp-qc-phone" placeholder="55 1234 5678">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom:1.5rem;">
+                    <label for="erp-qc-address">Dirección comercial</label>
+                    <input type="text" id="erp-qc-address" placeholder="Av. Principal 123">
+                </div>
+                <div style="display:flex;justify-content:flex-end;gap:0.8rem;">
+                    <button type="button" class="btn-secondary" onclick="window.closeErpModal('erp-quick-client-modal')">Cancelar</button>
+                    <button type="submit" class="btn-primary" style="background:#10b981;border-color:#10b981;"><i class="fas fa-save"></i> Guardar Cliente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL AUDITORÍA 360° INVENTARIO ERP (CRM + SCM) -->
+    <div class="scm-modal-backdrop" id="erp-inventory-detail-modal">
+        <div class="scm-modal-window" style="max-width:920px;max-height:90vh;overflow-y:auto;">
+            <div class="scm-modal-header" style="border-bottom:1px solid #e2e8f0;padding-bottom:1rem;">
+                <div>
+                    <div style="display:flex;align-items:center;gap:0.75rem;">
+                        <h3 class="scm-modal-title" style="margin:0;"><i class="fas fa-cubes" style="color:#6366f1;"></i> <span id="erp-inv-modal-prod-name">Producto</span></h3>
+                        <span class="erp-badge" id="erp-inv-modal-status-badge">Normal</span>
+                    </div>
+                    <small id="erp-inv-modal-category" style="color:#64748b;font-weight:600;">Categoría</small>
+                </div>
+                <button type="button" class="scm-modal-close" onclick="window.closeErpModal('erp-inventory-detail-modal')"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div style="padding:1.25rem 0;">
+                <!-- Tarjetas de Resumen Financiero y Existencias -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;margin-bottom:1.5rem;">
+                    <div style="background:#f8fafc;padding:0.9rem;border-radius:10px;border:1px solid #e2e8f0;">
+                        <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;">Almacén Actual</div>
+                        <div style="font-size:1.4rem;font-weight:800;color:#0f172a;margin-top:0.25rem;">
+                            <span id="erp-inv-modal-stock">0</span> <small style="font-size:0.85rem;color:#64748b;font-weight:500;">unidades</small>
+                        </div>
+                        <small style="color:#64748b;">Mínimo requerido: <strong id="erp-inv-modal-min-stock">-</strong></small>
+                    </div>
+                    <div style="background:#f8fafc;padding:0.9rem;border-radius:10px;border:1px solid #e2e8f0;">
+                        <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;">Valuación ERP</div>
+                        <div style="font-size:1.4rem;font-weight:800;color:#6366f1;margin-top:0.25rem;" id="erp-inv-modal-val-costo">$0.00</div>
+                        <small style="color:#64748b;">Costo: <strong id="erp-inv-modal-unit-cost">$0</strong> | Precio: <strong id="erp-inv-modal-price">$0</strong></small>
+                    </div>
+                    <div style="background:#f8fafc;padding:0.9rem;border-radius:10px;border:1px solid #e2e8f0;">
+                        <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;">Ventas Totales CRM</div>
+                        <div style="font-size:1.4rem;font-weight:800;color:#059669;margin-top:0.25rem;">
+                            <span id="erp-inv-modal-crm-qty">0</span> <small style="font-size:0.85rem;color:#64748b;font-weight:500;">vendidas</small>
+                        </div>
+                        <small style="color:#64748b;">Facturado: <strong id="erp-inv-modal-crm-billed" style="color:#059669;">$0.00</strong></small>
+                    </div>
+                    <div style="background:#f8fafc;padding:0.9rem;border-radius:10px;border:1px solid #e2e8f0;">
+                        <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;">Margen Bruto</div>
+                        <div style="font-size:1.4rem;font-weight:800;color:#2563eb;margin-top:0.25rem;">
+                            <span id="erp-inv-modal-margin">0%</span>
+                        </div>
+                        <small style="color:#64748b;">Estrategia SCM: <strong id="erp-inv-modal-strategy">PUSH</strong></small>
+                    </div>
+                </div>
+
+                <!-- Pestañas de detalle SCM vs CRM -->
+                <div style="display:flex;gap:0.5rem;border-bottom:2px solid #e2e8f0;margin-bottom:1rem;">
+                    <button type="button" class="btn-tab active" id="erp-inv-tab-scm-btn" onclick="window.switchErpInvModalTab('scm')" style="padding:0.6rem 1.2rem;font-weight:700;border:none;background:transparent;cursor:pointer;border-bottom:3px solid #6366f1;color:#6366f1;">
+                        <i class="fas fa-boxes"></i> Cadena SCM (Proveedores & Movimientos)
+                    </button>
+                    <button type="button" class="btn-tab" id="erp-inv-tab-crm-btn" onclick="window.switchErpInvModalTab('crm')" style="padding:0.6rem 1.2rem;font-weight:600;border:none;background:transparent;cursor:pointer;color:#64748b;">
+                        <i class="fas fa-users-cog"></i> Demanda CRM (Clientes & Órdenes)
+                    </button>
+                </div>
+
+                <!-- Panel SCM -->
+                <div id="erp-inv-panel-scm">
+                    <!-- Proveedor Info Box -->
+                    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:0.85rem 1.1rem;margin-bottom:1.2rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+                        <div>
+                            <strong style="color:#1e40af;font-size:0.95rem;"><i class="fas fa-truck"></i> Proveedor:</strong>
+                            <span id="erp-inv-modal-prov-name" style="font-weight:700;color:#0f172a;margin-left:0.35rem;">-</span>
+                            <div style="font-size:0.85rem;color:#475569;margin-top:0.25rem;">
+                                Contacto: <span id="erp-inv-modal-prov-contact">-</span> | Tel: <span id="erp-inv-modal-prov-phone">-</span> | Correo: <span id="erp-inv-modal-prov-email">-</span>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="erp-badge erp-badge-primary" id="erp-inv-modal-prov-strategy">Estrategia PUSH</span>
+                        </div>
+                    </div>
+
+                    <h4 style="font-size:0.95rem;color:#0f172a;margin:0 0 0.5rem 0;"><i class="fas fa-clipboard-list" style="color:#6366f1;"></i> Pedidos de Abastecimiento a Proveedor (SCM)</h4>
+                    <div style="max-height:160px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:1.2rem;">
+                        <table class="product-table" style="font-size:0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th>Folio</th>
+                                    <th>Fecha</th>
+                                    <th>Cantidad</th>
+                                    <th>Tipo</th>
+                                    <th>Estado</th>
+                                    <th>Proveedor</th>
+                                </tr>
+                            </thead>
+                            <tbody id="erp-inv-modal-scm-orders-body"></tbody>
+                        </table>
+                    </div>
+
+                    <h4 style="font-size:0.95rem;color:#0f172a;margin:0 0 0.5rem 0;"><i class="fas fa-exchange-alt" style="color:#10b981;"></i> Últimos Movimientos en Almacén</h4>
+                    <div style="max-height:160px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;">
+                        <table class="product-table" style="font-size:0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Cantidad</th>
+                                    <th>Motivo</th>
+                                    <th>Usuario</th>
+                                </tr>
+                            </thead>
+                            <tbody id="erp-inv-modal-scm-movs-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Panel CRM -->
+                <div id="erp-inv-panel-crm" style="display:none;">
+                    <h4 style="font-size:0.95rem;color:#0f172a;margin:0 0 0.5rem 0;"><i class="fas fa-crown" style="color:#f59e0b;"></i> Top Clientes Compradores (CRM)</h4>
+                    <div style="border:1px solid #e2e8f0;border-radius:8px;margin-bottom:1.2rem;overflow-x:auto;">
+                        <table class="product-table" style="font-size:0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Empresa</th>
+                                    <th>Órdenes</th>
+                                    <th>Unidades</th>
+                                    <th>Total Consumido</th>
+                                </tr>
+                            </thead>
+                            <tbody id="erp-inv-modal-crm-top-clients-body"></tbody>
+                        </table>
+                    </div>
+
+                    <h4 style="font-size:0.95rem;color:#0f172a;margin:0 0 0.5rem 0;"><i class="fas fa-receipt" style="color:#6366f1;"></i> Historial de Órdenes de Clientes</h4>
+                    <div style="max-height:190px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;">
+                        <table class="product-table" style="font-size:0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th>Folio</th>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Cantidad</th>
+                                    <th>Subtotal</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="erp-inv-modal-crm-orders-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e2e8f0;padding-top:1rem;flex-wrap:wrap;gap:0.75rem;">
+                <div style="font-size:0.85rem;color:#64748b;">
+                    <i class="fas fa-check-double" style="color:#10b981;"></i> Registro cruzado en vivo desde la base de datos MySQL.
+                </div>
+                <div style="display:flex;gap:0.75rem;">
+                    <button type="button" class="btn-secondary" onclick="window.closeErpModal('erp-inventory-detail-modal')">Cerrar</button>
+                    <button type="button" class="btn-primary" id="erp-inv-modal-btn-order" onclick="window.sellProductFromErpInventory()"><i class="fas fa-cart-plus"></i> Crear orden ERP con este producto</button>
+                </div>
+            </div>
 </section>
-    </main>
+    <!-- MODAL AJUSTE MONEDERO -->
+<div class="modal-overlay" id="admin-monedero-ajuste-modal" style="display:none; align-items:center; justify-content:center; z-index:9999;">
+    <div class="modal-box" style="max-width:480px; width:90%; text-align:left; background:#fff; border-radius:16px; padding:1.5rem;">
+        <h3 style="margin-bottom:1rem; color:var(--text-primary);"><i class="fas fa-wallet" style="color:var(--primary);"></i> Ajuste Manual de Monedero</h3>
+        <p style="font-size:0.9rem; color:#64748b; margin-bottom:1rem;">Cliente: <strong id="ajuste-client-name">Cliente</strong></p>
+        <input type="hidden" id="ajuste-client-id">
+        <div class="form-group" style="margin-bottom:0.75rem;">
+            <label style="font-size:0.85rem; font-weight:600;">Tipo de operación:</label>
+            <select id="ajuste-tipo" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid #cbd5e1;">
+                <option value="abono">Abono (Aumentar saldo)</option>
+                <option value="cargo">Cargo (Descontar saldo)</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0.75rem;">
+            <label style="font-size:0.85rem; font-weight:600;">Monto ($):</label>
+            <input type="number" id="ajuste-monto" placeholder="Ej: 200.00" min="1" step="any" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid #cbd5e1;">
+        </div>
+        <div class="form-group" style="margin-bottom:1.25rem;">
+            <label style="font-size:0.85rem; font-weight:600;">Motivo / Concepto:</label>
+            <input type="text" id="ajuste-concepto" placeholder="Ej: Bonificación de cortesía o ajuste" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid #cbd5e1;">
+        </div>
+        <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+            <button type="button" class="btn-secondary" onclick="document.getElementById('admin-monedero-ajuste-modal').style.display='none'">Cancelar</button>
+            <button type="button" class="btn-primary" id="btn-guardar-ajuste-monedero">Guardar ajuste</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL RESPONDER TICKET -->
+<div class="modal-overlay" id="admin-ticket-responder-modal" style="display:none; align-items:center; justify-content:center; z-index:9999;">
+    <div class="modal-box" style="max-width:550px; width:90%; text-align:left; background:#fff; border-radius:16px; padding:1.5rem;">
+        <h3 style="margin-bottom:0.5rem; color:var(--text-primary);"><i class="fas fa-reply" style="color:var(--primary);"></i> Responder Ticket <span id="resp-ticket-folio" style="color:var(--primary);"></span></h3>
+        <p style="font-size:0.85rem; color:#64748b; margin-bottom:0.5rem;">Cliente: <strong id="resp-ticket-cliente"></strong> · Asunto: <strong id="resp-ticket-asunto"></strong></p>
+        <div style="background:#f8fafc; border-left:3px solid var(--primary); padding:0.75rem; border-radius:6px; margin-bottom:1rem; font-size:0.9rem;" id="resp-ticket-mensaje"></div>
+        <input type="hidden" id="resp-ticket-id">
+        <div class="form-group" style="margin-bottom:0.75rem;">
+            <label style="font-size:0.85rem; font-weight:600;">Respuesta al cliente:</label>
+            <textarea id="resp-ticket-texto" rows="4" placeholder="Escribe tu respuesta..." style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid #cbd5e1; font-family:inherit;"></textarea>
+        </div>
+        <div class="form-group" style="margin-bottom:1.25rem;">
+            <label style="font-size:0.85rem; font-weight:600;">Estado del ticket:</label>
+            <select id="resp-ticket-estado" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid #cbd5e1;">
+                <option value="Respondido">Respondido</option>
+                <option value="Cerrado">Cerrado</option>
+                <option value="En proceso">En proceso</option>
+            </select>
+        </div>
+        <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+            <button type="button" class="btn-secondary" onclick="document.getElementById('admin-ticket-responder-modal').style.display='none'">Cerrar</button>
+            <button type="button" class="btn-primary" id="btn-guardar-respuesta-ticket">Guardar y Enviar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CONFIGURAR IMPUESTO -->
+<div class="modal-overlay" id="admin-impuesto-modal" style="display:none; align-items:center; justify-content:center; z-index:9999;">
+    <div class="modal-box" style="max-width:420px; width:90%; text-align:left; background:#fff; border-radius:16px; padding:1.5rem;">
+        <h3 style="margin-bottom:1rem; color:var(--text-primary);"><i class="fas fa-percentage" style="color:var(--primary);"></i> Configurar Impuesto</h3>
+        <input type="hidden" id="impuesto-edit-id">
+        <div class="form-group" style="margin-bottom:0.75rem;">
+            <label style="font-size:0.85rem; font-weight:600;">Nombre del impuesto:</label>
+            <input type="text" id="impuesto-edit-nombre" placeholder="Ej: IVA" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid #cbd5e1;">
+        </div>
+        <div class="form-group" style="margin-bottom:0.75rem;">
+            <label style="font-size:0.85rem; font-weight:600;">Porcentaje (%):</label>
+            <input type="number" id="impuesto-edit-pct" placeholder="16.00" min="0" max="100" step="0.01" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid #cbd5e1;">
+        </div>
+        <div class="form-group" style="margin-bottom:1.25rem;">
+            <label style="font-size:0.85rem; font-weight:600;">Estado:</label>
+            <select id="impuesto-edit-estado" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid #cbd5e1;">
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+            </select>
+        </div>
+        <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+            <button type="button" class="btn-secondary" onclick="document.getElementById('admin-impuesto-modal').style.display='none'">Cancelar</button>
+            <button type="button" class="btn-primary" id="btn-guardar-impuesto">Guardar cambios</button>
+        </div>
+    </div>
+</div>
+</main>
 
     <script src="script.js"></script>
 
@@ -1187,72 +2253,98 @@
      ============================================================ -->
 <script>
     let users = [];
-    const usersTableBody = document.getElementById('users-table-body');
+    const userRolePanels = [
+        { role: 'admin', roles: ['admin', 'super_administrador'], label: 'Administrador', tableBodyId: 'users-table-admin' },
+        { role: 'logistica', roles: ['logistica'], label: 'Logística', tableBodyId: 'users-table-logistica' },
+        { role: 'ventas', roles: ['ventas'], label: 'Ventas', tableBodyId: 'users-table-ventas' }
+    ];
     const userFormContainer = document.getElementById('admin-user-form');
     const userForm = document.getElementById('user-form');
     const formUserName = document.getElementById('form-user-name');
     const formUserEmail = document.getElementById('form-user-email');
     const formUserPassword = document.getElementById('form-user-password');
     const formUserConfirmPassword = document.getElementById('form-user-confirm-password');
-    const formUserRole = document.getElementById('form-user-role');
+    const formUserRoleLabel = document.getElementById('form-user-role-label');
     const formUserSaveBtn = document.getElementById('form-user-save-btn');
     const formUserCancelBtn = document.getElementById('form-user-cancel-btn');
     const userFormMessage = document.getElementById('user-form-message');
-    const addUserBtn = document.getElementById('admin-add-user-btn');
     let editingUserId = null;
+    let activeUserRole = 'admin';
+    const USERS_API_BASE = `${window.location.origin}/api/auth`;
 
     async function loadUsersFromApi() {
         if (!window.deliciasAuthToken) return;
+        if (!['admin', 'super_administrador'].includes(window.getAdminRole())) return false;
         try {
-            const response = await fetch('http://localhost:5000/api/auth/admins', {
+            const response = await fetch(`${USERS_API_BASE}/admins`, {
                 headers: { 'Authorization': 'Bearer ' + window.deliciasAuthToken }
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'No se pudieron cargar los administradores.');
             users = data.map(user => ({ ...user, status: user.status || 'activo' }));
             renderUsersTable();
+            return true;
         } catch (error) {
             showUserFormMessage(error.message, 'error');
+            return false;
         }
     }
 
     function renderUsersTable() {
-        if (!usersTableBody) return;
-        usersTableBody.innerHTML = '';
-        users.forEach(user => {
-            const tr = document.createElement('tr');
-            const isSuperAdmin = user.role === 'super_administrador';
-            const canDelete = user.role === 'admin';
-            tr.innerHTML = `
-                <td><strong>${user.name}</strong></td>
-                <td>${user.email}</td>
-                <td>
-                    <span style="background: ${isSuperAdmin ? '#8b5cf6' : '#3b82f6'}; color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem;">
-                        ${isSuperAdmin ? 'Super Administrador' : 'Administrador'}
-                    </span>
-                </td>
-                <td><span style="color: #10b981;">● ${user.status}</span></td>
-                <td>
-                    ${canDelete ? `
-                        <button class="btn-danger" style="padding: 4px 10px; border-radius: 6px; border: none; cursor: pointer; background: #ef4444; color: white;" onclick="deleteUser(${user.id})">
-                            <i class="fas fa-trash"></i> Eliminar
-                        </button>
-                    ` : `<span style="color: #6b7280; font-size: 0.8rem;">(Cuenta principal)</span>`}
-                </td>
-            `;
-            usersTableBody.appendChild(tr);
+        const canDeleteUsers = window.getAdminRole() === 'super_administrador';
+        userRolePanels.forEach(panel => {
+            const tableBody = document.getElementById(panel.tableBodyId);
+            if (!tableBody) return;
+            tableBody.replaceChildren();
+
+            users.filter(user => panel.roles.includes(user.role)).forEach(user => {
+                const row = document.createElement('tr');
+                const nameCell = document.createElement('td');
+                const name = document.createElement('strong');
+                name.textContent = user.name;
+                nameCell.appendChild(name);
+                row.appendChild(nameCell);
+
+                const emailCell = document.createElement('td');
+                emailCell.textContent = user.email;
+                row.appendChild(emailCell);
+
+                const statusCell = document.createElement('td');
+                statusCell.textContent = `● ${user.status}`;
+                statusCell.style.color = '#10b981';
+                row.appendChild(statusCell);
+
+                const actionsCell = document.createElement('td');
+                if (user.role === 'super_administrador') {
+                    const accountLabel = document.createElement('span');
+                    accountLabel.textContent = '(Cuenta principal)';
+                    accountLabel.style.color = '#6b7280';
+                    accountLabel.style.fontSize = '0.8rem';
+                    actionsCell.appendChild(accountLabel);
+                } else if (canDeleteUsers) {
+                    const deleteButton = document.createElement('button');
+                    deleteButton.type = 'button';
+                    deleteButton.className = 'btn-danger';
+                    deleteButton.style.cssText = 'padding: 4px 10px; border-radius: 6px; border: none; cursor: pointer; background: #ef4444; color: white;';
+                    deleteButton.innerHTML = '<i class="fas fa-trash"></i> Eliminar';
+                    deleteButton.addEventListener('click', () => window.deleteUser(user.id));
+                    actionsCell.appendChild(deleteButton);
+                }
+                row.appendChild(actionsCell);
+                tableBody.appendChild(row);
+            });
         });
     }
 
     window.deleteUser = async function(userId) {
         const userToDelete = users.find(u => u.id === userId);
         if (!userToDelete) return;
-        if (userToDelete.role !== 'admin') return;
+        if (userToDelete.role === 'super_administrador') return;
 
         if (typeof window.showConfirmModal !== 'function') {
-            if (!confirm(`¿Estás seguro de eliminar al administrador "${userToDelete.name}"?`)) return;
+            if (!confirm(`¿Estás seguro de eliminar al usuario "${userToDelete.name}"?`)) return;
             try {
-                const response = await fetch('http://localhost:5000/api/auth/admins/' + userId, {
+                const response = await fetch(`${USERS_API_BASE}/admins/${userId}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': 'Bearer ' + (window.deliciasAuthToken || '') }
                 });
@@ -1267,11 +2359,11 @@
         }
 
         window.showConfirmModal(
-            '¿Estás seguro de eliminar al administrador "' + userToDelete.name + '"?',
+            '¿Estás seguro de eliminar al usuario "' + userToDelete.name + '"?',
             async function(confirmed) {
                 if (!confirmed) return;
                 try {
-                    const response = await fetch('http://localhost:5000/api/auth/admins/' + userId, {
+                    const response = await fetch(`${USERS_API_BASE}/admins/${userId}`, {
                         method: 'DELETE',
                         headers: { 'Authorization': 'Bearer ' + (window.deliciasAuthToken || '') }
                     });
@@ -1287,13 +2379,8 @@
     };
 
     function showUserFormMessage(message, type = 'success') {
-        if (!userFormMessage) return;
-        userFormMessage.textContent = message;
-        userFormMessage.className = 'alert-message';
-        userFormMessage.classList.remove('hidden');
-        userFormMessage.style.color = type === 'success' ? '#10b981' : '#ef4444';
-        userFormMessage.style.border = type === 'success' ? '1px solid #10b981' : '1px solid #ef4444';
-        setTimeout(() => userFormMessage.classList.add('hidden'), 4000);
+        window.showAppNotification(message, type);
+        userFormMessage?.classList.add('hidden');
     }
 
     function resetUserForm() {
@@ -1301,16 +2388,20 @@
         formUserEmail.value = '';
         formUserPassword.value = '';
         formUserConfirmPassword.value = '';
-        formUserRole.value = 'admin';
+        formUserRoleLabel.value = userRolePanels.find(panel => panel.role === activeUserRole)?.label || 'Administrador';
         editingUserId = null;
         formUserSaveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar';
-        document.querySelector('#admin-user-form h3').innerHTML = '<i class="fas fa-user-plus"></i> Agregar administrador';
+        document.querySelector('#admin-user-form h3').innerHTML = '<i class="fas fa-user-plus"></i> Agregar usuario';
         userFormMessage.classList.add('hidden');
     }
 
-    function showUserForm() {
+    function showUserForm(role) {
         if (!userFormContainer) return;
+        if (!userRolePanels.some(panel => panel.role === role)) return;
+        activeUserRole = role;
         resetUserForm();
+        const roleLabel = userRolePanels.find(panel => panel.role === role).label.toLowerCase();
+        document.querySelector('#admin-user-form h3').innerHTML = `<i class="fas fa-user-plus"></i> Agregar ${roleLabel}`;
         document.querySelectorAll('.admin-page').forEach(p => {
             p.classList.add('hidden');
             p.classList.remove('active');
@@ -1319,12 +2410,12 @@
         userFormContainer.classList.add('active');
     }
 
-    if (addUserBtn) {
-        addUserBtn.addEventListener('click', function(e) {
+    document.querySelectorAll('[data-add-user-role]').forEach(button => {
+        button.addEventListener('click', function(e) {
             e.preventDefault();
-            showUserForm();
+            showUserForm(button.dataset.addUserRole);
         });
-    }
+    });
 
     if (formUserCancelBtn) {
         formUserCancelBtn.addEventListener('click', function(e) {
@@ -1343,7 +2434,7 @@
     }
 
     function isValidEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
-    function isValidPassword(password) { return password.length >= 6 && /[A-Z]/.test(password) && /\d/.test(password); }
+    function isValidPassword(password) { return password.length >= 6 && password.length <= 128; }
     function emailExists(email, excludeUserId = null) {
         return users.some(u => u.email.toLowerCase() === email.toLowerCase() && u.id !== excludeUserId);
     }
@@ -1355,16 +2446,16 @@
             const email = formUserEmail.value.trim();
             const password = formUserPassword.value.trim();
             const confirmPassword = formUserConfirmPassword.value.trim();
-            const role = formUserRole.value;
+            const role = activeUserRole;
 
             if (!name || name.length < 3) return showUserFormMessage('El nombre debe tener al menos 3 caracteres.', 'error');
             if (!email || !isValidEmail(email)) return showUserFormMessage('Ingresa un correo electrónico válido.', 'error');
             if (!editingUserId && emailExists(email)) return showUserFormMessage('Este correo electrónico ya está registrado.', 'error');
             if (!editingUserId) {
-                if (!password || !isValidPassword(password)) return showUserFormMessage('La contraseña debe tener al menos 6 caracteres, una mayúscula y un número.', 'error');
+                if (!password || !isValidPassword(password)) return showUserFormMessage('La contraseña debe tener entre 6 y 128 caracteres.', 'error');
                 if (password !== confirmPassword) return showUserFormMessage('Las contraseñas no coinciden.', 'error');
             } else {
-                if (password && !isValidPassword(password)) return showUserFormMessage('La contraseña debe tener al menos 6 caracteres, una mayúscula y un número.', 'error');
+                if (password && !isValidPassword(password)) return showUserFormMessage('La contraseña debe tener entre 6 y 128 caracteres.', 'error');
                 if (password && password !== confirmPassword) return showUserFormMessage('Las contraseñas no coinciden.', 'error');
             }
 
@@ -1380,21 +2471,21 @@
                 }
             } else {
                 try {
-                    const response = await fetch('http://localhost:5000/api/auth/admin-register', {
+                    const response = await fetch(`${USERS_API_BASE}/admin-register`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': 'Bearer ' + (window.deliciasAuthToken || '')
                         },
-                        body: JSON.stringify({ name, email, password })
+                        body: JSON.stringify({ name, email, password, role })
                     });
                     const data = await response.json();
-                    if (!response.ok) throw new Error(data.error || 'No se pudo registrar el administrador.');
+                    if (!response.ok) throw new Error(data.error || 'No se pudo registrar el usuario.');
                 } catch (error) {
                     return showUserFormMessage(error.message, 'error');
                 }
-                await loadUsersFromApi();
-                showUserFormMessage('Administrador agregado correctamente.', 'success');
+                if (!await loadUsersFromApi()) return;
+                showUserFormMessage('Usuario agregado correctamente.', 'success');
             }
 
             renderUsersTable();
@@ -1417,5 +2508,7 @@
 </script>
 
 <script src="scm.js"></script>
+<script src="erp.js"></script>
+    <script src="ecom.js"></script>
 </body>
 </html>

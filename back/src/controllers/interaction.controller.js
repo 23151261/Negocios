@@ -27,7 +27,7 @@ const createInteraction = async (req, res) => {
     try {
         const { clienteId, type, date, note } = req.body || {};
         const user = req.user.email || 'Usuario';
-        const staffUserId = ['admin', 'super_administrador'].includes(req.user.role)
+        const staffUserId = ['admin', 'super_administrador', 'ventas'].includes(req.user.role)
             ? Number(req.user.id)
             : null;
 

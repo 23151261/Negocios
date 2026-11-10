@@ -1,7 +1,17 @@
 const express = require('express');
 const pool = require('../config/db');
-const { verifyToken } = require('../middleware/auth.middleware');
-const { getCart, saveCart, transferGuestCart, isValidCartSessionId } = require('../controllers/cart.controller');
+const { verifyToken, requireRoles } = require('../middleware/auth.middleware');
+const {
+    getCart,
+    saveCart,
+    transferGuestCart,
+    isValidCartSessionId,
+    agregarAlCarrito,
+    getCarritoCliente,
+    updateCartItem,
+    removeCartItem,
+    vaciarCarritoCliente
+} = require('../controllers/cart.controller');
 
 const router = express.Router();
 
@@ -34,6 +44,28 @@ async function resolveCartOwner(req, res, next) {
     return next();
 }
 
+function resolveOwnClientCart(req, res, next) {
+    const requestedClientId = req.params.cliente_id !== undefined
+        ? Number(req.params.cliente_id)
+        : req.body?.cliente_id !== undefined
+            ? Number(req.body.cliente_id)
+            : Number(req.user?.id);
+    const clienteId = Number(req.user?.id);
+    if (req.user?.role !== 'usuario' || !Number.isSafeInteger(clienteId) || requestedClientId !== clienteId) {
+        return res.status(403).json({ error: 'Solo puedes modificar tu propio carrito' });
+    }
+    req.cartSessionKey = `client:${clienteId}`;
+    next();
+}
+
+// ─── Rutas explícitas Etapa 4 ───────────────────────────────
+router.post('/agregar', verifyToken, requireRoles('usuario'), resolveOwnClientCart, agregarAlCarrito);
+router.put('/item/:id', verifyToken, requireRoles('usuario'), updateCartItem);
+router.delete('/item/:id', verifyToken, requireRoles('usuario'), removeCartItem);
+router.delete('/vaciar/:cliente_id', verifyToken, requireRoles('usuario'), resolveOwnClientCart, vaciarCarritoCliente);
+router.get('/:cliente_id', verifyToken, requireRoles('usuario'), resolveOwnClientCart, getCarritoCliente);
+
+// ─── Rutas con middleware de sesión del carrito ─────────────
 router.use(authenticateIfProvided);
 router.use(resolveCartOwner);
 router.get('/', getCart);

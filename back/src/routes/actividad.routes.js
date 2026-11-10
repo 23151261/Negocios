@@ -116,7 +116,7 @@ router.get('/mi-actividad', verifyToken, async (req, res) => {
                 ORDER BY a.fecha DESC
                 LIMIT 200
             `;
-        } else if (role === 'admin') {
+        } else if (role === 'admin' || role === 'ventas') {
             query = `
                 SELECT a.*, u.role AS usuario_role
                 FROM actividad_usuarios a

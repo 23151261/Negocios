@@ -28,6 +28,15 @@ const dataRoutes = require('./src/routes/data.routes');
 const cartRoutes = require('./src/routes/cart.routes');
 const scmRoutes = require('./src/routes/scm.routes');
 const actividadRoutes = require('./src/routes/actividad.routes');
+const erpRoutes = require('./src/routes/erp.routes');
+const { initErpDatabase } = require('./src/controllers/erp.controller');
+const catalogoRoutes = require('./src/routes/catalogo.routes');
+const pagosRoutes = require('./src/routes/pagos.routes');
+const monederoRoutes = require('./src/routes/monedero.routes');
+const impuestosRoutes = require('./src/routes/impuestos.routes');
+const promocionesRoutes = require('./src/routes/promociones.routes');
+const atencionRoutes = require('./src/routes/atencion.routes');
+const { initEtapa4 } = require('./src/config/init_etapa4');
 
 // Usar rutas
 app.use('/api/auth', authRoutes);
@@ -37,6 +46,20 @@ app.use('/api/data', dataRoutes);
 app.use('/api/carrito', cartRoutes);
 app.use('/api', scmRoutes);
 app.use('/api/actividad', actividadRoutes);
+app.use('/api/erp', erpRoutes);
+app.use('/auth', authRoutes);
+app.use('/api/catalogo', catalogoRoutes);
+app.use('/catalogo', catalogoRoutes);
+app.use('/api/pagos', pagosRoutes);
+app.use('/pagos', pagosRoutes);
+app.use('/api/monedero', monederoRoutes);
+app.use('/monedero', monederoRoutes);
+app.use('/api/impuestos', impuestosRoutes);
+app.use('/impuestos', impuestosRoutes);
+app.use('/api/promociones', promocionesRoutes);
+app.use('/promociones', promocionesRoutes);
+app.use('/api/atencion', atencionRoutes);
+app.use('/atencion', atencionRoutes);
 
 // Iniciar servidor
 async function startServer() {
@@ -380,6 +403,9 @@ async function startServer() {
     } finally {
         connection.release();
     }
+
+    await initErpDatabase();
+    await initEtapa4();
 
     app.listen(PORT, () => {
         console.log(`Servidor corriendo en http://localhost:${PORT}`);

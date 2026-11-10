@@ -5,10 +5,11 @@ const { verifyToken } = require('../middleware/auth.middleware');
 const router = express.Router();
 
 router.get('/:key', (req, res, next) => {
-    if (req.params.key !== 'clients') return next();
+    const key = req.params.key;
+    if (key !== 'clients' && !key.startsWith('scm_')) return next();
     return verifyToken(req, res, () => {
         if (!['admin', 'super_administrador'].includes(req.user?.role)) {
-            return res.status(403).json({ error: 'Solo un administrador puede consultar datos CRM' });
+            return res.status(403).json({ error: 'Solo un administrador puede consultar estos datos empresariales' });
         }
         return getData(req, res);
     });

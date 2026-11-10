@@ -3,7 +3,7 @@ const MAX_CART_QUANTITY = 2147483647;
 
 function getCartRows(executor, sessionKey) {
     return executor.query(
-        `SELECT c.product_id, c.publication_id, c.quantity, c.marketplace,
+        `SELECT c.id AS cart_item_id, c.product_id, c.publication_id, c.quantity, c.marketplace,
                 COALESCE(p.name, pub.nombre) AS name,
                 COALESCE(p.price, pub.precio) AS price,
                 pub.foto
@@ -14,10 +14,14 @@ function getCartRows(executor, sessionKey) {
          ORDER BY c.id`,
         [sessionKey]
     ).then(([rows]) => rows.map(row => ({
+        id: row.cart_item_id,
         productId: row.marketplace ? row.publication_id : row.product_id,
         quantity: Number(row.quantity),
         nombre: row.name,
+        name: row.name,
         precio: Number(row.price),
+        price: Number(row.price),
+        subtotal: Number((Number(row.price) * Number(row.quantity)).toFixed(2)),
         foto: row.foto || '',
         esMarketplace: Boolean(row.marketplace)
     })));
@@ -193,4 +197,119 @@ async function transferGuestCart(req, res) {
     }
 }
 
-module.exports = { getCart, saveCart, transferGuestCart, isValidCartSessionId };
+// ─── Endpoints específicos de Etapa 4 ───────────────────────
+async function agregarAlCarrito(req, res) {
+    try {
+        const { producto_id, cantidad } = req.body || {};
+        const pId = Number(producto_id);
+        const qty = Number(cantidad === undefined ? 1 : cantidad);
+
+        if (!Number.isSafeInteger(pId) || pId <= 0 || !Number.isSafeInteger(qty) || qty <= 0 || qty > 1000) {
+            return res.status(400).json({ error: 'Producto no válido' });
+        }
+        const targetKey = req.cartSessionKey;
+        const [products] = await pool.query(
+            "SELECT id, stock, status, active FROM productos WHERE id = ?",
+            [pId]
+        );
+        if (products.length === 0 || Number(products[0].active) !== 1 || products[0].status !== 'disponible') {
+            return res.status(404).json({ error: 'Producto no disponible' });
+        }
+
+        const [existing] = await pool.query(
+            'SELECT id, quantity FROM carrito WHERE session_key = ? AND product_id = ?',
+            [targetKey, pId]
+        );
+
+        if (existing.length > 0) {
+            const newQty = Number(existing[0].quantity) + qty;
+            if (newQty > Number(products[0].stock)) {
+                return res.status(409).json({ error: 'La cantidad solicitada supera el stock disponible' });
+            }
+            await pool.query('UPDATE carrito SET quantity = ? WHERE id = ?', [newQty, existing[0].id]);
+        } else {
+            if (qty > Number(products[0].stock)) {
+                return res.status(409).json({ error: 'La cantidad solicitada supera el stock disponible' });
+            }
+            await pool.query(
+                'INSERT INTO carrito (session_key, product_id, quantity, marketplace) VALUES (?, ?, ?, 0)',
+                [targetKey, pId, qty]
+            );
+        }
+
+        const items = await getCartRows(pool, targetKey);
+        res.json({ success: true, items });
+    } catch (error) {
+        console.error('Error al agregar al carrito:', error);
+        res.status(500).json({ error: 'Error al agregar producto al carrito' });
+    }
+}
+
+async function getCarritoCliente(req, res) {
+    try {
+        const items = await getCartRows(pool, req.cartSessionKey);
+        res.json(items);
+    } catch (error) {
+        console.error('Error al obtener carrito de cliente:', error);
+        res.status(500).json({ error: 'Error al obtener carrito' });
+    }
+}
+
+async function updateCartItem(req, res) {
+    try {
+        const itemId = Number(req.params.id);
+        const { cantidad } = req.body;
+        const qty = Number(cantidad);
+
+        if (!Number.isSafeInteger(qty) || qty < 1 || qty > 1000) {
+            return res.status(400).json({ error: 'Cantidad inválida' });
+        }
+
+        const [result] = await pool.query(
+            'UPDATE carrito SET quantity = ? WHERE id = ? AND session_key = ?',
+            [qty, itemId, `client:${Number(req.user.id)}`]
+        );
+        if (!result.affectedRows) return res.status(404).json({ error: 'Producto del carrito no encontrado' });
+        res.json({ success: true, id: itemId, cantidad: qty });
+    } catch (error) {
+        console.error('Error al actualizar item del carrito:', error);
+        res.status(500).json({ error: 'Error al actualizar producto en el carrito' });
+    }
+}
+
+async function removeCartItem(req, res) {
+    try {
+        const itemId = Number(req.params.id);
+        const [result] = await pool.query(
+            'DELETE FROM carrito WHERE id = ? AND session_key = ?',
+            [itemId, `client:${Number(req.user.id)}`]
+        );
+        if (!result.affectedRows) return res.status(404).json({ error: 'Producto del carrito no encontrado' });
+        res.json({ success: true, message: 'Producto eliminado del carrito' });
+    } catch (error) {
+        console.error('Error al eliminar item del carrito:', error);
+        res.status(500).json({ error: 'Error al eliminar producto del carrito' });
+    }
+}
+
+async function vaciarCarritoCliente(req, res) {
+    try {
+        await pool.query('DELETE FROM carrito WHERE session_key = ?', [req.cartSessionKey]);
+        res.json({ success: true, message: 'Carrito vaciado' });
+    } catch (error) {
+        console.error('Error al vaciar carrito:', error);
+        res.status(500).json({ error: 'Error al vaciar carrito' });
+    }
+}
+
+module.exports = {
+    getCart,
+    saveCart,
+    transferGuestCart,
+    isValidCartSessionId,
+    agregarAlCarrito,
+    getCarritoCliente,
+    updateCartItem,
+    removeCartItem,
+    vaciarCarritoCliente
+};

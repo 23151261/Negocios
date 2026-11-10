@@ -6,8 +6,8 @@
  */
 
 (function () {
-    const API_BASE = 'http://localhost:5000/api/data';
-    const API_ROOT = 'http://localhost:5000/api';
+    const API_ROOT = `${window.location.origin}/api`;
+    const API_BASE = `${API_ROOT}/data`;
 
     // Estado en memoria
     let scmProducts = [];
@@ -18,7 +18,17 @@
     let scmLevel = 'Inicial';
     let scmMetrics = null;
     let scmAlerts = [];
-    let scmDeleteNoticeTimeout;
+
+    function isAdminScmUser() {
+        const role = typeof window.getAdminRole === 'function' ? window.getAdminRole() : 'admin';
+        return ['admin', 'super_administrador'].includes(role);
+    }
+
+    function applyScmRolePermissions() {
+        document.querySelectorAll('[data-scm-admin-only]').forEach(element => {
+            element.hidden = !isAdminScmUser();
+        });
+    }
 
     // Instancias de Chart.js
     let chartTopProducts = null;
@@ -27,8 +37,10 @@
 
     // Helpers de API
     async function apiGet(key) {
-        const res = await fetch(`${API_BASE}/${key}`);
-        const result = await res.json();
+        const headers = {};
+        if (window.deliciasAuthToken) headers.Authorization = `Bearer ${window.deliciasAuthToken}`;
+        const res = await fetch(`${API_BASE}/${key}`, { headers });
+        const result = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(result.error || `No se pudo cargar ${key} (HTTP ${res.status})`);
         return result;
     }
@@ -44,7 +56,7 @@
             },
             body: JSON.stringify(data)
         });
-        const result = await res.json();
+        const result = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(result.error || `No se pudo guardar ${key} en SQL (HTTP ${res.status})`);
         return result;
     }
@@ -52,11 +64,11 @@
     async function apiScmRequest(path, method = 'GET', data) {
         const headers = {};
         const options = { method, headers };
+        const token = window.deliciasAuthToken;
+        if (token) headers.Authorization = `Bearer ${token}`;
         if (method !== 'GET') {
-            const token = window.deliciasAuthToken;
             if (!token) throw new Error('Inicia sesión como administrador antes de guardar cambios SCM.');
             headers['Content-Type'] = 'application/json';
-            headers.Authorization = `Bearer ${token}`;
             if (data !== undefined) {
                 if (data instanceof FormData) {
                     delete headers['Content-Type'];
@@ -67,23 +79,13 @@
             }
         }
         const response = await fetch(`${API_ROOT}${path}`, options);
-        const result = await response.json();
+        const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || `No se pudo completar ${method} ${path} (HTTP ${response.status})`);
         return result;
     }
 
     function showScmError(error) {
-        const content = document.querySelector('.admin-content');
-        if (!content) return;
-        let message = document.getElementById('scm-save-error');
-        if (!message) {
-            message = document.createElement('div');
-            message.id = 'scm-save-error';
-            message.setAttribute('role', 'alert');
-            message.style.cssText = 'margin:0 0 1rem;padding:0.85rem 1rem;border-radius:8px;background:#fee2e2;color:#991b1b;';
-            content.prepend(message);
-        }
-        message.textContent = `Error de persistencia SCM en SQL: ${error.message}`;
+        window.showAppNotification(`Error de persistencia SCM en SQL: ${error.message}`, 'error');
     }
 
     function clearScmError() {
@@ -91,12 +93,7 @@
     }
 
     function showScmProductFormMessage(message, type = 'error') {
-        const notice = document.getElementById('scm-product-form-message');
-        if (!notice) return;
-        notice.className = `alert-message ${type === 'success' ? 'auth-success' : 'auth-error'}`;
-        notice.setAttribute('role', type === 'success' ? 'status' : 'alert');
-        notice.textContent = message;
-        notice.classList.remove('hidden');
+        window.showAppNotification(message, type);
     }
 
     function renderScmProductImagePreview(imageUrl) {
@@ -107,31 +104,13 @@
             return;
         }
         const image = document.createElement('img');
-        image.src = String(imageUrl).startsWith('/') ? `http://localhost:5000${imageUrl}` : imageUrl;
+        image.src = String(imageUrl).startsWith('/') ? `${window.location.origin}${imageUrl}` : imageUrl;
         image.alt = 'Vista previa del producto';
         preview.replaceChildren(image);
     }
 
     function showScmDeleteNotice(pageId, message, type = 'success') {
-        const content = document.getElementById(pageId)?.querySelector('.product-table-container');
-        if (!content) return;
-
-        let notice = document.getElementById('scm-delete-notice');
-        if (!notice) {
-            notice = document.createElement('div');
-            notice.id = 'scm-delete-notice';
-            content.prepend(notice);
-        } else if (notice.parentElement !== content) {
-            content.prepend(notice);
-        }
-
-        notice.setAttribute('role', type === 'success' ? 'status' : 'alert');
-        notice.className = `alert-message ${type === 'success' ? 'auth-success' : 'auth-error'}`;
-        notice.style.cssText = `margin:0 0 1rem;padding:0.85rem 1rem;border:1px solid ${type === 'success' ? '#10b981' : '#ef4444'};border-radius:8px;background:${type === 'success' ? '#f0fdf4' : '#fef2f2'};color:${type === 'success' ? '#047857' : '#991b1b'};`;
-        notice.textContent = message;
-        notice.classList.remove('hidden');
-        clearTimeout(scmDeleteNoticeTimeout);
-        scmDeleteNoticeTimeout = setTimeout(() => notice.classList.add('hidden'), 4000);
+        window.showAppNotification(message, type === 'success' ? 'success' : 'error');
     }
 
     function renderLowStockWarning() {
@@ -148,9 +127,20 @@
                 warning.hidden = true;
             });
 
+            const pullPendingCount = scmAlerts.filter(a => a.strategy === 'PULL' && !a.order).length;
+            const pushCompletedCount = scmAlerts.filter(a => a.strategy === 'PUSH').length;
+            let headingText = `Control de stock y reposición: ${scmAlerts.length} aviso${scmAlerts.length === 1 ? '' : 's'}`;
+            if (pullPendingCount > 0 && pushCompletedCount > 0) {
+                headingText = `Stock: ${pullPendingCount} requiere pedido manual (PULL) · ${pushCompletedCount} reabastecido automáticamente (PUSH)`;
+            } else if (pullPendingCount > 0) {
+                headingText = `Stock mínimo: ${pullPendingCount} producto${pullPendingCount === 1 ? '' : 's'} requiere${pullPendingCount === 1 ? '' : 'n'} generar pedido (PULL)`;
+            } else if (pushCompletedCount > 0) {
+                headingText = `Aviso SCM: ${pushCompletedCount} producto${pushCompletedCount === 1 ? '' : 's'} con reposición automática realizada (PUSH)`;
+            }
+
             const heading = document.createElement('h4');
             heading.className = 'scm-low-stock-title';
-            heading.textContent = `Stock mínimo: ${scmAlerts.length} producto${scmAlerts.length === 1 ? '' : 's'} requiere${scmAlerts.length === 1 ? '' : 'n'} atención`;
+            heading.textContent = headingText;
 
             list.replaceChildren();
             warning.replaceChildren(closeButton, heading, list);
@@ -165,28 +155,47 @@
                 productName.textContent = alert.productName;
                 const stock = document.createElement('span');
                 stock.className = 'scm-low-stock-details';
-                stock.textContent = `Stock: ${alert.stock} / mínimo: ${alert.minStock} · Proveedor: ${alert.providerName}.`;
+                stock.textContent = `Stock: ${alert.stock} / mínimo: ${alert.minStock} · Proveedor: ${alert.providerName} · Estrategia: ${alert.strategy}.`;
+
                 const orderStatus = document.createElement('span');
                 orderStatus.className = 'scm-low-stock-order';
-                orderStatus.textContent = alert.order
-                    ? `Pedido ${alert.order.folio}: ${alert.order.quantity} unidades · ${alert.order.status}${alert.order.autoGenerated ? ' (automático)' : ''}.`
-                    : alert.strategy === 'PULL'
-                        ? 'Aún no se ha solicitado; esta estrategia requiere pedido manual.'
-                        : 'Aún no hay un pedido de reposición registrado.';
-                details.append(productName, stock, orderStatus);
 
                 const action = document.createElement('button');
                 action.type = 'button';
-                action.className = alert.order ? 'btn-secondary scm-low-stock-action' : 'btn-primary scm-low-stock-action';
-                action.textContent = alert.order ? 'Ver pedidos' : 'Generar pedido';
-                action.addEventListener('click', () => {
-                    if (alert.order) {
-                        window.switchScmPage('scm-pedidos');
-                    } else {
-                        window.openScmOrderModal(alert.productId);
-                    }
-                });
 
+                if (alert.strategy === 'PUSH') {
+                    // PUSH: Reposición automática ya realizada en inventario; solo avisa y no manda a generar pedido
+                    if (alert.order) {
+                        orderStatus.textContent = `Pedido ${alert.order.folio}: ${alert.order.quantity} unidades · Reposición automática realizada (inventario reabastecido).`;
+                    } else {
+                        orderStatus.textContent = 'Reposición automática realizada: el inventario ya fue reabastecido automáticamente.';
+                    }
+                    action.className = 'btn-secondary scm-low-stock-action';
+                    action.textContent = alert.order ? 'Ver pedidos' : 'Ver inventario';
+                    action.addEventListener('click', () => {
+                        if (alert.order) {
+                            window.switchScmPage('scm-pedidos');
+                        } else {
+                            window.switchScmPage('scm-inventario');
+                        }
+                    });
+                } else {
+                    // PULL: Requiere que el usuario genere el pedido manualmente si no existe
+                    orderStatus.textContent = alert.order
+                        ? `Pedido ${alert.order.folio}: ${alert.order.quantity} unidades · ${alert.order.status}.`
+                        : 'Aún no se ha solicitado; esta estrategia requiere pedido manual.';
+                    action.className = alert.order ? 'btn-secondary scm-low-stock-action' : 'btn-primary scm-low-stock-action';
+                    action.textContent = alert.order ? 'Ver pedidos' : 'Generar pedido';
+                    action.addEventListener('click', () => {
+                        if (alert.order) {
+                            window.switchScmPage('scm-pedidos');
+                        } else {
+                            window.openScmOrderModal(alert.productId);
+                        }
+                    });
+                }
+
+                details.append(productName, stock, orderStatus);
                 item.append(details, action);
                 list.appendChild(item);
             }
@@ -198,10 +207,20 @@
             await saveOperation();
             await loadScmData();
             clearScmError();
+            if (typeof window.refreshMainProductCatalog === 'function') {
+                window.refreshMainProductCatalog().catch(error => {
+                    window.showAppNotification(`No se pudo actualizar el catálogo: ${error.message}`, 'error');
+                });
+            }
+            if (typeof window.refreshErpData === 'function') {
+                window.refreshErpData().catch(error => {
+                    window.showAppNotification(`No se pudo actualizar ERP: ${error.message}`, 'error');
+                });
+            }
             return true;
         } catch (error) {
-            showScmError(error);
             if (onError) onError(error);
+            else showScmError(error);
             try {
                 await loadScmData();
             } catch (reloadError) {
@@ -213,22 +232,27 @@
 
     // SQL es la fuente de verdad para todos los datos SCM.
     async function loadScmData() {
-        const [
-            dbProducts,
-            dbProviders,
-            dbMovements,
-            dbOrders,
-            scmState,
-            scmMetricsData
-        ] = await Promise.all([
-            apiScmRequest('/productos'),
-            apiScmRequest('/proveedores'),
-            apiScmRequest('/inventario/movimientos'),
-            apiScmRequest('/pedidos'),
-            apiScmRequest('/scm/estado'),
-            apiGet('scm_metrics')
-        ]);
-        const scmAlertsData = await apiGet('scm_alerts');
+        applyScmRolePermissions();
+        if (!isAdminScmUser()) return;
+        const dbProducts = await apiScmRequest('/productos');
+        let dbProviders = [];
+        let dbMovements = [];
+        let dbOrders = [];
+        let scmState = { checklist: [], nivel_scm: 'Inicial' };
+        let scmMetricsData = null;
+        let scmAlertsData = [];
+
+        if (isAdminScmUser()) {
+            [dbProviders, dbMovements, dbOrders, scmState, scmMetricsData, scmAlertsData] = await Promise.all([
+                apiScmRequest('/proveedores'),
+                apiScmRequest('/inventario/movimientos'),
+                apiScmRequest('/pedidos'),
+                apiScmRequest('/scm/estado'),
+                apiGet('scm_metrics'),
+                apiGet('scm_alerts')
+            ]);
+        }
+
         scmProducts = dbProducts.map(product => {
             return {
                 ...product,
@@ -261,7 +285,9 @@
     // Helpers de búsqueda
     function getProviderName(id) {
         const p = scmProviders.find(x => x.id === Number(id));
-        return p ? p.name : '—';
+        if (p) return p.name;
+        const product = scmProducts.find(item => Number(item.providerId) === Number(id));
+        return product?.providerName || '—';
     }
 
     function getProductName(id) {
@@ -286,6 +312,10 @@
     // NAVEGACIÓN Y APERTURA DE PÁGINAS SCM
     // ============================================================
     window.switchScmPage = function (pageId) {
+        if (typeof window.isAdminPageAllowed === 'function' && !window.isAdminPageAllowed(pageId)) {
+            window.showAppNotification('No tienes acceso a esta sección.', 'warning');
+            return;
+        }
         if (typeof window.showAdminPage === 'function') {
             window.showAdminPage(pageId);
         } else {
@@ -302,7 +332,7 @@
         renderScmView(pageId);
     };
 
-    function renderScmView(pageId) {
+    async function renderScmView(pageId) {
         const scmSubmenu = document.getElementById('scm-submenu');
         const scmToggle = document.getElementById('scm-menu-toggle');
         // Si el menú SCM está colapsado, expandirlo para mostrar la sección activa
@@ -310,6 +340,13 @@
             scmSubmenu.classList.remove('collapsed');
             scmToggle.classList.remove('collapsed');
             scmToggle.setAttribute('aria-expanded', 'true');
+        }
+
+        try {
+            await loadScmData();
+        } catch (error) {
+            showScmError(error);
+            return;
         }
 
         switch (pageId) {
@@ -343,6 +380,7 @@
     }
 
     window.renderScmPage = renderScmView;
+    window.loadScmData = loadScmData;
 
     // ============================================================
     // 1. PRODUCTOS SCM (DeliciasResto)
@@ -388,6 +426,14 @@
                 p.category === 'Ensaladas' ? 'fa-carrot' : 'fa-utensils';
 
             const tr = document.createElement('tr');
+            const actions = isAdminScmUser() ? `
+                <button class="btn-primary" style="padding:4px 8px;border-radius:6px;margin-right:4px;" title="Editar" onclick="window.openScmProductModal(${p.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-danger" style="padding:4px 8px;border-radius:6px;background:#ef4444;color:white;border:none;cursor:pointer;" title="Eliminar" onclick="window.deleteScmProduct(${p.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            ` : '<span>Consulta</span>';
             tr.innerHTML = `
                 <td style="width: 50px;">
                     <div style="width:38px;height:38px;border-radius:10px;background:#f0fdfa;color:#0d9488;display:flex;align-items:center;justify-content:center;font-size:1.1rem;">
@@ -403,20 +449,17 @@
                         <i class="fas ${isPush ? 'fa-arrow-down' : 'fa-arrow-up'}"></i> ${p.strategy}
                     </span>
                 </td>
-                <td>
-                    <button class="btn-primary" style="padding:4px 8px;border-radius:6px;margin-right:4px;" title="Editar" onclick="window.openScmProductModal(${p.id})">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-danger" style="padding:4px 8px;border-radius:6px;background:#ef4444;color:white;border:none;cursor:pointer;" title="Eliminar" onclick="window.deleteScmProduct(${p.id})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
+                <td>${actions}</td>
             `;
             tbody.appendChild(tr);
         });
     }
 
     window.openScmProductModal = function (id = null) {
+        if (!isAdminScmUser()) {
+            window.showAppNotification('Solo administración puede modificar productos SCM.', 'error');
+            return;
+        }
         const modal = document.getElementById('scm-product-modal');
         const form = document.getElementById('scm-product-form');
         const title = document.getElementById('scm-product-modal-title');
@@ -465,6 +508,10 @@
     };
 
     window.deleteScmProduct = async function (id) {
+        if (!isAdminScmUser()) {
+            window.showAppNotification('Solo administración puede eliminar productos SCM.', 'error');
+            return;
+        }
         const productId = Number(id);
         const p = scmProducts.find(x => Number(x.id) === productId);
         if (!p) {
@@ -551,6 +598,10 @@
     }
 
     window.openScmProviderModal = function (id = null) {
+        if (!isAdminScmUser()) {
+            window.showAppNotification('Solo administración puede modificar proveedores SCM.', 'error');
+            return;
+        }
         const modal = document.getElementById('scm-provider-modal');
         const form = document.getElementById('scm-provider-form');
         const title = document.getElementById('scm-provider-modal-title');
@@ -644,17 +695,21 @@
                 ● ${p.minStock === null ? 'Mínimo sin definir' : isLow ? 'Stock bajo' : 'Normal'}
                     </span>
                 </td>
-                <td>
+                    <td>${isAdminScmUser() ? `
                     <button class="btn-secondary" style="padding:4px 8px;font-size:0.8rem;border-radius:6px;" title="Registrar movimiento" onclick="window.quickMovementForProduct(${p.id})">
                         <i class="fas fa-exchange-alt"></i> Movimiento
                     </button>
-                </td>
+                    ` : 'Consulta'}</td>
             `;
             tbody.appendChild(tr);
         });
     }
 
     window.quickMovementForProduct = function (productId) {
+        if (!isAdminScmUser()) {
+            window.showAppNotification('Solo administración puede registrar movimientos SCM.', 'error');
+            return;
+        }
         window.openScmMovementModal();
         const select = document.getElementById('scm-form-mov-product');
         if (select) select.value = productId;
@@ -712,6 +767,10 @@
     }
 
     window.openScmMovementModal = function () {
+        if (!isAdminScmUser()) {
+            window.showAppNotification('Solo administración puede registrar movimientos SCM.', 'error');
+            return;
+        }
         const modal = document.getElementById('scm-movement-modal');
         const form = document.getElementById('scm-movement-form');
         const prodSelect = document.getElementById('scm-form-mov-product');
@@ -906,6 +965,7 @@
             return;
         }
         renderScmOrdersTable();
+        window.showAppNotification(`Pedido ${order.folio} actualizado a "${newStatus}".`, 'success');
     };
 
     // ============================================================
@@ -1184,6 +1244,7 @@
                 document.getElementById('scm-product-modal').classList.remove('active');
                 renderScmProductsTable();
                 renderScmInventoryTable();
+                showScmDeleteNotice('admin-scm-productos', id ? 'Producto actualizado correctamente.' : 'Producto creado correctamente.');
                 if (typeof window.refreshMainProductCatalog === 'function') {
                     try {
                         await window.refreshMainProductCatalog();
@@ -1216,6 +1277,7 @@
                 if (!await persistScm(() => apiScmRequest(id ? `/proveedores/${id}` : '/proveedores', id ? 'PUT' : 'POST', providerData))) return;
                 document.getElementById('scm-provider-modal').classList.remove('active');
                 renderScmProvidersTable();
+                showScmDeleteNotice('admin-scm-proveedores', id ? 'Proveedor actualizado correctamente.' : 'Proveedor creado correctamente.');
             });
         }
 
@@ -1247,6 +1309,7 @@
                 document.getElementById('scm-movement-modal').classList.remove('active');
                 renderScmMovementsTable();
                 renderScmInventoryTable();
+                showScmDeleteNotice('admin-scm-inventario', 'Movimiento de inventario registrado correctamente.');
             });
         }
 
@@ -1274,6 +1337,7 @@
 
                 document.getElementById('scm-order-modal').classList.remove('active');
                 renderScmOrdersTable();
+                showScmDeleteNotice('admin-scm-pedidos', 'Pedido SCM registrado correctamente.');
             });
         }
 
@@ -1305,6 +1369,7 @@
                 scmLevel = result.nivel_scm;
             })) return;
             renderScmMaturityView();
+            showScmDeleteNotice('admin-scm-madurez', 'Nivel de madurez SCM actualizado correctamente.');
         });
 
         const prodSelectStrat = document.getElementById('scm-strategy-product-select');
@@ -1331,34 +1396,15 @@
 
     // Inicialización
     document.addEventListener('DOMContentLoaded', async function () {
+        setupFormListeners();
+    });
+
+    document.addEventListener('admin-authenticated', async function () {
+        applyScmRolePermissions();
         try {
             await loadScmData();
         } catch (error) {
             showScmError(error);
-        }
-        setupFormListeners();
-
-        const crmToggle = document.getElementById('crm-menu-toggle');
-        const scmToggle = document.getElementById('scm-menu-toggle');
-        const crmSubmenu = document.getElementById('crm-submenu');
-        const scmSubmenu = document.getElementById('scm-submenu');
-
-        if (crmToggle && crmSubmenu) {
-            crmToggle.addEventListener('click', function (e) {
-                e.preventDefault();
-                const isCollapsed = crmSubmenu.classList.toggle('collapsed');
-                crmToggle.classList.toggle('collapsed');
-                crmToggle.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
-            });
-        }
-
-        if (scmToggle && scmSubmenu) {
-            scmToggle.addEventListener('click', function (e) {
-                e.preventDefault();
-                const isCollapsed = scmSubmenu.classList.toggle('collapsed');
-                scmToggle.classList.toggle('collapsed');
-                scmToggle.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
-            });
         }
     });
 })();

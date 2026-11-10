@@ -75,12 +75,38 @@ function getDefaultProviderId(category) {
 }
 
 async function ensureLowStockOrders(connection) {
-    // Leer productos con sus metadatos SCM directamente de la BD
+    // 1. Procesar pedidos auto-generados existentes que quedaron sin recibir stock
+    const [unreceivedOrders] = await connection.query(
+        "SELECT * FROM pedidos_scm WHERE auto_generated=1 AND status='Surtido' AND stock_received=0"
+    );
+    for (const order of unreceivedOrders) {
+        const [[prod]] = await connection.query(
+            'SELECT * FROM productos WHERE id=? AND active=1',
+            [order.product_id]
+        );
+        if (prod && String(prod.strategy || 'PUSH').toUpperCase() === 'PUSH') {
+            const replenishQty = Number(order.quantity);
+            await connection.query(
+                "UPDATE productos SET stock = stock + ?, status = 'disponible' WHERE id = ?",
+                [replenishQty, Number(prod.id)]
+            );
+            await connection.query(
+                'INSERT INTO movimientos_inventario (date, product_id, product_name, type, quantity, reason, user) VALUES (?,?,?,?,?,?,?)',
+                [order.date || new Date().toLocaleDateString('es-MX'), Number(prod.id), prod.name, 'Entrada', replenishQty, `Reposición automática PUSH (${order.folio})`, 'Sistema SCM (PUSH)']
+            );
+            await connection.query(
+                "UPDATE pedidos_scm SET stock_received=1, retry_suppressed=0, notes=? WHERE id=?",
+                [`Reposición automática completada (+${replenishQty} unidades en inventario).`, order.id]
+            );
+        }
+    }
+
+    // 2. Leer productos con sus metadatos SCM directamente de la BD
     const [products] = await connection.query(
         'SELECT id, name, category, stock, min_stock, strategy, provider_id FROM productos WHERE active=1 ORDER BY id FOR UPDATE'
     );
 
-    // Obtener pedidos activos de la tabla relacional
+    // 3. Obtener pedidos activos de la tabla relacional
     const [activeOrders] = await connection.query(
         "SELECT * FROM pedidos_scm WHERE status IN ('Pendiente','En proceso') ORDER BY id DESC FOR UPDATE"
     );
@@ -99,7 +125,7 @@ async function ensureLowStockOrders(connection) {
         }
     }
 
-    // Cancelar pedidos auto-generados que ya no cumplen las condiciones
+    // Cancelar pedidos auto-generados que cambiaron a PULL o surtir reponiendo inventario si siguen en PUSH
     for (const order of activeOrders) {
         if (!order.auto_generated) continue;
         const product = products.find(item => Number(item.id) === Number(order.product_id));
@@ -110,9 +136,21 @@ async function ensureLowStockOrders(connection) {
             );
             continue;
         }
+        if (Boolean(order.stock_received)) continue;
+
+        const replenishQty = Number(order.quantity);
         await connection.query(
-            "UPDATE pedidos_scm SET status='Surtido', retry_suppressed=1, notes=? WHERE id=?",
-            [`Reposición automática completada sin modificar inventario (${Number(order.quantity)} unidades).`, order.id]
+            "UPDATE productos SET stock = stock + ?, status = 'disponible' WHERE id = ?",
+            [replenishQty, Number(product.id)]
+        );
+        const todayStr = new Date().toLocaleDateString('es-MX');
+        await connection.query(
+            'INSERT INTO movimientos_inventario (date, product_id, product_name, type, quantity, reason, user) VALUES (?,?,?,?,?,?,?)',
+            [todayStr, Number(product.id), product.name, 'Entrada', replenishQty, `Reposición automática PUSH (${order.folio})`, 'Sistema SCM (PUSH)']
+        );
+        await connection.query(
+            "UPDATE pedidos_scm SET status='Surtido', stock_received=1, retry_suppressed=0, notes=? WHERE id=?",
+            [`Reposición automática completada (+${replenishQty} unidades en inventario).`, order.id]
         );
     }
 
@@ -134,7 +172,12 @@ async function ensureLowStockOrders(connection) {
 
     const createdOrders = [];
 
-    for (const product of products) {
+    // Re-leer productos para tener el stock actualizado tras surtir pedidos activos
+    const [freshProducts] = await connection.query(
+        'SELECT id, name, category, stock, min_stock, strategy, provider_id FROM productos WHERE active=1 ORDER BY id FOR UPDATE'
+    );
+
+    for (const product of freshProducts) {
         const strategy = String(product.strategy || 'PUSH').toUpperCase();
         const minStock = product.min_stock != null ? Number(product.min_stock) : null;
 
@@ -154,25 +197,40 @@ async function ensureLowStockOrders(connection) {
         );
         if (hasActiveOrder) continue;
 
-        // Verificar que el proveedor existe
-        const providerId = product.provider_id ? Number(product.provider_id) : null;
-        if (!providerId) continue;
+        // Verificar o asignar proveedor
+        let providerId = product.provider_id ? Number(product.provider_id) : null;
+        if (!providerId) {
+            providerId = getDefaultProviderId(product.category);
+        }
         const [[provExists]] = await connection.query(
             'SELECT id FROM proveedores WHERE id=? AND activo=1',
             [providerId]
         );
-        if (!provExists) continue;
+        const validProviderId = provExists ? providerId : null;
 
         const orderId = nextId++;
         const folio = `PC-${String(nextFolio++).padStart(3, '0')}`;
         const date = new Date().toLocaleDateString('es-MX');
+        const replenishQty = minStock;
+
+        // PUSH repone directamente el inventario
+        await connection.query(
+            "UPDATE productos SET stock = stock + ?, status = 'disponible' WHERE id = ?",
+            [replenishQty, Number(product.id)]
+        );
+
+        // Registrar movimiento de entrada en inventario
+        await connection.query(
+            'INSERT INTO movimientos_inventario (date, product_id, product_name, type, quantity, reason, user) VALUES (?,?,?,?,?,?,?)',
+            [date, Number(product.id), product.name, 'Entrada', replenishQty, `Reposición automática PUSH (${folio})`, 'Sistema SCM (PUSH)']
+        );
 
         await connection.query(
-            'INSERT INTO pedidos_scm (id, folio, date, product_id, quantity, type, status, provider_id, notes, auto_generated, retry_suppressed, product_name) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
-            [orderId, folio, date, Number(product.id), minStock, 'Reposición', 'Surtido', providerId,
-             `Reposición automática completada sin modificar inventario (${minStock} unidades).`, 1, 1, product.name]
+            'INSERT INTO pedidos_scm (id, folio, date, product_id, quantity, type, status, provider_id, notes, auto_generated, retry_suppressed, stock_received, product_name) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
+            [orderId, folio, date, Number(product.id), replenishQty, 'Reposición', 'Surtido', validProviderId,
+             `Reposición automática completada (+${replenishQty} unidades en inventario).`, 1, 0, 1, product.name]
         );
-        createdOrders.push({ id: orderId, folio, productId: Number(product.id), quantity: minStock });
+        createdOrders.push({ id: orderId, folio, productId: Number(product.id), quantity: replenishQty });
     }
 
     return createdOrders;
@@ -197,7 +255,15 @@ async function getRows(key) {
         return rows.map(row => ({ id: row.id, nombre: row.nombre, precio: Number(row.precio), categoria: row.categoria, descripcion: row.descripcion, foto: row.foto, fecha: row.fecha, usuario: '', compras: row.compras }));
     }
     if (key === 'clients') {
-        const [clients] = await pool.query('SELECT * FROM clientes ORDER BY id DESC');
+        const [clients] = await pool.query(`
+            SELECT c.* FROM clientes c
+            WHERE NOT EXISTS (
+                SELECT 1 FROM usuarios u
+                WHERE LOWER(u.email) = LOWER(c.email)
+                  AND u.role IN ('admin', 'super_administrador', 'ventas', 'logistica', 'soporte')
+            )
+            ORDER BY c.id DESC
+        `);
         const [interactions] = await pool.query('SELECT * FROM interacciones ORDER BY date DESC');
         return clients.map(({ password, ...client }) => ({ ...client, registeredDate: client.registered_date, lastInteractionDate: client.last_interaction_date, interactions: interactions.filter(item => item.cliente_id === client.id) }));
     }
@@ -231,6 +297,12 @@ async function getRows(key) {
         return { ofertas: rows.map(row => ({ usuario: row.user_name, monto: Number(row.amount), timestamp: row.offered_at })), ofertaActual: auction.length ? Number(auction[0].current_bid) : 6 };
     }
     if (key === 'scm_metrics') {
+        const connection = await pool.getConnection();
+        try {
+            await ensureLowStockOrders(connection);
+        } finally {
+            connection.release();
+        }
         const [[{ totalProducts }]] = await pool.query('SELECT COUNT(*) AS totalProducts FROM productos WHERE active=1');
         const [[{ totalOrders }]] = await pool.query('SELECT COUNT(*) AS totalOrders FROM pedidos');
         const [topProducts] = await pool.query('SELECT pi.name, SUM(pi.quantity) AS soldQty, SUM(pi.subtotal) AS totalAmount FROM pedido_items pi GROUP BY pi.name ORDER BY soldQty DESC LIMIT 5');
@@ -263,16 +335,32 @@ async function getRows(key) {
         };
     }
     if (key === 'scm_alerts') {
+        const connection = await pool.getConnection();
+        try {
+            await ensureLowStockOrders(connection);
+        } finally {
+            connection.release();
+        }
         const [products] = await pool.query(`
             SELECT p.id, p.name, p.category, p.stock, p.min_stock, p.strategy,
                    pv.name AS provider_name, ps.folio, ps.quantity AS order_quantity,
                    ps.status AS order_status, ps.auto_generated
             FROM productos p
             LEFT JOIN proveedores pv ON pv.id=p.provider_id AND pv.activo=1
-            LEFT JOIN pedidos_scm ps ON ps.product_id=p.id
-                AND ps.type IN ('Reposición','Suministro')
-                AND ps.status IN ('Pendiente','En proceso')
-            WHERE p.active=1 AND p.min_stock IS NOT NULL AND p.stock<p.min_stock
+            LEFT JOIN pedidos_scm ps ON ps.id = (
+                SELECT id FROM pedidos_scm
+                WHERE product_id = p.id AND type IN ('Reposición','Suministro')
+                ORDER BY id DESC LIMIT 1
+            )
+            WHERE p.active=1 AND p.min_stock IS NOT NULL
+              AND (
+                  p.stock < p.min_stock
+                  OR (
+                      ps.auto_generated = 1
+                      AND ps.status = 'Surtido'
+                      AND ps.created_at >= NOW() - INTERVAL 1 DAY
+                  )
+              )
             ORDER BY p.id, ps.id DESC
         `);
         const emitted = new Set();

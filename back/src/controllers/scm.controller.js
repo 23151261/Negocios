@@ -179,6 +179,12 @@ async function applyStrategyChange(connection, productId, currentStrategy, nextS
 // ─── PRODUCTOS ────────────────────────────────────────────────────────────────
 
 async function getProducts(req) {
+    const connection = await pool.getConnection();
+    try {
+        await ensureLowStockOrders(connection);
+    } finally {
+        connection.release();
+    }
     const strategyFilter = req.query.estrategia === undefined
         ? null
         : normalizeStrategy(req.query.estrategia);
