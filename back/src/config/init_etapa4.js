@@ -1,5 +1,39 @@
 const pool = require('./db');
 
+const catalogPriceUpdates = [
+    { id: 1, name: 'Pizza Margarita', previousPrice: 12.50, price: 149.00 },
+    { id: 2, name: 'Pizza Pepperoni', previousPrice: 14.90, price: 159.00 },
+    { id: 3, name: 'Hamburguesa Clásica', previousPrice: 10.90, price: 99.00 },
+    { id: 4, name: 'Hamburguesa BBQ', previousPrice: 13.50, price: 129.00 },
+    { id: 5, name: 'Salmón a la plancha', previousPrice: 18.40, price: 269.00 },
+    { id: 6, name: 'Ceviche de camarón', previousPrice: 15.20, price: 189.00 },
+    { id: 7, name: 'Café de especialidad', previousPrice: 4.20, price: 55.00 },
+    { id: 8, name: 'Ensalada César', previousPrice: 11.80, price: 139.00 },
+    { id: 16, name: 'flavitron', previousPrice: 26.40, price: 139.00 }
+];
+
+async function updateCatalogPrices() {
+    const connection = await pool.getConnection();
+    let transactionStarted = false;
+    try {
+        await connection.beginTransaction();
+        transactionStarted = true;
+        for (const update of catalogPriceUpdates) {
+            await connection.query(
+                'UPDATE productos SET price = ? WHERE id = ? AND name = ? AND price = ?',
+                [update.price, update.id, update.name, update.previousPrice]
+            );
+        }
+        await connection.commit();
+        transactionStarted = false;
+    } catch (error) {
+        if (transactionStarted) await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
+}
+
 async function ensureColumn(table, column, definition) {
     const [rows] = await pool.query(
         `SELECT COLUMN_NAME FROM information_schema.COLUMNS
@@ -12,8 +46,11 @@ async function ensureColumn(table, column, definition) {
 }
 
 async function initEtapa4() {
+    await updateCatalogPrices();
+
     // 1. Columnas en clientes
-    await ensureColumn('clientes', 'monedero_saldo', 'DECIMAL(12,2) NOT NULL DEFAULT 1200.00');
+    await ensureColumn('clientes', 'monedero_saldo', 'DECIMAL(12,2) NOT NULL DEFAULT 0.00');
+    await pool.query('ALTER TABLE `clientes` MODIFY COLUMN `monedero_saldo` DECIMAL(12,2) NOT NULL DEFAULT 0.00');
     
     // 2. Tabla monedero_movimientos
     await pool.query(`
@@ -85,18 +122,6 @@ async function initEtapa4() {
             ('T-104', ?, ?, ?, 'Cambio de producto', 'Solicito cambio de ensalada césar por ensalada mixta.', 'Respondido', NOW() - INTERVAL 1 DAY, 'Estimado cliente, su cambio ha sido procesado con éxito por el equipo de cocina.', NOW() - INTERVAL 12 HOUR),
             ('T-103', ?, ?, ?, 'Facturación', 'Requiero confirmación del timbrado fiscal de mi compra.', 'Cerrado', NOW() - INTERVAL 2 DAY, 'Factura timbrada y enviada a su correo electrónico.', NOW() - INTERVAL 1 DAY)
         `, [cId, cName, cEmail, cId, cName, cEmail, cId, cName, cEmail]);
-    }
-
-    // Seed movimiento inicial de monedero para clientes existentes que no tengan movimientos
-    const [clients] = await pool.query('SELECT id, monedero_saldo FROM clientes');
-    for (const c of clients) {
-        const [movs] = await pool.query('SELECT id FROM monedero_movimientos WHERE cliente_id = ? LIMIT 1', [c.id]);
-        if (movs.length === 0) {
-            await pool.query(`
-                INSERT INTO monedero_movimientos (cliente_id, folio, fecha, concepto, tipo, monto, saldo, metodo_pago)
-                VALUES (?, 'REC-001', NOW() - INTERVAL 3 DAY, 'Saldo de bienvenida / Promoción inicial', 'abono', ?, ?, 'Monedero')
-            `, [c.id, c.monedero_saldo || 1200.00, c.monedero_saldo || 1200.00]);
-        }
     }
 
     // 5. Tabla pagos

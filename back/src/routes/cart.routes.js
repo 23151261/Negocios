@@ -70,6 +70,7 @@ router.use(authenticateIfProvided);
 router.use(resolveCartOwner);
 router.get('/', getCart);
 router.put('/', saveCart);
+router.post('/', verifyToken, transferGuestCart);
 router.post('/transferir', verifyToken, transferGuestCart);
 
 module.exports = router;

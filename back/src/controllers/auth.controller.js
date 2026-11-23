@@ -38,19 +38,13 @@ const register = async (req, res) => {
             `INSERT INTO clientes
                 (name, email, company, password, phone, address, stage, status, orders, spent, registered_date, last_interaction_date, monedero_saldo)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [name.trim(), normalizedEmail, '', hashedPassword, (phone || '').trim(), (address || '').trim(), 'prospecto', 'activo', 0, 0, new Date(), new Date(), 1200.00]
-        );
-
-        await connection.query(
-            `INSERT INTO monedero_movimientos (cliente_id, folio, fecha, concepto, tipo, monto, saldo, metodo_pago)
-             VALUES (?, 'REC-001', NOW(), 'Saldo de bienvenida / Promoción inicial', 'abono', 1200.00, 1200.00, 'Monedero')`,
-            [clientResult.insertId]
+            [name.trim(), normalizedEmail, '', hashedPassword, (phone || '').trim(), (address || '').trim(), 'prospecto', 'activo', 0, 0, new Date(), new Date(), 0]
         );
 
         await connection.query(
             `INSERT INTO interacciones (cliente_id, type, date, note, user)
              VALUES (?, ?, ?, ?, ?)`,
-            [clientResult.insertId, 'registro', new Date(), 'Usuario registrado en la plataforma con saldo de bienvenida de $1,200.00.', normalizedEmail]
+            [clientResult.insertId, 'registro', new Date(), 'Usuario registrado en la plataforma.', normalizedEmail]
         );
 
         await connection.commit();
@@ -70,7 +64,7 @@ const register = async (req, res) => {
                 email: normalizedEmail,
                 phone: (phone || '').trim(),
                 address: (address || '').trim(),
-                monedero_saldo: 1200.00,
+                monedero_saldo: 0,
                 role: 'usuario'
             }
         });
@@ -247,7 +241,7 @@ const login = async (req, res) => {
                 email: user.email,
                 phone: user.phone || '',
                 address: user.address || '',
-                monedero_saldo: user.monedero_saldo !== undefined ? Number(user.monedero_saldo) : 1200.00,
+                monedero_saldo: user.monedero_saldo !== undefined ? Number(user.monedero_saldo) : 0,
                 role: user.role || 'usuario'
             }
         });

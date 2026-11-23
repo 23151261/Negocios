@@ -6,6 +6,13 @@ const router = express.Router();
 
 router.get('/:key', (req, res, next) => {
     const key = req.params.key;
+    if (key === 'historial') {
+        if (!req.headers.authorization) return res.json([]);
+        return verifyToken(req, res, () => {
+            if (req.user?.role !== 'usuario') return res.json([]);
+            return getData(req, res);
+        });
+    }
     if (key !== 'clients' && !key.startsWith('scm_')) return next();
     return verifyToken(req, res, () => {
         if (!['admin', 'super_administrador'].includes(req.user?.role)) {

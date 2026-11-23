@@ -67,7 +67,7 @@ async function recargarMonedero(req, res) {
     try {
         await connection.beginTransaction();
 
-        const { cliente_id, monto, metodo_pago } = req.body;
+        const { cliente_id, monto } = req.body;
         const cId = Number(cliente_id);
         const amount = Number(monto);
 
@@ -85,7 +85,7 @@ async function recargarMonedero(req, res) {
             return res.status(400).json({ error: 'El monto de recarga debe ser mayor a 0' });
         }
 
-        const paymentMethod = (metodo_pago || 'Tarjeta de crédito / débito').trim();
+        const paymentMethod = 'Recarga simulada';
 
         const [clients] = await connection.query(
             'SELECT id, name, email, monedero_saldo FROM clientes WHERE id = ? FOR UPDATE',
@@ -106,7 +106,7 @@ async function recargarMonedero(req, res) {
             [nuevoSaldo, cId]
         );
 
-        const concepto = `Recarga con ${paymentMethod}`;
+        const concepto = 'Recarga simulada del Monedero';
         await connection.query(
             `INSERT INTO monedero_movimientos (cliente_id, folio, fecha, concepto, tipo, monto, saldo, metodo_pago)
              VALUES (?, ?, NOW(), ?, 'abono', ?, ?, ?)`,
@@ -117,7 +117,7 @@ async function recargarMonedero(req, res) {
         await connection.query(
             `INSERT INTO interacciones (cliente_id, type, date, note, user)
              VALUES (?, 'nota', CURDATE(), ?, ?)`,
-            [cId, `Recarga de monedero por $${amount.toFixed(2)} (${paymentMethod}). Folio: ${folio}`, 'Sistema']
+            [cId, `Recarga simulada de monedero por $${amount.toFixed(2)}. Folio: ${folio}`, 'Sistema']
         );
 
         await connection.commit();

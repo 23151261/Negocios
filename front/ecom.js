@@ -11,6 +11,8 @@
 
     function apiHeaders(headers = {}) {
         const token = window.deliciasAuthToken
+            || localStorage.getItem('delicias_customer_token')
+            || sessionStorage.getItem('delicias_customer_token')
             || sessionStorage.getItem('delicias_admin_token')
             || localStorage.getItem('token')
             || sessionStorage.getItem('token');
@@ -44,12 +46,20 @@
     }
 
     function getAuthToken() {
-        return window.deliciasAuthToken || localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+        return window.deliciasAuthToken
+            || localStorage.getItem('delicias_customer_token')
+            || sessionStorage.getItem('delicias_customer_token')
+            || localStorage.getItem('token')
+            || sessionStorage.getItem('token')
+            || '';
     }
 
     function getStoredUser() {
         try {
-            const raw = localStorage.getItem('usuario') || sessionStorage.getItem('usuario');
+            const raw = localStorage.getItem('delicias_customer_user')
+                || sessionStorage.getItem('delicias_customer_user')
+                || localStorage.getItem('usuario')
+                || sessionStorage.getItem('usuario');
             if (raw) return JSON.parse(raw);
         } catch (_) {}
         if (window.currentUser && window.currentUser.id) return window.currentUser;
@@ -58,7 +68,7 @@
 
     // ─── ESTADO GLOBAL ECOM ─────────────────────────────────────
     const ecomState = {
-        monederoSaldo: 1200.00,
+        monederoSaldo: 0,
         impuestos: [{ id: 1, nombre: 'IVA', porcentaje: 16.00, estado: 'Activo' }],
         impuestoActivo: 16.00,
         tickets: [],
@@ -75,15 +85,18 @@
             const res = await fetch(`${API_ROOT}/api/monedero/${clienteId}`, {
                 headers: apiHeaders()
             });
-            if (res.ok) {
-                const data = await res.json();
-                ecomState.monederoSaldo = Number(data.saldo || 0);
-                ecomState.monederoMovimientos = data.movimientos || [];
-                renderMonederoUI();
-                updateCheckoutWalletDisplay();
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                notify(data.error || `No se pudo consultar el monedero (HTTP ${res.status}).`, 'error');
+                return;
             }
+            const data = await res.json();
+            ecomState.monederoSaldo = Number(data.saldo || 0);
+            ecomState.monederoMovimientos = data.movimientos || [];
+            renderMonederoUI();
+            updateCheckoutWalletDisplay();
         } catch (err) {
-            notify('No se pudo actualizar el monedero desde el servidor.', 'error');
+            notify(`No se pudo actualizar el monedero: ${err.message}`, 'error');
         }
     }
 
@@ -119,7 +132,7 @@
         }
     }
 
-    async function recargarMonedero(monto, metodoPago) {
+    async function recargarMonedero(monto) {
         const user = getStoredUser();
         const clienteId = user?.id;
         if (!clienteId) {
@@ -133,8 +146,7 @@
                 headers: apiHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
                     cliente_id: clienteId,
-                    monto: Number(monto),
-                    metodo_pago: metodoPago
+                    monto: Number(monto)
                 })
             });
 
@@ -156,15 +168,27 @@
 
     // ─── 2. IMPUESTOS ───────────────────────────────────────────
     async function loadImpuestos() {
-        try {
-            const res = await fetch(`${API_ROOT}/api/impuestos`);
-            if (res.ok) {
-                const data = await res.json();
-                ecomState.impuestos = data;
-                const activo = data.find(i => i.estado === 'Activo');
-                if (activo) ecomState.impuestoActivo = Number(activo.porcentaje);
-            }
-        } catch (_) {}
+        const res = await fetch(`${API_ROOT}/api/impuestos`);
+        if (!res.ok) {
+            throw new Error(`No se pudieron cargar los impuestos (HTTP ${res.status}).`);
+        }
+        const data = await res.json();
+        ecomState.impuestos = data;
+        ecomState.impuestoActivo = data
+            .filter(impuesto => impuesto.estado === 'Activo')
+            .reduce((total, impuesto) => total + Number(impuesto.porcentaje || 0), 0);
+        updateCheckoutWalletDisplay();
+        return data;
+    }
+
+    function getCheckoutTotals(subtotal) {
+        const montoSubtotal = Number(Number(subtotal || 0).toFixed(2));
+        const impuesto = Number((montoSubtotal * ecomState.impuestoActivo / 100).toFixed(2));
+        return {
+            subtotal: montoSubtotal,
+            impuesto,
+            total: Number((montoSubtotal + impuesto).toFixed(2))
+        };
     }
 
     // ─── 3. ATENCIÓN A CLIENTES (TICKETS) ────────────────────────
@@ -175,12 +199,15 @@
             const res = await fetch(`${API_ROOT}/api/atencion/tickets/cliente/${clienteId}`, {
                 headers: apiHeaders()
             });
-            if (res.ok) {
-                ecomState.tickets = await res.json();
-                renderTicketsUI();
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                notify(data.error || `No se pudieron cargar los tickets (HTTP ${res.status}).`, 'error');
+                return;
             }
-        } catch (_) {
-            notify('No se pudo cargar el historial de atención.', 'error');
+            ecomState.tickets = await res.json();
+            renderTicketsUI();
+        } catch (err) {
+            notify(`No se pudo cargar el historial de atención: ${err.message}`, 'error');
         }
     }
 
@@ -276,24 +303,20 @@
         const confirmBtn = document.getElementById('confirmar-compra-btn');
 
         if (totalPagarEl && window.checkoutData) {
-            const total = Number(window.checkoutData.total || 0);
+            const total = getCheckoutTotals(window.checkoutData.total).total;
             totalPagarEl.textContent = `$${total.toFixed(2)}`;
             const saldoRestante = ecomState.monederoSaldo - total;
+            const saldoInsuficiente = saldoRestante < 0;
             
             if (saldoDespuesEl) {
                 saldoDespuesEl.textContent = `$${Math.max(0, saldoRestante).toFixed(2)}`;
             }
 
             if (alertaEl) {
-                if (saldoRestante < 0) {
-                    alertaEl.style.display = 'flex';
-                    if (confirmBtn && window.checkoutData.metodoPago === 'monedero') {
-                        confirmBtn.disabled = true;
-                    }
-                } else {
-                    alertaEl.style.display = 'none';
-                    if (confirmBtn) confirmBtn.disabled = false;
-                }
+                alertaEl.style.display = saldoInsuficiente ? 'flex' : 'none';
+            }
+            if (confirmBtn) {
+                confirmBtn.disabled = saldoInsuficiente && window.checkoutData.metodoPago === 'monedero';
             }
         }
     }
@@ -427,28 +450,43 @@
             if (res.ok) {
                 const list = await res.json();
                 ecomState.ticketsAdmin = list;
-                const tbody = document.getElementById('admin-tickets-tbody');
-                if (tbody) {
+                const ticketsList = document.getElementById('admin-tickets-list');
+                if (ticketsList) {
                     if (list.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:1.5rem; color:#64748b;">No hay tickets de clientes</td></tr>';
+                        ticketsList.innerHTML = '<p class="support-ticket-empty">No hay solicitudes de clientes por ahora.</p>';
                     } else {
-                        tbody.innerHTML = list.map(t => {
+                        ticketsList.innerHTML = list.map(t => {
                             const badgeClass = t.estado === 'En proceso' ? 'en-proceso' : (t.estado === 'Respondido' ? 'respondido' : 'cerrado');
                             const fechaFmt = new Date(t.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                            const mensaje = String(t.mensaje || '');
+                            const respuesta = String(t.respuesta || '');
                             return `
-                                <tr>
-                                    <td><strong style="color:var(--primary);">${escapeHtml(t.folio)}</strong></td>
-                                    <td>${fechaFmt}</td>
-                                    <td>${escapeHtml(t.cliente_nombre)}<br><span style="font-size:0.8rem; color:#64748b;">${escapeHtml(t.cliente_email)}</span></td>
-                                    <td><strong>${escapeHtml(t.asunto)}</strong><br><span style="font-size:0.85rem; color:#475569;">${escapeHtml(t.mensaje.substring(0, 50))}...</span></td>
-                                    <td><span class="ticket-badge ${badgeClass}">${escapeHtml(t.estado)}</span></td>
-                                    <td>${t.respuesta ? `<span style="color:#10b981; font-size:0.85rem;"><i class="fas fa-check"></i> ${escapeHtml(t.respuesta.substring(0, 40))}...</span>` : '<span style="color:#94a3b8; font-size:0.85rem;">Pendiente</span>'}</td>
-                                    <td>
-                                        <button class="btn-primary btn-sm admin-responder-ticket-btn" data-id="${t.id}" data-folio="${escapeHtml(t.folio)}" data-cliente="${escapeHtml(t.cliente_nombre)}" data-asunto="${escapeHtml(t.asunto)}" data-mensaje="${escapeHtml(t.mensaje)}" data-respuesta="${escapeHtml(t.respuesta || '')}" data-estado="${escapeHtml(t.estado)}">
-                                            <i class="fas fa-reply"></i> Responder
+                                <article class="support-ticket-card">
+                                    <div class="support-ticket-card-header">
+                                        <div class="support-ticket-reference">
+                                            <strong class="ticket-folio">${escapeHtml(t.folio)}</strong>
+                                            <span><i class="far fa-calendar-alt" aria-hidden="true"></i> ${fechaFmt}</span>
+                                        </div>
+                                        <span class="ticket-badge ${badgeClass}">${escapeHtml(t.estado)}</span>
+                                    </div>
+                                    <div class="support-ticket-card-body">
+                                        <div class="support-ticket-customer">
+                                            <i class="fas fa-user-circle" aria-hidden="true"></i>
+                                            <span><strong>${escapeHtml(t.cliente_nombre)}</strong><small>${escapeHtml(t.cliente_email)}</small></span>
+                                        </div>
+                                        <h4>${escapeHtml(t.asunto)}</h4>
+                                        <p class="support-ticket-message">${escapeHtml(mensaje)}${mensaje.length > 180 ? '…' : ''}</p>
+                                        <div class="support-ticket-response ${respuesta ? 'has-response' : ''}">
+                                            <strong>${respuesta ? 'Respuesta enviada' : 'Sin respuesta'}</strong>
+                                            ${respuesta ? `<span>${escapeHtml(respuesta)}${respuesta.length > 180 ? '…' : ''}</span>` : '<span>La solicitud sigue pendiente de atención.</span>'}
+                                        </div>
+                                    </div>
+                                    <div class="support-ticket-card-actions">
+                                        <button class="btn-primary admin-responder-ticket-btn" type="button" data-id="${t.id}" data-folio="${escapeHtml(t.folio)}" data-cliente="${escapeHtml(t.cliente_nombre)}" data-asunto="${escapeHtml(t.asunto)}" data-mensaje="${escapeHtml(t.mensaje)}" data-respuesta="${escapeHtml(t.respuesta || '')}" data-estado="${escapeHtml(t.estado)}">
+                                            <i class="fas fa-reply" aria-hidden="true"></i> Responder
                                         </button>
-                                    </td>
-                                </tr>
+                                    </div>
+                                </article>
                             `;
                         }).join('');
                     }
@@ -503,9 +541,11 @@
 
     // ─── EVENTOS Y BINDINGS ─────────────────────────────────────
     document.addEventListener('DOMContentLoaded', function() {
-        loadImpuestos();
+        loadImpuestos().catch(err => {
+            notify(`No se pudieron actualizar los impuestos del checkout: ${err.message}`, 'error');
+        });
         const user = getStoredUser();
-        if (user && user.id) {
+        if (!document.body.classList.contains('admin-page-shell') && user && user.id) {
             loadMonedero(user.id);
             loadTicketsCliente(user.id);
         }
@@ -534,9 +574,6 @@
                 const customInput = document.getElementById('monedero-custom-amount');
                 const monto = customInput && customInput.value ? Number(customInput.value) : (activeQuick ? Number(activeQuick.dataset.amount) : 100);
                 
-                const metodoRadio = document.querySelector('input[name="recarga-metodo"]:checked');
-                const metodo = metodoRadio ? metodoRadio.value : 'Tarjeta de crédito / débito';
-
                 if (!monto || monto <= 0) {
                     notify('Ingresa un monto válido para recargar', 'error');
                     return;
@@ -545,10 +582,21 @@
                 recargarBtn.disabled = true;
                 recargarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando recarga...';
                 
-                await recargarMonedero(monto, metodo);
+                await recargarMonedero(monto);
                 
                 recargarBtn.disabled = false;
                 recargarBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Recargar saldo';
+            });
+        }
+
+        const checkoutWalletRechargeBtn = document.getElementById('checkout-wallet-ir-recarga');
+        if (checkoutWalletRechargeBtn) {
+            checkoutWalletRechargeBtn.addEventListener('click', function() {
+                if (typeof window.showPage === 'function') {
+                    window.showPage('monedero');
+                } else {
+                    notify('No se pudo abrir la página del monedero. Recarga la página e inténtalo de nuevo.', 'error');
+                }
             });
         }
 
@@ -628,7 +676,8 @@
                     document.getElementById('resp-ticket-asunto').textContent = respBtn.dataset.asunto;
                     document.getElementById('resp-ticket-mensaje').textContent = respBtn.dataset.mensaje;
                     document.getElementById('resp-ticket-texto').value = respBtn.dataset.respuesta || '';
-                    document.getElementById('resp-ticket-estado').value = respBtn.dataset.estado || 'Respondido';
+                    document.getElementById('resp-ticket-estado').value =
+                        respBtn.dataset.estado === 'Cerrado' ? 'Cerrado' : 'Respondido';
                     modal.style.display = 'flex';
                 }
             }
@@ -655,21 +704,33 @@
                 const respuesta = document.getElementById('resp-ticket-texto').value;
                 const estado = document.getElementById('resp-ticket-estado').value;
 
+                if (!tId || !respuesta.trim()) {
+                    notify('Escribe una respuesta antes de enviarla.', 'error');
+                    return;
+                }
+
+                saveRespBtn.disabled = true;
+                saveRespBtn.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Enviando...';
                 try {
                     const res = await fetch(`${API_ROOT}/api/atencion/ticket/${tId}/respuesta`, {
                         method: 'PUT',
                         headers: apiHeaders({ 'Content-Type': 'application/json' }),
                         body: JSON.stringify({ respuesta, estado })
                     });
-                    if (res.ok) {
-                        notify('Respuesta enviada y ticket actualizado', 'success');
-                        document.getElementById('admin-ticket-responder-modal').style.display = 'none';
-                        await loadAdminTickets();
-                    } else {
-                        notify('No se pudo guardar la respuesta', 'error');
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        notify(data.error || `No se pudo guardar la respuesta (HTTP ${res.status}).`, 'error');
+                        return;
                     }
-                } catch (_) {
-                    notify('Error de red al actualizar ticket', 'error');
+
+                    notify('Respuesta enviada y ticket actualizado', 'success');
+                    document.getElementById('admin-ticket-responder-modal').style.display = 'none';
+                    await loadAdminTickets();
+                } catch (error) {
+                    notify(`Error de red al actualizar ticket: ${error.message}`, 'error');
+                } finally {
+                    saveRespBtn.disabled = false;
+                    saveRespBtn.innerHTML = '<i class="fas fa-paper-plane" aria-hidden="true"></i> Guardar y Enviar';
                 }
             });
         }
@@ -749,6 +810,8 @@
         enviarTicket,
         procesarCompraCompleta,
         loadAdminMonedero,
+        loadImpuestos,
+        getCheckoutTotals,
         loadAdminImpuestos,
         loadAdminTickets,
         loadAdminPagos,

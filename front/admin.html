@@ -117,8 +117,9 @@
                     </button>
                     <ul class="submenu collapsed" id="erp-submenu">
                         <li><a href="#" data-admin-page="erp-dashboard"><i class="fas fa-chart-line"></i> Dashboard ERP</a></li>
+                        <li><a href="#" data-admin-page="clientes"><i class="fas fa-users"></i> Clientes CRM</a></li>
                         <li><a href="#" data-admin-page="erp-ordenes"><i class="fas fa-receipt"></i> Órdenes de clientes</a></li>
-                        <li><a href="#" data-admin-page="erp-inventario"><i class="fas fa-boxes-stacked"></i> Inventario ERP</a></li>
+                        <li><a href="#" data-admin-page="scm-inventario"><i class="fas fa-boxes-stacked"></i> Inventario SCM</a></li>
                         <li><a href="#" data-admin-page="erp-nueva-orden"><i class="fas fa-cart-plus"></i> Nueva orden</a></li>
                         <li><a href="#" data-admin-page="erp-nivel"><i class="fas fa-layer-group"></i> Nivel ERP</a></li>
                         <li><a href="#" data-admin-page="erp-reportes"><i class="fas fa-file-invoice-dollar"></i> Reportes ERP</a></li>
@@ -135,7 +136,6 @@
                         <li><a href="#" data-admin-page="ecom-monedero"><i class="fas fa-wallet"></i> Monedero</a></li>
                         <li><a href="#" data-admin-page="ecom-impuestos"><i class="fas fa-percentage"></i> Configuración de Impuestos</a></li>
                         <li><a href="#" data-admin-page="ecom-pagos"><i class="fas fa-money-check-alt"></i> Registro de Pagos</a></li>
-                        <li><a href="#" data-admin-page="ecom-tickets"><i class="fas fa-headset"></i> Tickets de soporte</a></li>
                     </ul>
                 </li>
 
@@ -148,6 +148,26 @@
         <!-- ============ CONTENIDO ADMIN ============ -->
         <div class="admin-content">
             <!-- ===== DASHBOARD ===== -->
+            <div id="admin-erp-clientes" class="admin-page hidden">
+                <div class="product-table-container">
+                    <div class="table-header">
+                        <h3>Clientes ERP</h3>
+                    </div>
+                    <div class="crm-client-filters">
+                        <label for="erp-client-search">Buscar cliente</label>
+                        <input type="search" id="erp-client-search" placeholder="Nombre, correo o teléfono">
+                        <label for="erp-client-status-filter">Estado</label>
+                        <select id="erp-client-status-filter"><option value="todos">Todos los estados</option><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select>
+                        <label for="erp-client-stage-filter">Etapa CRM</label>
+                        <select id="erp-client-stage-filter"><option value="todas">Todas las etapas</option><option value="prospecto">Prospecto</option><option value="activo">Activo</option><option value="frecuente">Frecuente</option><option value="inactivo">Inactivo</option></select>
+                    </div>
+                    <table class="product-table">
+                        <thead><tr><th>Cliente</th><th>Email</th><th>Teléfono</th><th>Empresa</th><th>Etapa CRM</th><th>Pedidos</th><th>Total</th><th>Registro</th><th>Acciones</th></tr></thead>
+                        <tbody id="erp-clients-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
             <div id="admin-dashboard" class="admin-page active">
                 <div id="scm-low-stock-warning" class="scm-low-stock-warning" data-scm-low-stock-warning role="status" aria-live="polite" hidden>
                     <ul id="scm-low-stock-warning-list" data-scm-low-stock-list></ul>
@@ -1657,16 +1677,20 @@
         </div>
     </div>
     <div id="admin-ecom-tickets" class="admin-page hidden">
-        <div class="product-table-container">
-            <div class="scm-page-header">
-                <div><h3 class="scm-header-title"><i class="fas fa-headset"></i> Panel de soporte</h3>
-                    <div class="scm-header-subtitle">Consulta, responde y da seguimiento a solicitudes de clientes.</div></div>
+        <div class="product-table-container support-panel">
+            <div class="support-panel-header">
+                <div class="support-panel-heading">
+                    <span class="support-panel-icon" aria-hidden="true"><i class="fas fa-headset"></i></span>
+                    <div>
+                        <h3>Panel de soporte</h3>
+                        <p>Consulta, responde y da seguimiento a solicitudes de clientes.</p>
+                    </div>
+                </div>
                 <button class="btn-secondary" type="button" id="admin-refresh-tickets"><i class="fas fa-sync-alt"></i> Actualizar</button>
             </div>
-            <div style="overflow-x:auto;"><table class="product-table">
-                <thead><tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Solicitud</th><th>Estado</th><th>Respuesta</th><th>Acciones</th></tr></thead>
-                <tbody id="admin-tickets-tbody"></tbody>
-            </table></div>
+            <div id="admin-tickets-list" class="support-ticket-list" aria-live="polite">
+                <p class="support-ticket-empty">Cargando solicitudes...</p>
+            </div>
         </div>
     </div>
     <div id="admin-ecom-pagos" class="admin-page hidden">

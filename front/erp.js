@@ -14,6 +14,7 @@
     let erpMetrics = null;
     let erpState = null;
     let crmClientsList = [];
+    let erpClientsData = [];
     let scmProductsList = [];
 
     // Estado del asistente de nueva orden
@@ -96,9 +97,24 @@
     async function loadCrmClients() {
         try {
             crmClientsList = await apiRequest('/clientes');
+            erpClientsData = crmClientsList;
             return crmClientsList;
         } catch (err) {
             showErpError('No se pudieron cargar los clientes del CRM', err);
+            crmClientsList = [];
+            erpClientsData = [];
+            return [];
+        }
+    }
+
+    async function loadErpClients() {
+        try {
+            erpClientsData = await apiRequest('/clientes');
+            crmClientsList = erpClientsData;
+            return erpClientsData;
+        } catch (err) {
+            showErpError('No se pudieron cargar los clientes del ERP', err);
+            erpClientsData = [];
             crmClientsList = [];
             return [];
         }
@@ -113,6 +129,89 @@
             scmProductsList = [];
             return [];
         }
+    }
+
+    function formatClientStage(stage) {
+        const labels = {
+            prospecto: 'Prospecto',
+            activo: 'Activo',
+            frecuente: 'Frecuente',
+            inactivo: 'Inactivo'
+        };
+        return labels[String(stage || 'prospecto')] || 'Prospecto';
+    }
+
+    function renderErpClientsTable() {
+        const tbody = document.getElementById('erp-clients-table-body');
+        if (!tbody) return;
+
+        const search = (document.getElementById('erp-client-search')?.value || '').trim().toLowerCase();
+        const statusFilter = document.getElementById('erp-client-status-filter')?.value || 'todos';
+        const stageFilter = document.getElementById('erp-client-stage-filter')?.value || 'todas';
+
+        let clients = [...erpClientsData];
+        if (search) {
+            clients = clients.filter(client =>
+                (client.name || '').toLowerCase().includes(search) ||
+                (client.email || '').toLowerCase().includes(search) ||
+                (client.phone || '').toLowerCase().includes(search) ||
+                (client.company || '').toLowerCase().includes(search)
+            );
+        }
+        if (statusFilter !== 'todos') {
+            clients = clients.filter(client => (client.status || 'activo') === statusFilter);
+        }
+        if (stageFilter !== 'todas') {
+            clients = clients.filter(client => (client.stage || 'prospecto') === stageFilter);
+        }
+
+        if (!clients.length) {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#64748b;padding:1.5rem;">No se encontraron clientes con los filtros actuales.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = clients.map(client => {
+            const total = Number(client.spent || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const pedidos = Number(client.orders || 0);
+            const initials = (client.name || 'C').charAt(0).toUpperCase();
+            const stage = formatClientStage(client.stage);
+            const status = (client.status || 'activo') === 'activo' ? 'Activo' : 'Inactivo';
+            return `
+                <tr>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:0.75rem;">
+                            <div style="width:2.15rem;height:2.15rem;border-radius:50%;background:#e0e7ff;color:#4338ca;font-weight:700;display:flex;align-items:center;justify-content:center;">${escapeHtml(initials)}</div>
+                            <div>
+                                <strong>${escapeHtml(client.name || 'Cliente')}</strong>
+                                <div style="font-size:0.78rem;color:#64748b;">${escapeHtml(status)}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${escapeHtml(client.email || 'Sin correo')}</td>
+                    <td>${escapeHtml(client.phone || 'Sin teléfono')}</td>
+                    <td>${escapeHtml(client.company || 'Particular')}</td>
+                    <td><span class="erp-badge erp-badge-primary">${escapeHtml(stage)}</span></td>
+                    <td>${pedidos}</td>
+                    <td>$${escapeHtml(total)}</td>
+                    <td>${escapeHtml(client.registered_date ? new Date(client.registered_date).toLocaleDateString('es-MX') : (client.created_at ? new Date(client.created_at).toLocaleDateString('es-MX') : 'Sin registro'))}</td>
+                    <td>
+                        <button type="button" class="btn-secondary" onclick="window.viewClientDetailById(${client.id}, 'erp-clientes')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    async function renderErpClientsPage() {
+        const tbody = document.getElementById('erp-clients-table-body');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:1.5rem;color:#64748b;"><i class="fas fa-spinner fa-spin"></i> Cargando clientes del ERP...</td></tr>';
+        }
+
+        await loadErpClients();
+        renderErpClientsTable();
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -1164,7 +1263,7 @@
         const visiblePagesByRole = {
             ventas: new Set([
                 'dashboard', 'clientes', 'client-detail', 'client-form', 'mi-actividad',
-                'scm-productos', 'erp-ordenes', 'erp-nueva-orden', 'erp-reportes',
+                'scm-productos', 'erp-clientes', 'erp-ordenes', 'erp-nueva-orden', 'erp-reportes',
                 'ecom-monedero', 'ecom-impuestos', 'ecom-tickets', 'ecom-pagos'
             ]),
             logistica: new Set(['dashboard', 'scm-productos', 'scm-inventario', 'erp-ordenes', 'erp-reportes']),
@@ -1607,6 +1706,8 @@
 
         if (pageId === 'erp-dashboard') {
             renderErpDashboard();
+        } else if (pageId === 'erp-clientes') {
+            renderErpClientsPage();
         } else if (pageId === 'erp-ordenes') {
             renderErpOrdersList();
         } else if (pageId === 'erp-inventario') {
@@ -1632,6 +1733,20 @@
 
     // Inicialización al cargar el DOM
     document.addEventListener('DOMContentLoaded', function () {
+        // Búsqueda en listado de clientes ERP
+        const erpClientSearch = document.getElementById('erp-client-search');
+        if (erpClientSearch) {
+            erpClientSearch.addEventListener('input', () => renderErpClientsTable());
+        }
+        const erpClientStatusFilter = document.getElementById('erp-client-status-filter');
+        if (erpClientStatusFilter) {
+            erpClientStatusFilter.addEventListener('change', () => renderErpClientsTable());
+        }
+        const erpClientStageFilter = document.getElementById('erp-client-stage-filter');
+        if (erpClientStageFilter) {
+            erpClientStageFilter.addEventListener('change', () => renderErpClientsTable());
+        }
+
         // Búsqueda en listado de órdenes
         const searchInput = document.getElementById('erp-orders-search');
         if (searchInput) {

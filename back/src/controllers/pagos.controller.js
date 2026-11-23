@@ -1,12 +1,13 @@
 const pool = require('../config/db');
 const { ensureLowStockOrders } = require('./data.controller');
+const { enviarComprobanteFiscalEmail, DEFAULT_TARGET_EMAIL } = require('../utils/mailer');
 
 async function procesarPago(req, res) {
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
 
-        const { metodo_pago, direccion, cart_session_key } = req.body || {};
+        const { metodo_pago, direccion, cart_session_key, reviewed_items } = req.body || {};
         const paymentMethodInput = typeof metodo_pago === 'string' ? metodo_pago.trim().toLowerCase() : 'tarjeta';
         const paymentMethods = {
             tarjeta: 'Tarjeta',
@@ -69,9 +70,16 @@ async function procesarPago(req, res) {
             await connection.rollback();
             return res.status(400).json({ error: 'El carrito está vacío o contiene demasiados productos' });
         }
+        if (!Array.isArray(reviewed_items) || reviewed_items.length !== cartRows.length) {
+            await connection.rollback();
+            return res.status(409).json({
+                error: 'Actualiza el carrito y vuelve a revisar el total antes de pagar.'
+            });
+        }
 
         const items = [];
-        for (const row of cartRows) {
+        for (let index = 0; index < cartRows.length; index += 1) {
+            const row = cartRows[index];
             const quantity = Number(row.quantity);
             if (!Number.isSafeInteger(quantity) || quantity <= 0 || quantity > 1000) {
                 await connection.rollback();
@@ -86,6 +94,19 @@ async function procesarPago(req, res) {
             if (!Number.isSafeInteger(productId) || productId <= 0 || !name || !Number.isFinite(price) || price <= 0) {
                 await connection.rollback();
                 return res.status(409).json({ error: 'Un producto del carrito ya no está disponible' });
+            }
+            const reviewedItem = reviewed_items[index];
+            if (
+                !reviewedItem
+                || reviewedItem.name !== name
+                || Number(reviewedItem.quantity) !== quantity
+                || !Number.isFinite(Number(reviewedItem.price))
+                || Math.round(Number(reviewedItem.price) * 100) !== Math.round(price * 100)
+            ) {
+                await connection.rollback();
+                return res.status(409).json({
+                    error: 'Los productos o sus precios cambiaron. Actualiza el carrito y revisa el total antes de pagar.'
+                });
             }
             if (!isMarketplace) {
                 const stock = Number(row.product_stock);
@@ -339,6 +360,36 @@ async function procesarPago(req, res) {
 
         await connection.commit();
 
+        // 12. Enviar automáticamente el comprobante fiscal por correo a pailoto0717@gmail.com
+        let emailFiscalResult = { success: false, destinatario: DEFAULT_TARGET_EMAIL };
+        try {
+            emailFiscalResult = await enviarComprobanteFiscalEmail({
+                folio: orderFolio,
+                fecha: new Date().toLocaleString('es-MX'),
+                cliente: {
+                    nombre: clientName,
+                    email: clientEmail,
+                    telefono: clientPhone,
+                    direccion: clientAddress
+                },
+                datosFiscales: {
+                    rfc: 'XAXX010101000',
+                    razonSocial: clientName,
+                    regimen: '616 - General / Régimen de Incorporación',
+                    uso: 'G03 - Gastos en general'
+                },
+                items: items,
+                subtotal: montoSubtotal,
+                impuesto: montoImpuesto,
+                descuento: montoDescuento,
+                total: montoTotal,
+                metodoPago: paymentMethod,
+                saldoActualMonedero: esMonedero ? saldoNuevoMonedero : null
+            });
+        } catch (mailErr) {
+            console.error('Error al enviar correo del comprobante fiscal:', mailErr);
+        }
+
         res.json({
             success: true,
             message: '¡Compra realizada con éxito!',
@@ -355,6 +406,8 @@ async function procesarPago(req, res) {
             cliente_nombre: clientName,
             cliente_email: clientEmail,
             fecha: new Date().toLocaleString('es-MX'),
+            email_fiscal_enviado: emailFiscalResult.success,
+            email_fiscal_destinatario: emailFiscalResult.destinatario || DEFAULT_TARGET_EMAIL,
             items
         });
     } catch (error) {
@@ -363,6 +416,54 @@ async function procesarPago(req, res) {
         res.status(500).json({ error: error.message || 'Error al procesar el pago' });
     } finally {
         connection.release();
+    }
+}
+
+async function enviarComprobanteFiscal(req, res) {
+    try {
+        const {
+            folio,
+            fecha,
+            cliente,
+            datosFiscales,
+            items,
+            subtotal,
+            impuesto,
+            descuento,
+            total,
+            metodoPago,
+            saldoActualMonedero
+        } = req.body || {};
+
+        if (!folio) {
+            return res.status(400).json({ error: 'El folio es requerido para enviar el comprobante' });
+        }
+
+        const result = await enviarComprobanteFiscalEmail({
+            folio,
+            fecha: fecha || new Date().toLocaleString('es-MX'),
+            cliente: cliente || {},
+            datosFiscales: datosFiscales || {},
+            items: Array.isArray(items) ? items : [],
+            subtotal: Number(subtotal || 0),
+            impuesto: Number(impuesto || 0),
+            descuento: Number(descuento || 0),
+            total: Number(total || 0),
+            metodoPago: metodoPago || 'Tarjeta',
+            saldoActualMonedero: saldoActualMonedero !== undefined ? Number(saldoActualMonedero) : null
+        });
+
+        return res.status(result.success ? 200 : 503).json({
+            success: result.success,
+            message: result.success
+                ? `Comprobante fiscal enviado exitosamente a ${result.destinatario}`
+                : `No se pudo enviar el correo: ${result.error || 'Error SMTP'}`,
+            destinatario: result.destinatario,
+            error: result.success ? undefined : result.error
+        });
+    } catch (error) {
+        console.error('Error en endpoint enviarComprobanteFiscal:', error);
+        res.status(500).json({ error: 'Error al enviar comprobante fiscal por correo' });
     }
 }
 
@@ -400,6 +501,7 @@ async function getPagoById(req, res) {
 
 module.exports = {
     procesarPago,
+    enviarComprobanteFiscal,
     getPagos,
     getPagoById
 };

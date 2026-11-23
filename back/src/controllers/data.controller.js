@@ -237,7 +237,7 @@ async function ensureLowStockOrders(connection) {
 }
 
 
-async function getRows(key) {
+async function getRows(key, clientId) {
     if (key === 'products') {
         const [rows] = await pool.query('SELECT * FROM productos WHERE active=1 ORDER BY id');
         return rows.map(row => ({ id: row.id, name: row.name, category: row.category, price: Number(row.price), desc: row.description, image: getProductImage(row.image, row.name), badge: row.badge, badgeText: row.badge_text, stock: row.stock, status: row.status }));
@@ -267,8 +267,42 @@ async function getRows(key) {
         const [interactions] = await pool.query('SELECT * FROM interacciones ORDER BY date DESC');
         return clients.map(({ password, ...client }) => ({ ...client, registeredDate: client.registered_date, lastInteractionDate: client.last_interaction_date, interactions: interactions.filter(item => item.cliente_id === client.id) }));
     }
-    if (key === 'orders' || key === 'historial') {
-        const source = key === 'orders' ? 'admin' : 'history';
+    if (key === 'historial') {
+        if (!Number.isSafeInteger(Number(clientId)) || Number(clientId) <= 0) return [];
+        const [orders] = await pool.query(
+            "SELECT * FROM pedidos WHERE source = 'online' AND cliente_id = ? ORDER BY order_date DESC",
+            [Number(clientId)]
+        );
+        if (orders.length === 0) return [];
+        const orderIds = orders.map(order => order.id);
+        const placeholders = orderIds.map(() => '?').join(', ');
+        const [items] = await pool.query(
+            `SELECT * FROM pedido_items WHERE pedido_id IN (${placeholders})`,
+            orderIds
+        );
+        return orders.map(order => {
+            const orderItems = items.filter(item => item.pedido_id === order.id);
+            return {
+                id: order.id,
+                client: order.client_name,
+                products: orderItems.map(item => item.name + ' (' + item.quantity + ')').join(', '),
+                total: Number(order.total),
+                status: order.status,
+                date: order.order_date,
+                metodo: order.payment_method,
+                estado: order.status,
+                direccion: parseAddress(order.address),
+                items: orderItems.map(item => ({
+                    name: item.name,
+                    quantity: Number(item.quantity),
+                    price: Number(item.price),
+                    subtotal: Number(item.subtotal)
+                }))
+            };
+        });
+    }
+    if (key === 'orders') {
+        const source = 'admin';
         const [orders] = await pool.query('SELECT * FROM pedidos WHERE source = ? ORDER BY order_date DESC', [source]);
         const [items] = await pool.query('SELECT * FROM pedido_items');
         return orders.map(order => ({ id: order.id, client: order.client_name, products: items.filter(item => item.pedido_id === order.id).map(item => item.name + ' (' + item.quantity + ')').join(', '), total: Number(order.total), status: order.status, date: order.order_date, metodo: order.payment_method, estado: order.status, direccion: parseAddress(order.address), items: items.filter(item => item.pedido_id === order.id).map(item => ({ name: item.name, quantity: item.quantity, price: Number(item.price), subtotal: Number(item.subtotal) })) }));
@@ -601,7 +635,7 @@ const getData = async (req, res) => {
         return res.status(410).json({ error: 'El carrito ahora usa /api/carrito y se guarda por cliente' });
     }
     if (!isAllowed(key)) return res.status(400).json({ error: 'Colección no permitida' });
-    try { res.json(await getRows(key)); } catch (error) { console.error(error); res.status(500).json({ error: 'Error al obtener datos SQL' }); }
+    try { res.json(await getRows(key, key === 'historial' ? req.user?.id : undefined)); } catch (error) { console.error(error); res.status(500).json({ error: 'Error al obtener datos SQL' }); }
 };
 
 const saveData = async (req, res) => {
@@ -612,6 +646,9 @@ const saveData = async (req, res) => {
     if (!isAllowed(key)) return res.status(400).json({ error: 'Colección no permitida' });
     if (key === 'clients') {
         return res.status(405).json({ error: 'Usa los endpoints REST de /api/clientes para administrar clientes' });
+    }
+    if (key === 'historial') {
+        return res.status(405).json({ error: 'El historial de compras se genera desde los pedidos pagados' });
     }
     if (arrayDataKeys.has(key) && !Array.isArray(req.body)) {
         return res.status(400).json({ error: `La colección ${key} debe enviarse como una lista` });

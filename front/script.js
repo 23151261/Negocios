@@ -2,7 +2,7 @@
     const rolePageAccess = {
         ventas: new Set([
             'dashboard', 'clientes', 'client-detail', 'client-form', 'mi-actividad',
-            'scm-productos', 'erp-ordenes', 'erp-nueva-orden', 'erp-reportes', 'ecom-monedero', 'ecom-impuestos', 'ecom-tickets', 'ecom-pagos'
+            'scm-productos', 'scm-inventario', 'erp-ordenes', 'erp-nueva-orden', 'erp-reportes', 'ecom-monedero', 'ecom-impuestos', 'ecom-tickets', 'ecom-pagos'
         ]),
         logistica: new Set([
             'dashboard', 'scm-productos', 'scm-inventario', 'erp-ordenes', 'erp-reportes'
@@ -267,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function apiGet(key) {
         const headers = {};
-        if (key === 'clients' && window.deliciasAuthToken) {
+        if (['clients', 'historial'].includes(key) && window.deliciasAuthToken) {
             headers.Authorization = 'Bearer ' + window.deliciasAuthToken;
         }
         const response = await fetch(API_BASE + '/data/' + key, { headers: headers });
@@ -276,6 +276,17 @@ document.addEventListener('DOMContentLoaded', function() {
             throw new Error(result.error || 'No se pudo cargar ' + key + ' (HTTP ' + response.status + ')');
         }
         return response.json();
+    }
+
+    async function loadCustomerPurchaseHistory() {
+        try {
+            const history = await apiGet('historial');
+            if (!Array.isArray(history)) throw new Error('El historial de compras no tiene un formato válido');
+            historialCompras = history;
+            renderHistorialCompras();
+        } catch (error) {
+            showAppNotice('No se pudo cargar tu historial de compras: ' + error.message);
+        }
     }
 
     async function apiCreateInteraction(interaction) {
@@ -541,6 +552,7 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
         total: 0,
         items: []
     };
+    window.checkoutData = checkoutData;
     let promoAplicada = false;
 
     // ============================================================
@@ -610,12 +622,32 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
         return apiSave('publications', userPublications);
     }
 
-        function saveHistorial() {
-            return apiSave('historial', historialCompras);
+        function saveCurrentUser(persistSession) {
+            const shouldPersist = persistSession !== false;
+            try {
+                if (shouldPersist) {
+                    localStorage.setItem('delicias_customer_token', authToken);
+                    localStorage.setItem('delicias_customer_user', JSON.stringify(currentUser));
+                    sessionStorage.removeItem('delicias_customer_token');
+                    sessionStorage.removeItem('delicias_customer_user');
+                } else {
+                    sessionStorage.setItem('delicias_customer_token', authToken);
+                    sessionStorage.setItem('delicias_customer_user', JSON.stringify(currentUser));
+                    localStorage.removeItem('delicias_customer_token');
+                    localStorage.removeItem('delicias_customer_user');
+                }
+            } catch (_) {}
+            return currentUser;
         }
 
-        function saveCurrentUser() {
-            return currentUser;
+        function clearCustomerSession() {
+            try {
+                localStorage.removeItem('delicias_customer_token');
+                localStorage.removeItem('delicias_customer_user');
+                sessionStorage.removeItem('delicias_customer_token');
+                sessionStorage.removeItem('delicias_customer_user');
+                sessionStorage.removeItem('delicias_active_page');
+            } catch (_) {}
         }
 
     function saveAuction() {
@@ -817,6 +849,8 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
         registro: document.getElementById('page-registro'),
         login: document.getElementById('page-login'),
         perfil: document.getElementById('page-perfil'),
+        monedero: document.getElementById('page-monedero'),
+        tickets: document.getElementById('page-tickets'),
         exito: document.getElementById('page-exito'),
         marketplace: document.getElementById('page-marketplace'),
         'publicar-producto': document.getElementById('page-publicar-producto'),
@@ -852,6 +886,7 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
         'scm-madurez': document.getElementById('admin-scm-madurez'),
         'scm-reportes': document.getElementById('admin-scm-reportes'),
         'erp-dashboard': document.getElementById('admin-erp-dashboard'),
+        'erp-clientes': document.getElementById('admin-erp-clientes'),
         'erp-ordenes': document.getElementById('admin-erp-ordenes'),
         'erp-inventario': document.getElementById('admin-erp-inventario'),
         'erp-nueva-orden': document.getElementById('admin-erp-nueva-orden'),
@@ -865,6 +900,11 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
     };
 
     function showPage(pageId) {
+        if (!document.body.classList.contains('admin-page-shell')) {
+            try {
+                sessionStorage.setItem('delicias_active_page', pageId);
+            } catch (_) {}
+        }
         if (document.body.classList.contains('admin-page-shell')) {
             var adminLoginPage = document.getElementById('page-login');
             var adminMainPage = document.getElementById('page-admin');
@@ -915,6 +955,18 @@ async function registrarActividadUsuario(tipo, descripcion, metadata) {
 
         if (pageId === 'perfil') {
             updateProfileUI();
+        }
+
+        if (pageId === 'checkout') {
+            fillCheckoutFromProfile();
+        }
+
+        if (pageId === 'monedero' && isLoggedIn && currentUser.id && window.ecom) {
+            window.ecom.loadMonedero(currentUser.id);
+        }
+
+        if (pageId === 'tickets' && isLoggedIn && currentUser.id && window.ecom) {
+            window.ecom.loadTicketsCliente(currentUser.id);
         }
 
         if (pageId === 'comunidad') {
@@ -1551,6 +1603,7 @@ async function renderMyActivity() {
             isAdmin = false;
             authToken = '';
             window.deliciasAuthToken = '';
+            clearCustomerSession();
             await loadGuestCartAfterLogout();
             updateNavVisibility();
             showPage('inicio');
@@ -1594,6 +1647,8 @@ async function renderMyActivity() {
         var totalItems = 0;
         for (var i = 0; i < cart.length; i++) totalItems += cart[i].quantity;
         if (cartBadge) cartBadge.textContent = totalItems;
+        var menuCartBadge = document.getElementById('menu-cart-badge');
+        if (menuCartBadge) menuCartBadge.textContent = totalItems;
 
         var totalPrice = 0;
         for (var j = 0; j < cart.length; j++) {
@@ -1756,6 +1811,22 @@ async function renderMyActivity() {
     // FUNCIÓN PROCESAR PAGO (CON VERIFICACIÓN DE LOGIN)
     // ============================================================
 
+    function fillCheckoutFromProfile() {
+        if (!isLoggedIn || !currentUser) return;
+        var profileCheckoutFields = [
+            ['checkout-nombre', currentUser.name],
+            ['checkout-email', currentUser.email],
+            ['checkout-telefono', currentUser.phone],
+            ['checkout-direccion', currentUser.address],
+            ['checkout-ciudad', currentUser.city || currentUser.ciudad],
+            ['checkout-cp', currentUser.postalCode || currentUser.postal_code || currentUser.cp || currentUser.codigoPostal]
+        ];
+        profileCheckoutFields.forEach(function(field) {
+            var input = document.getElementById(field[0]);
+            if (input && !input.value && field[1]) input.value = String(field[1]);
+        });
+    }
+
     function processPayment() {
         if (cart.length === 0) return;
         
@@ -1814,26 +1885,7 @@ async function renderMyActivity() {
         
         checkoutCurrentStep = 1;
         actualizarCheckoutProgress(1);
-        
-        if (isLoggedIn && currentUser) {
-            var nombreInput = document.getElementById('checkout-nombre');
-            var emailInput = document.getElementById('checkout-email');
-            var direccionInput = document.getElementById('checkout-direccion');
-            var telefonoInput = document.getElementById('checkout-telefono');
-            
-            if (nombreInput && currentUser.name) {
-                nombreInput.value = currentUser.name;
-            }
-            if (emailInput && currentUser.email) {
-                emailInput.value = currentUser.email;
-            }
-            if (direccionInput && currentUser.address) {
-                direccionInput.value = currentUser.address;
-            }
-            if (telefonoInput && currentUser.phone) {
-                telefonoInput.value = currentUser.phone;
-            }
-        }
+        fillCheckoutFromProfile();
         
         var total = 0;
         checkoutData.items = [];
@@ -1853,6 +1905,7 @@ async function renderMyActivity() {
             }
         }
         checkoutData.total = aplicarDescuento(total, checkoutData.items);
+        if (window.ecom) window.ecom.updateCheckoutWalletDisplay();
     }
 
     function mostrarErrorCarrito(message) {
@@ -1898,7 +1951,16 @@ async function renderMyActivity() {
     function irAlPaso(step) {
         checkoutCurrentStep = step;
         actualizarCheckoutProgress(step);
+        if (step === 2 && window.ecom) window.ecom.updateCheckoutWalletDisplay();
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function recalculateCheckoutTotal() {
+        var subtotal = checkoutData.items.reduce(function(total, item) {
+            return total + Number(item.subtotal || Number(item.price) * Number(item.quantity));
+        }, 0);
+        checkoutData.total = aplicarDescuento(subtotal, checkoutData.items);
+        if (window.ecom) window.ecom.updateCheckoutWalletDisplay();
     }
 
     // ============================================================
@@ -4096,6 +4158,40 @@ function eliminarPublicacion(id) {
         });
     }
 
+    var menuCartBtn = document.getElementById('menu-cart-btn');
+    if (menuCartBtn) {
+        menuCartBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var navLinks = document.getElementById('nav-links');
+            var hamburgerBtn = document.getElementById('hamburger-btn');
+            if (navLinks) navLinks.classList.remove('nav-open');
+            if (hamburgerBtn) {
+                hamburgerBtn.classList.remove('open');
+                hamburgerBtn.setAttribute('aria-expanded', 'false');
+            }
+            openCart();
+        });
+    }
+
+    var menuCheckoutBtn = document.getElementById('menu-checkout-btn');
+    if (menuCheckoutBtn) {
+        menuCheckoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var navLinks = document.getElementById('nav-links');
+            var hamburgerBtn = document.getElementById('hamburger-btn');
+            if (navLinks) navLinks.classList.remove('nav-open');
+            if (hamburgerBtn) {
+                hamburgerBtn.classList.remove('open');
+                hamburgerBtn.setAttribute('aria-expanded', 'false');
+            }
+            if (cart.length === 0) {
+                openCart();
+                return;
+            }
+            processPayment();
+        });
+    }
+
     // ============================================================
     // EVENT LISTENERS - DETALLE DE PRODUCTO
     // ============================================================
@@ -4571,8 +4667,12 @@ function eliminarPublicacion(id) {
                         const result = await apiAuth('register', { name: name, email: email, password: password, phone: phone, address: address });
                 currentUser.name = result.user.name;
                 currentUser.email = result.user.email;
+                currentUser.id = result.user.id;
+                currentUser.phone = result.user.phone || '';
+                currentUser.address = result.user.address || '';
                 currentUser.role = result.user.role || 'usuario'; 
                 customerCartTransferred = await loadClientCartAfterLogin();
+                await loadCustomerPurchaseHistory();
             } catch (error) {
                 showFormMessage(msg, error.message, 'error');
                 return;
@@ -4698,15 +4798,20 @@ function eliminarPublicacion(id) {
                 const result = await apiAuth('login', { email: email, password: password });
                 currentUser.name = result.user.name;
                 currentUser.email = result.user.email;
+                currentUser.id = result.user.id;
+                currentUser.phone = result.user.phone || '';
+                currentUser.address = result.user.address || '';
                 currentUser.role = result.user.role;
                 customerCartTransferred = await loadClientCartAfterLogin();
+                await loadCustomerPurchaseHistory();
             } catch (error) {
                 showFormMessage(msg, error.message, 'error');
                 return;
             }
             isLoggedIn = true;
             isAdmin = false;
-            saveCurrentUser();
+            var rememberMe = document.getElementById('remember-me');
+            saveCurrentUser(!(rememberMe && !rememberMe.checked));
             registrarActividadUsuario('login', 'Inició sesión en la plataforma', {});
             if (msg) showFormMessage(msg, 'Inicio de sesión exitoso.', 'success');
             document.getElementById('login-email').value = '';
@@ -4794,6 +4899,7 @@ function eliminarPublicacion(id) {
             adminEmail = '';
             authToken = '';
             window.deliciasAuthToken = '';
+            clearCustomerSession();
             await loadGuestCartAfterLogout();
             var msg = document.getElementById('profile-message');
             if (msg) showFormMessage(msg, 'Has cerrado sesión exitosamente.', 'success');
@@ -5258,33 +5364,91 @@ function ejecutarLogoutAdmin() {
     // CHECKOUT - EVENT LISTENERS
     // ============================================================
 
+    function showCheckoutValidationError(message, input) {
+        var checkoutMessage = document.getElementById('checkout-message');
+        if (checkoutMessage) {
+            checkoutMessage.textContent = message;
+            checkoutMessage.classList.remove('hidden');
+            checkoutMessage.classList.add('visible');
+        }
+        if (input) {
+            input.setAttribute('aria-invalid', 'true');
+            input.focus();
+            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    function clearCheckoutValidationError() {
+        document.querySelectorAll('#checkout-direccion-form input[aria-invalid="true"]').forEach(function(input) {
+            input.removeAttribute('aria-invalid');
+        });
+        var checkoutMessage = document.getElementById('checkout-message');
+        if (checkoutMessage) {
+            checkoutMessage.textContent = '';
+            checkoutMessage.classList.remove('visible');
+        }
+    }
+
+    function showCheckoutPaymentMethodError(message, input) {
+        var checkoutMessage = document.getElementById('checkout-method-message');
+        if (checkoutMessage) {
+            checkoutMessage.textContent = message;
+            checkoutMessage.classList.remove('hidden');
+            checkoutMessage.classList.add('visible');
+        }
+        if (input) {
+            input.setAttribute('aria-invalid', 'true');
+            input.focus();
+            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    function clearCheckoutPaymentMethodError() {
+        document.querySelectorAll('.payment-form input[aria-invalid="true"]').forEach(function(input) {
+            input.removeAttribute('aria-invalid');
+        });
+        var checkoutMessage = document.getElementById('checkout-method-message');
+        if (checkoutMessage) {
+            checkoutMessage.textContent = '';
+            checkoutMessage.classList.remove('hidden', 'visible');
+        }
+    }
+
     document.querySelectorAll('.checkout-next-btn').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
+        btn.addEventListener('click', async function(e) {
             e.preventDefault();
             
             if (checkoutCurrentStep === 1) {
+                clearCheckoutValidationError();
                 var direccion = document.getElementById('checkout-direccion')?.value.trim() || '';
                 var nombre = document.getElementById('checkout-nombre')?.value.trim() || '';
                 var email = document.getElementById('checkout-email')?.value.trim() || '';
                 var telefono = document.getElementById('checkout-telefono')?.value.trim() || '';
                 var ciudad = document.getElementById('checkout-ciudad')?.value.trim() || '';
                 var cp = document.getElementById('checkout-cp')?.value.trim() || '';
-                var checkoutMessage = document.getElementById('checkout-message');
 
                 if (!nombre || nombre.length < 3) {
-                    showFormMessage(checkoutMessage, 'Escribe tu nombre completo.', 'error');
+                    showCheckoutValidationError('Escribe tu nombre completo.', document.getElementById('checkout-nombre'));
                     return;
                 }
                 if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                    showFormMessage(checkoutMessage, 'Escribe un correo electrónico válido.', 'error');
+                    showCheckoutValidationError('Escribe un correo electrónico válido.', document.getElementById('checkout-email'));
                     return;
                 }
                 if (!/^\+?[0-9\s()-]{7,20}$/.test(telefono)) {
-                    showFormMessage(checkoutMessage, 'Escribe un teléfono válido.', 'error');
+                    showCheckoutValidationError('Escribe un teléfono válido.', document.getElementById('checkout-telefono'));
                     return;
                 }
-                if (direccion.length < 5 || ciudad.length < 2 || !/^\d{5}$/.test(cp)) {
-                    showFormMessage(checkoutMessage, 'Completa dirección, ciudad y código postal de 5 dígitos.', 'error');
+                if (direccion.length < 5) {
+                    showCheckoutValidationError('Escribe una dirección válida.', document.getElementById('checkout-direccion'));
+                    return;
+                }
+                if (ciudad.length < 2) {
+                    showCheckoutValidationError('Escribe la ciudad de entrega.', document.getElementById('checkout-ciudad'));
+                    return;
+                }
+                if (!/^\d{5}$/.test(cp)) {
+                    showCheckoutValidationError('Escribe un código postal válido de 5 dígitos.', document.getElementById('checkout-cp'));
                     return;
                 }
                 
@@ -5296,10 +5460,29 @@ function ejecutarLogoutAdmin() {
                     ciudad: ciudad || '',
                     cp: cp || ''
                 };
+
+                if (checkoutData.items.length === 0) checkoutData.items = obtenerItemsCheckout();
+                if (checkoutData.items.length === 0) {
+                    showCheckoutValidationError('Tu carrito está vacío.');
+                    return;
+                }
+                recalculateCheckoutTotal();
                 
                 irAlPaso(2);
                 
             } else if (checkoutCurrentStep === 2) {
+                clearCheckoutPaymentMethodError();
+                if (!window.ecom || typeof window.ecom.loadImpuestos !== 'function') {
+                    showCheckoutPaymentMethodError('No se pudo verificar el total con impuestos. Inténtalo de nuevo.');
+                    return;
+                }
+                try {
+                    await window.ecom.loadImpuestos();
+                } catch (error) {
+                    showCheckoutPaymentMethodError('No se pudo verificar el total con impuestos. Inténtalo de nuevo.');
+                    return;
+                }
+
                 var metodoSeleccionado = document.querySelector('input[name="payment-method"]:checked');
                 if (metodoSeleccionado) {
                     checkoutData.metodoPago = metodoSeleccionado.value;
@@ -5312,45 +5495,51 @@ function ejecutarLogoutAdmin() {
                     var cardNumber = (document.getElementById('checkout-tarjeta-numero')?.value || '').replace(/\s/g, '');
                     var expiry = document.getElementById('checkout-tarjeta-fecha')?.value.trim() || '';
                     var cvv = document.getElementById('checkout-tarjeta-cvv')?.value.trim() || '';
-                    var cardMessage = document.getElementById('checkout-message');
-                    if (!cardName || !/^\d{13,19}$/.test(cardNumber) || !/^\d{2}\/\d{2}$/.test(expiry) || !/^\d{3,4}$/.test(cvv)) {
-                        showFormMessage(cardMessage, 'Completa correctamente los datos de la tarjeta.', 'error');
+                    if (!cardName) {
+                        showCheckoutPaymentMethodError('Escribe el nombre que aparece en la tarjeta.', document.getElementById('checkout-tarjeta-nombre'));
+                        return;
+                    }
+                    if (!/^\d{13,19}$/.test(cardNumber)) {
+                        showCheckoutPaymentMethodError('Escribe un número de tarjeta válido.', document.getElementById('checkout-tarjeta-numero'));
+                        return;
+                    }
+                    if (!/^\d{2}\/\d{2}$/.test(expiry)) {
+                        showCheckoutPaymentMethodError('Escribe la fecha de vencimiento en formato MM/AA.', document.getElementById('checkout-tarjeta-fecha'));
+                        return;
+                    }
+                    if (!/^\d{3,4}$/.test(cvv)) {
+                        showCheckoutPaymentMethodError('Escribe un CVV válido.', document.getElementById('checkout-tarjeta-cvv'));
                         return;
                     }
                     var expiryParts = expiry.split('/');
                     var expiryDate = new Date(2000 + Number(expiryParts[1]), Number(expiryParts[0]), 0);
                     if (Number(expiryParts[0]) < 1 || Number(expiryParts[0]) > 12 || expiryDate < new Date()) {
-                        showFormMessage(cardMessage, 'La tarjeta está vencida o la fecha no es válida.', 'error');
+                        showCheckoutPaymentMethodError('La tarjeta está vencida o la fecha no es válida.', document.getElementById('checkout-tarjeta-fecha'));
                         return;
                     }
                 }
-                if (checkoutData.metodoPago === 'ewallet' && checkoutData.total > 5) {
-                    var walletMessage = document.getElementById('checkout-message');
-                    showFormMessage(walletMessage, 'El saldo de la E-wallet es de $5.00 y no cubre este pedido.', 'error');
+                if (checkoutData.metodoPago === 'monedero') {
+                    var walletAlert = document.getElementById('checkout-wallet-alerta');
+                    if (walletAlert && window.getComputedStyle(walletAlert).display !== 'none') {
+                        showCheckoutPaymentMethodError('El saldo del Monedero no cubre este pedido. Recarga tu saldo o elige otro método.');
+                        return;
+                    }
+                }
+                
+                if (checkoutData.items.length === 0) checkoutData.items = obtenerItemsCheckout();
+                if (checkoutData.items.length === 0) {
+                    showCheckoutPaymentMethodError('Tu carrito está vacío.');
                     return;
                 }
                 
-                if (checkoutData.items.length === 0) {
-                    for (var i = 0; i < cart.length; i++) {
-                        var p = obtenerProductoCarrito(cart[i]);
-                        if (p) {
-                            checkoutData.items.push({
-                                name: p.name,
-                                quantity: cart[i].quantity,
-                                price: p.price,
-                                subtotal: p.price * cart[i].quantity
-                            });
-                        }
-                    }
-                    checkoutData.total = 0;
-                    for (var j = 0; j < checkoutData.items.length; j++) {
-                        checkoutData.total += checkoutData.items[j].subtotal;
-                    }
-                    checkoutData.total = aplicarDescuento(checkoutData.total, checkoutData.items);
-                }
-                
-                document.getElementById('checkout-total').textContent = '$' + checkoutData.total.toFixed(2);
-                document.getElementById('confirm-total').textContent = '$' + checkoutData.total.toFixed(2);
+                recalculateCheckoutTotal();
+                if (window.ecom) window.ecom.updateCheckoutWalletDisplay();
+
+                var checkoutTotals = window.ecom.getCheckoutTotals(checkoutData.total);
+                document.getElementById('checkout-total').textContent = '$' + checkoutTotals.total.toFixed(2);
+                document.getElementById('confirm-subtotal').textContent = '$' + checkoutTotals.subtotal.toFixed(2);
+                document.getElementById('confirm-tax').textContent = '$' + checkoutTotals.impuesto.toFixed(2);
+                document.getElementById('confirm-total').textContent = '$' + checkoutTotals.total.toFixed(2);
                 document.getElementById('checkout-payment-method').textContent = 
                     checkoutData.metodoPago.charAt(0).toUpperCase() + checkoutData.metodoPago.slice(1);
                 document.getElementById('confirm-metodo-pago').textContent = checkoutData.metodoPago.charAt(0).toUpperCase() + checkoutData.metodoPago.slice(1);
@@ -5359,7 +5548,6 @@ function ejecutarLogoutAdmin() {
                 document.getElementById('checkout-order-number').textContent = '#' + numeroPedido;
                 document.getElementById('checkout-order-date').textContent = new Date().toLocaleString('es-ES');
                 
-                var resumenContainer = document.getElementById('checkout-resumen-items');
                 var htmlResumen = '';
                 for (var k = 0; k < checkoutData.items.length; k++) {
                     var item = checkoutData.items[k];
@@ -5368,7 +5556,6 @@ function ejecutarLogoutAdmin() {
                     htmlResumen += '<span>$' + item.subtotal.toFixed(2) + '</span>';
                     htmlResumen += '</div>';
                 }
-                resumenContainer.innerHTML = htmlResumen;
                 document.getElementById('confirm-resumen-items').innerHTML = htmlResumen;
                 
                 irAlPaso(3);
@@ -5386,28 +5573,39 @@ function ejecutarLogoutAdmin() {
         });
     });
 
+    function selectPaymentMethod(method) {
+        if (!method) return;
+        const radio = method.querySelector('input[name="payment-method"]');
+        if (!radio) return;
+
+        clearCheckoutPaymentMethodError();
+        radio.checked = true;
+        checkoutData.metodoPago = radio.value;
+        document.querySelectorAll('.payment-method').forEach(function(option) {
+            const selected = option === method;
+            option.classList.toggle('active', selected);
+            const form = option.querySelector('.payment-form');
+            if (form) form.style.display = selected ? 'block' : 'none';
+        });
+        if (window.ecom) window.ecom.updateCheckoutWalletDisplay();
+    }
+
     document.querySelectorAll('.payment-method').forEach(function(method) {
         method.addEventListener('click', function() {
-            const radio = this.querySelector('input[type="radio"]');
-            if (radio) radio.checked = true;
-            
-            document.querySelectorAll('.payment-form').forEach(function(form) {
-                form.style.display = 'none';
-            });
-            
-            const target = this.querySelector('.payment-form');
-            if (target) target.style.display = 'block';
+            selectPaymentMethod(this);
+        });
+    });
+
+    document.querySelectorAll('input[name="payment-method"]').forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            selectPaymentMethod(this.closest('.payment-method'));
         });
     });
 
     var defaultPaymentMethod = document.querySelector('input[name="payment-method"][value="tarjeta"]');
     if (defaultPaymentMethod) {
-        defaultPaymentMethod.checked = true;
         var defaultMethodContainer = defaultPaymentMethod.closest('.payment-method');
-        if (defaultMethodContainer) {
-            var defaultForm = defaultMethodContainer.querySelector('.payment-form');
-            if (defaultForm) defaultForm.style.display = 'block';
-        }
+        selectPaymentMethod(defaultMethodContainer);
     }
 
     // ============================================================
@@ -5418,6 +5616,15 @@ function ejecutarLogoutAdmin() {
         e.preventDefault();
         var confirmButton = this;
         if (confirmButton.disabled) return;
+        const paymentMessage = document.getElementById('checkout-payment-message');
+        const originalButtonContent = confirmButton.innerHTML;
+
+        function showPaymentError(message) {
+            if (paymentMessage) {
+                paymentMessage.textContent = message;
+                paymentMessage.style.display = 'block';
+            }
+        }
         
         // 1. Verificar que se hayan aceptado los términos
         const terminosCheckbox = document.getElementById('aceptar-terminos');
@@ -5436,7 +5643,12 @@ function ejecutarLogoutAdmin() {
         if (terminosError) {
             terminosError.style.display = 'none';
         }
+        if (paymentMessage) {
+            paymentMessage.textContent = '';
+            paymentMessage.style.display = 'none';
+        }
         confirmButton.disabled = true;
+        confirmButton.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Procesando pago...';
         
         // 2. Preparar los datos del pedido
         let total = checkoutData.total || calcularTotalCheckout();
@@ -5453,18 +5665,27 @@ function ejecutarLogoutAdmin() {
         
         if (!window.ecom || typeof window.ecom.procesarCompraCompleta !== 'function') {
             confirmButton.disabled = false;
-            showFormMessage(document.getElementById('checkout-message'), 'No se pudo conectar con el servicio de pagos.', 'error');
+            confirmButton.innerHTML = originalButtonContent;
+            showPaymentError('No se pudo conectar con el servicio de pagos.');
             return;
         }
 
         const apiPurchaseResult = await window.ecom.procesarCompraCompleta({
             metodo_pago: metodo,
             direccion: direccion,
-            cart_session_key: getGuestCartSessionId()
+            cart_session_key: getGuestCartSessionId(),
+            reviewed_items: checkoutData.items.map(function(item) {
+                return {
+                    name: item.name,
+                    quantity: Number(item.quantity),
+                    price: Number(item.price)
+                };
+            })
         });
         if (!apiPurchaseResult.success) {
             confirmButton.disabled = false;
-            showFormMessage(document.getElementById('checkout-message'), apiPurchaseResult.error, 'error');
+            confirmButton.innerHTML = originalButtonContent;
+            showPaymentError(apiPurchaseResult.error || 'No se pudo procesar el pago.');
             return;
         }
 
@@ -5492,18 +5713,6 @@ function ejecutarLogoutAdmin() {
             direccion: direccion
         };
         historialCompras.unshift(compra);
-        orders.unshift({
-            id: numeroPedido,
-            client: direccion.nombre,
-            products: items.map(function(item) { return item.name + ' (' + item.quantity + ')'; }).join(', '),
-            total: total,
-            status: 'pendiente',
-            date: fecha,
-            metodo: metodo,
-            direccion: direccion,
-            items: items
-        });
-        await Promise.all([saveHistorial(), saveOrders()]);
         
         // 4. Vaciar el carrito
         var previousCart = cart.slice();
@@ -5541,6 +5750,44 @@ function ejecutarLogoutAdmin() {
                 if (orderNumberEl) orderNumberEl.textContent = numeroPedido;
                 const paymentMethodEl = document.getElementById('checkout-payment-method');
                 if (paymentMethodEl) paymentMethodEl.textContent = purchase.pago;
+                const clientEmailNotice = document.getElementById('checkout-client-email-notice');
+                const clientEmailMessage = document.getElementById('checkout-client-email-message');
+                const clientEmailEl = document.getElementById('checkout-confirm-email');
+                if (clientEmailNotice && clientEmailMessage && clientEmailEl) {
+                    if (purchase.email_fiscal_enviado) {
+                        clientEmailNotice.style.background = '#ede9fe';
+                        clientEmailNotice.style.color = '#5b21b6';
+                        clientEmailMessage.textContent = 'Detalle de tu compra enviado a: ';
+                        clientEmailEl.textContent = direccion.email || currentUser.email || '';
+                        clientEmailEl.style.display = '';
+                    } else {
+                        clientEmailNotice.style.background = '#fff7ed';
+                        clientEmailNotice.style.color = '#9a3412';
+                        clientEmailMessage.textContent = 'La compra se registró, pero no se pudo enviar el detalle por correo.';
+                        clientEmailEl.textContent = '';
+                        clientEmailEl.style.display = 'none';
+                    }
+                }
+                const fiscalNotice = document.getElementById('checkout-fiscal-notice');
+                const fiscalMessage = document.getElementById('checkout-fiscal-message');
+                const fiscalEmailEl = document.getElementById('checkout-fiscal-email');
+                if (fiscalNotice && fiscalMessage && fiscalEmailEl) {
+                    if (purchase.email_fiscal_enviado) {
+                        fiscalNotice.style.background = '#ecfdf5';
+                        fiscalNotice.style.color = '#065f46';
+                        fiscalNotice.style.borderColor = '#a7f3d0';
+                        fiscalMessage.textContent = 'Comprobante fiscal enviado exitosamente a: ';
+                        fiscalEmailEl.textContent = purchase.email_fiscal_destinatario || '';
+                        fiscalEmailEl.style.display = '';
+                    } else {
+                        fiscalNotice.style.background = '#fff7ed';
+                        fiscalNotice.style.color = '#9a3412';
+                        fiscalNotice.style.borderColor = '#fed7aa';
+                        fiscalMessage.textContent = 'La compra se registró, pero no se pudo enviar el comprobante fiscal por correo.';
+                        fiscalEmailEl.textContent = '';
+                        fiscalEmailEl.style.display = 'none';
+                    }
+                }
                 const saldoActualRow = document.getElementById('checkout-saldo-actual-row');
                 const saldoActualVal = document.getElementById('checkout-saldo-actual-val');
                 if (purchase.es_monedero && saldoActualRow && saldoActualVal) {
@@ -5766,12 +6013,6 @@ function ejecutarLogoutAdmin() {
     // ============================================================
     // HISTORIAL DE COMPRAS - CORREGIDO
     // ============================================================
-
-    function guardarCompra(compra) {
-        historialCompras.unshift(compra);
-        saveHistorial();
-        renderHistorialCompras();
-    }
 
     function renderHistorialCompras() {
         const container = document.getElementById('compras-lista-container');
@@ -6117,8 +6358,30 @@ function ejecutarLogoutAdmin() {
         document.getElementById('factura-fiscal-view').querySelector('form').style.display = 'none';
         document.getElementById('factura-generada-view').style.display = 'block';
 
+        // Enviar comprobante fiscal actualizado por correo al backend
+        try {
+            fetch('/api/pagos/enviar-comprobante-fiscal', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(window.deliciasAuthToken ? { Authorization: 'Bearer ' + window.deliciasAuthToken } : {})
+                },
+                body: JSON.stringify({
+                    folio: invoice.folio || (ticketData ? ticketData.folio : 'OR-00000'),
+                    fecha: invoice.fecha,
+                    cliente: ticketData ? ticketData.cliente : { nombre: currentUser.name, email: currentUser.email },
+                    datosFiscales: facturaFiscalData,
+                    items: ticketData ? ticketData.items : [],
+                    subtotal: ticketData ? ticketData.total : 0,
+                    impuesto: 0,
+                    total: ticketData ? ticketData.total : 0,
+                    metodoPago: ticketData ? ticketData.metodo : 'Tarjeta'
+                })
+            }).catch(function(err) { console.warn('Aviso envío comprobante:', err); });
+        } catch (_) {}
+
         // Feedback de éxito
-        showFormMessage(feedback, 'Factura CFDI generada correctamente.', 'success');
+        showFormMessage(feedback, 'Factura CFDI generada y comprobante enviado por correo a pailoto0717@gmail.com.', 'success');
 
         // Scroll a la factura generada
         document.getElementById('factura-generada-view').scrollIntoView({ behavior: 'smooth' });
@@ -6387,7 +6650,74 @@ document.addEventListener('keydown', function(e) {
     if (!document.body.classList.contains('admin-page-shell')) {
         renderHistorialCompras();
     }
-    showPage(document.body.classList.contains('admin-page-shell') ? 'login' : 'inicio');
+    var savedActivePage = '';
+    if (!document.body.classList.contains('admin-page-shell')) {
+        try {
+            savedActivePage = sessionStorage.getItem('delicias_active_page') || '';
+        } catch (_) {}
+    }
+    var protectedPages = ['perfil', 'monedero', 'tickets', 'mis-compras', 'mi-actividad', 'mis-publicaciones', 'publicar-producto', 'mis-comentarios', 'checkout'];
+    var initialPage = savedActivePage && protectedPages.indexOf(savedActivePage) === -1
+        ? savedActivePage
+        : 'inicio';
+    showPage(document.body.classList.contains('admin-page-shell') ? 'login' : initialPage);
+    if (savedActivePage && protectedPages.indexOf(savedActivePage) !== -1) {
+        try {
+            sessionStorage.setItem('delicias_active_page', savedActivePage);
+        } catch (_) {}
+    }
+
+    if (!document.body.classList.contains('admin-page-shell')) {
+        (async function restoreCustomerSession() {
+            try {
+                var storedToken = localStorage.getItem('delicias_customer_token')
+                    || sessionStorage.getItem('delicias_customer_token');
+                var storedUser = localStorage.getItem('delicias_customer_user')
+                    || sessionStorage.getItem('delicias_customer_user');
+                if (!storedToken || !storedUser) return;
+
+                var parsedUser = JSON.parse(storedUser);
+                if (!parsedUser || parsedUser.role !== 'usuario') return;
+
+                authToken = storedToken;
+                window.deliciasAuthToken = storedToken;
+                currentUser = Object.assign(currentUser, parsedUser);
+
+                var profileResponse = await fetch(API_BASE + '/auth/perfil', {
+                    headers: { Authorization: 'Bearer ' + storedToken }
+                });
+                if (!profileResponse.ok) {
+                    clearCustomerSession();
+                    authToken = '';
+                    window.deliciasAuthToken = '';
+                    return;
+                }
+
+                var profile = await profileResponse.json();
+                currentUser = Object.assign(currentUser, profile, { role: 'usuario' });
+                isLoggedIn = true;
+                isAdmin = false;
+                saveCurrentUser(localStorage.getItem('delicias_customer_token') !== null);
+                await loadClientCartAfterLogin();
+                await loadCustomerPurchaseHistory();
+                updateNavVisibility();
+                updateProfileUI();
+                var savedPage = '';
+                try {
+                    savedPage = sessionStorage.getItem('delicias_active_page') || '';
+                } catch (_) {}
+                if (savedPage && savedPage !== 'login' && savedPage !== 'registro') {
+                    showPage(savedPage);
+                }
+            } catch (_) {
+                clearCustomerSession();
+                authToken = '';
+                window.deliciasAuthToken = '';
+                isLoggedIn = false;
+                updateNavVisibility();
+            }
+        })();
+    }
     
     // 👇 MODIFICADO: Esperar a que loadApiData termine y luego actualizar el dashboard
     
